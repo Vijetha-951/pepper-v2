@@ -1,0 +1,67 @@
+# ============================================================
+# Root .gitignore for PEPPER Project
+# Works for both React Frontend and Node.js Backend
+# ============================================================
+
+# =========================
+# FRONTEND (React)
+# =========================
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.js
+
+# Testing
+frontend/coverage/
+
+# Production build
+frontend/build/
+
+# Environment files
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Misc
+frontend/.DS_Store
+
+# Firebase
+frontend/.firebase/
+frontend/firebase-debug.log
+
+
+# =========================
+# BACKEND (Node.js / Express)
+# =========================
+backend/node_modules/
+
+# Environment variables
+backend/.env
+
+# Logs
+backend/npm-debug.log*
+backend/yarn-debug.log*
+backend/yarn-error.log*
+
+
+# =========================
+# IDE & OS Files
+# =========================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+
+# =========================
+# Optional Global Ignores
+# =========================
+*.log
+# Firebase / Google Cloud service account keys
+backend/src/config/serviceAccountKey.json
