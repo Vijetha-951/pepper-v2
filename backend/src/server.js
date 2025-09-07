@@ -2,9 +2,12 @@ import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import connectDB from './config/db.js';   // ✅ make sure db.js uses `export default`
+import connectDB from './config/db.js';
 import productsRouter from './routes/products.routes.js';
 import authRouter from './routes/auth.routes.js';
+import adminRouter from './routes/admin.routes.js';
+import userRouter from './routes/user.routes.js';
+import deliveryRouter from './routes/delivery.routes.js';
 
 dotenv.config();
 
@@ -24,6 +27,9 @@ app.get('/api/health', (_req, res) => {
 // ====== Routes ======
 app.use('/api/auth', authRouter);
 app.use('/api/products', productsRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/user', userRouter);
+app.use('/api/delivery', deliveryRouter);
 
 // ====== Start server after DB connect ======
 connectDB()

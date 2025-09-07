@@ -7,8 +7,17 @@ const router = express.Router();
 // GET /api/products - list products
 router.get(
   '/',
-  asyncHandler(async (_req, res) => {
-    const items = await Product.find().sort({ createdAt: -1 });
+  asyncHandler(async (req, res) => {
+    const { q, type, available, minPrice, maxPrice } = req.query;
+    const filter = {};
+    if (q) filter.name = { $regex: q, $options: 'i' };
+    if (type) filter.type = type;
+    if (available === 'true') filter.stock = { $gt: 0 };
+    if (minPrice || maxPrice) filter.price = {
+      ...(minPrice ? { $gte: Number(minPrice) } : {}),
+      ...(maxPrice ? { $lte: Number(maxPrice) } : {}),
+    };
+    const items = await Product.find(filter).sort({ createdAt: -1 });
     res.json(items);
   })
 );
@@ -27,8 +36,8 @@ router.get(
 router.post(
   '/',
   asyncHandler(async (req, res) => {
-    const { name, description, price, imageUrl, inStock, category } = req.body;
-    const created = await Product.create({ name, description, price, imageUrl, inStock, category });
+    const { name, type, category, description, price, stock, image, isActive } = req.body;
+    const created = await Product.create({ name, type, category, description, price, stock, image, isActive });
     res.status(201).json(created);
   })
 );
@@ -37,10 +46,10 @@ router.post(
 router.put(
   '/:id',
   asyncHandler(async (req, res) => {
-    const { name, description, price, imageUrl, inStock, category } = req.body;
+    const { name, type, category, description, price, stock, image, isActive } = req.body;
     const updated = await Product.findByIdAndUpdate(
       req.params.id,
-      { name, description, price, imageUrl, inStock, category },
+      { name, type, category, description, price, stock, image, isActive },
       { new: true }
     );
     if (!updated) return res.status(404).json({ message: 'Not found' });
