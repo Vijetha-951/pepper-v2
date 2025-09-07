@@ -1,94 +1,174 @@
 import express from 'express';
 import asyncHandler from 'express-async-handler';
 import admin from '../config/firebase.js';
-import User from '../models/User.js';
+import { getFirestore } from 'firebase-admin/firestore';
 import { requireAuth } from '../middleware/auth.js';
+
+const db = getFirestore();
 
 const router = express.Router();
 
-// ===== Sync user profile from Firebase to MongoDB =====
+// ===== Admin-only login via Firebase ID token (Email/Password) =====
 router.post(
-  '/sync-profile',
+  '/admin/email-login',
   asyncHandler(async (req, res) => {
-    const { idToken, additionalInfo } = req.body;
+    const { idToken } = req.body; // ID token obtained after Firebase email/password sign-in on client
+    const ADMIN_EMAIL = 'vj.vijetha01@gmail.com';
 
     if (!idToken) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Firebase ID token is required' 
-      });
+      return res.status(400).json({ success: false, error: 'idToken is required' });
     }
 
     try {
-      // Verify Firebase ID token
-      const decodedToken = await admin.auth().verifyIdToken(idToken);
-      const firebaseUser = await admin.auth().getUser(decodedToken.uid);
+      const decoded = await admin.auth().verifyIdToken(idToken);
+      const email = (decoded.email || '').toLowerCase();
 
-      // Check if user already exists in MongoDB
-      let user = await User.findOne({ firebaseUid: decodedToken.uid });
-
-      if (user) {
-        // Update existing user
-        user.email = decodedToken.email || firebaseUser.email;
-        user.firstName = firebaseUser.displayName?.split(' ')[0] || user.firstName;
-        user.lastName = firebaseUser.displayName?.split(' ').slice(1).join(' ') || user.lastName;
-        user.provider = decodedToken.firebase.sign_in_provider || 'firebase';
-        user.profilePicture = firebaseUser.photoURL || user.profilePicture;
-
-        // Update role from Firebase claims only (trust backend)
-        user.role = decodedToken.role || user.role;
-
-        // Update any additional frontend info except role
-        if (additionalInfo) {
-          const { role, ...safeInfo } = additionalInfo; // prevent frontend from overwriting role
-          Object.assign(user, safeInfo);
-        }
-
-        await user.save();
-      } else {
-        // Create new user profile
-        user = await User.create({
-          firebaseUid: decodedToken.uid,
-          email: decodedToken.email || firebaseUser.email,
-          firstName: firebaseUser.displayName?.split(' ')[0] || additionalInfo?.firstName || '',
-          lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || additionalInfo?.lastName || '',
-          phone: additionalInfo?.phone || '',
-          place: additionalInfo?.place || '',
-          district: additionalInfo?.district || '',
-          pincode: additionalInfo?.pincode || '',
-          provider: decodedToken.firebase.sign_in_provider || 'firebase',
-          profilePicture: firebaseUser.photoURL || '',
-          role: decodedToken.role || 'user' // trust Firebase claims
-        });
+      // Restrict to exact admin email
+      if (email !== ADMIN_EMAIL) {
+        return res.status(403).json({ success: false, error: 'Admin access denied' });
       }
 
-      res.json({
-        success: true,
-        message: 'Profile synced successfully',
-        user: {
-          id: user._id,
-          firebaseUid: user.firebaseUid,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          phone: user.phone,
-          role: user.role,
-          place: user.place,
-          district: user.district,
-          pincode: user.pincode,
-          provider: user.provider,
-          profilePicture: user.profilePicture,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt
-        }
-      });
-    } catch (error) {
-      console.error('Profile sync error:', error);
-      res.status(401).json({ 
-        success: false, 
-        error: 'Invalid Firebase token or sync failed' 
-      });
+      // Enforce email/password provider for this route
+      const provider = decoded.firebase?.sign_in_provider;
+      if (provider !== 'password') {
+        return res.status(403).json({ success: false, error: 'Use email/password to login here' });
+      }
+
+      // Make sure Firestore has role=admin entry for this uid
+      await db.collection('users').doc(decoded.uid).set(
+        { uid: decoded.uid, email, role: 'admin', provider },
+        { merge: true }
+      );
+
+      // Optionally ensure custom claims (non-blocking)
+      try { await admin.auth().setCustomUserClaims(decoded.uid, { role: 'admin' }); } catch {}
+
+      return res.json({ success: true, role: 'admin', redirectPath: '/admin/dashboard' });
+    } catch (err) {
+      console.error('Admin email-login failed:', err);
+      return res.status(401).json({ success: false, error: 'Invalid token' });
     }
+  })
+);
+
+// ===== Google Sign-In with role-based redirect =====
+router.post(
+  '/google-login',
+  asyncHandler(async (req, res) => {
+    const { idToken } = req.body; // ID token from Firebase Google sign-in
+    const ADMIN_EMAIL = 'vj.vijetha01@gmail.com';
+
+    if (!idToken) {
+      return res.status(400).json({ success: false, error: 'idToken is required' });
+    }
+
+    try {
+      const decoded = await admin.auth().verifyIdToken(idToken);
+      const isGoogle = decoded.firebase?.sign_in_provider === 'google.com';
+      const email = (decoded.email || '').toLowerCase();
+      if (!isGoogle) return res.status(403).json({ success: false, error: 'Only Google sign-in allowed here' });
+
+      // Role resolution priority
+      let role = null;
+      if (email === ADMIN_EMAIL) {
+        // Admin allowed to sign in with Google too
+        role = 'admin';
+        try { await admin.auth().setCustomUserClaims(decoded.uid, { role: 'admin' }); } catch {}
+      } else {
+        // Users and deliveryboys must already exist in Firestore
+        const doc = await db.collection('users').doc(decoded.uid).get();
+        if (doc.exists && doc.data()?.role) role = String(doc.data().role);
+        if (!role) {
+          const snap = await db.collection('users').where('email', '==', email).limit(1).get();
+          if (!snap.empty) role = String(snap.docs[0].data().role || '');
+        }
+      }
+
+      if (!role) {
+        return res.status(403).json({ success: false, error: 'Unauthorized or unregistered email' });
+      }
+
+      // Ensure Firestore has the user entry (merge)
+      await db.collection('users').doc(decoded.uid).set(
+        { uid: decoded.uid, email, role, provider: 'google.com' },
+        { merge: true }
+      );
+
+      let redirectPath = '/user/dashboard';
+      if (role === 'admin') redirectPath = '/admin/dashboard';
+      else if (role === 'deliveryboy') redirectPath = '/deliveryboy/dashboard';
+
+      return res.json({ success: true, role, redirectPath });
+    } catch (err) {
+      console.error('Google login failed:', err);
+      return res.status(401).json({ success: false, error: 'Invalid token' });
+    }
+  })
+);
+
+// ===== Normal login via Firebase (email/password) with role-based redirect =====
+router.post(
+  '/email-login',
+  asyncHandler(async (req, res) => {
+    const { idToken } = req.body; // ID token from Firebase email/password sign-in
+    if (!idToken) return res.status(400).json({ success: false, error: 'idToken is required' });
+
+    try {
+      const decoded = await admin.auth().verifyIdToken(idToken);
+      const email = (decoded.email || '').toLowerCase();
+
+      // Enforce email/password provider
+      const provider = decoded.firebase?.sign_in_provider;
+      if (provider !== 'password') {
+        return res.status(403).json({ success: false, error: 'Use email/password to login here' });
+      }
+
+      // Check Firestore for role by uid first, then by email
+      let role = null;
+      const doc = await db.collection('users').doc(decoded.uid).get();
+      if (doc.exists && doc.data()?.role) role = String(doc.data().role);
+      if (!role) {
+        const snap = await db.collection('users').where('email', '==', email).limit(1).get();
+        if (!snap.empty) role = String(snap.docs[0].data().role || '');
+      }
+
+      // Admin email always maps to admin
+      if (email === 'vj.vijetha01@gmail.com') role = 'admin';
+
+      if (!role) {
+        return res.status(403).json({ success: false, error: 'Role not assigned in Firestore' });
+      }
+
+      // Persist/merge minimal user record in Firestore
+      await db.collection('users').doc(decoded.uid).set(
+        { uid: decoded.uid, email, role, provider },
+        { merge: true }
+      );
+
+      let redirectPath = '/user/dashboard';
+      if (role === 'admin') redirectPath = '/admin/dashboard';
+      else if (role === 'deliveryboy') redirectPath = '/deliveryboy/dashboard';
+
+      return res.json({ success: true, role, redirectPath });
+    } catch (err) {
+      console.error('Email login failed:', err);
+      return res.status(401).json({ success: false, error: 'Invalid token' });
+    }
+  })
+);
+
+// ===== Determine redirect after login based on role =====
+router.get(
+  '/route-after-login',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const role = req.userRole;
+    let redirectPath = '/';
+    if (role === 'admin') redirectPath = '/admin/dashboard';
+    else if (role === 'deliveryboy') redirectPath = '/deliveryboy/dashboard';
+    else redirectPath = '/user/dashboard';
+
+    res.json({ success: true, role, redirectPath });
   })
 );
 
@@ -169,8 +249,8 @@ router.put(
     }
 
     const { userId, role } = req.body;
-    if (!userId || !role || !['user', 'admin'].includes(role)) {
-      return res.status(400).json({ success: false, error: 'Valid userId and role (user/admin) are required' });
+    if (!userId || !role || !['user', 'admin', 'deliveryboy'].includes(role)) {
+      return res.status(400).json({ success: false, error: 'Valid userId and role (user/admin/deliveryboy) are required' });
     }
 
     const user = await User.findByIdAndUpdate(userId, { role }, { new: true });

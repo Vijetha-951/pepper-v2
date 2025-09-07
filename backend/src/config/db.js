@@ -1,18 +1,19 @@
 import mongoose from 'mongoose';
 
-export async function connectDB() {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) throw new Error('MONGODB_URI not set');
+const connectDB = async () => {
+  try {
+    const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
+    if (!uri) {
+      throw new Error('Missing MONGO_URI/MONGODB_URI in environment');
+    }
+    await mongoose.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+  } catch (error) {
+    console.error('❌ MongoDB connection failed:', error.message);
+    process.exit(1);
+  }
+};
 
-  mongoose.set('strictQuery', true);
-
-  await mongoose.connect(uri, {
-    dbName: undefined, // use db in URI
-  });
-
-  console.log('MongoDB connected');
-
-  mongoose.connection.on('error', (err) => {
-    console.error('MongoDB error:', err);
-  });
-}
+export default connectDB;

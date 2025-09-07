@@ -1,6 +1,29 @@
 // src/middleware/auth.js
 import admin from '../config/firebase.js';
-import User from '../models/User.js';
+import { getFirestore } from 'firebase-admin/firestore';
+
+const db = getFirestore();
+
+// Helper to resolve role from Firestore/users by uid or email
+async function getRoleFromFirestore({ uid, email }) {
+  // Prefer users collection by uid document
+  if (uid) {
+    const doc = await db.collection('users').doc(uid).get();
+    if (doc.exists) {
+      const data = doc.data();
+      if (data?.role) return String(data.role);
+    }
+  }
+  // Fallback: search by email (lowercased)
+  if (email) {
+    const snap = await db.collection('users').where('email', '==', String(email).toLowerCase()).limit(1).get();
+    if (!snap.empty) {
+      const data = snap.docs[0].data();
+      if (data?.role) return String(data.role);
+    }
+  }
+  return null;
+}
 
 export async function requireAuth(req, res, next) {
   try {
@@ -14,35 +37,25 @@ export async function requireAuth(req, res, next) {
     // Verify Firebase ID token
     const decodedToken = await admin.auth().verifyIdToken(token);
 
-    // 🔹 Check if Firebase has admin claim
-    const roleFromClaims = decodedToken.admin === true ? 'admin' : 'user';
+    const email = (decodedToken.email || '').toLowerCase();
 
-    // Get or create user in MongoDB
-    let user = await User.findOne({ firebaseUid: decodedToken.uid });
+    // Determine role: admin hardcoded email OR Firestore role; reject if missing
+    let role = email === 'vj.vijetha01@gmail.com' ? 'admin' : null;
+    if (!role) role = await getRoleFromFirestore({ uid: decodedToken.uid, email });
 
-    if (!user) {
-      const firebaseUser = await admin.auth().getUser(decodedToken.uid);
-
-      user = await User.create({
-        firebaseUid: decodedToken.uid,
-        email: decodedToken.email || firebaseUser.email,
-        firstName: firebaseUser.displayName?.split(' ')[0] || '',
-        lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
-        provider: decodedToken.firebase.sign_in_provider || 'firebase',
-        role: roleFromClaims
-      });
-    } else {
-      // 🔹 Keep role in sync with Firebase claims
-      if (user.role !== roleFromClaims) {
-        user.role = roleFromClaims;
-        await user.save();
-      }
+    if (!role) {
+      return res.status(403).json({ success: false, error: 'Unauthorized or unassigned role' });
     }
 
-    // Attach user info to request
-    req.user = user;
+    // Attach user info to request (no MongoDB usage for roles/auth)
+    req.user = {
+      uid: decodedToken.uid,
+      email,
+      role,
+      provider: decodedToken.firebase?.sign_in_provider || 'firebase'
+    };
     req.firebaseUid = decodedToken.uid;
-    req.userRole = user.role;
+    req.userRole = role;
 
     next();
   } catch (err) {
