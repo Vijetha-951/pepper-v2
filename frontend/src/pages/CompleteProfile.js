@@ -67,8 +67,8 @@ export default function CompleteProfile() {
     
     if (!formData.lastName) {
       newErrors.lastName = "Last name is required";
-    } else if (formData.lastName.length < 2 || formData.lastName.length > 50) {
-      newErrors.lastName = "Last name must be 2–50 characters";
+    } else if (formData.lastName.length < 1 || formData.lastName.length > 50) {
+      newErrors.lastName = "Last name must be 1–50 characters";
     } else if (!/^[\p{L}]+$/u.test(formData.lastName)) {
       newErrors.lastName = "Only letters allowed";
     }

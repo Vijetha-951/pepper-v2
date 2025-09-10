@@ -88,6 +88,7 @@ export default function Dashboard() {
     { id: 'orders', label: 'My Orders', icon: ShoppingCart },
     { id: 'products', label: 'Products', icon: Package },
     ...(user.role === 'deliveryboy' ? [{ id: 'deliveries', label: 'Deliveries', icon: Truck }] : []),
+    ...(user.role === 'admin' ? [{ id: 'admin-users', label: 'User Management', icon: User }] : []),
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'settings', label: 'Settings', icon: Settings }
   ];
@@ -344,6 +345,14 @@ export default function Dashboard() {
               Settings
             </h3>
             <p style={{ color: '#6b7280' }}>Manage your account settings and preferences.</p>
+          </div>
+        );
+      case 'admin-users':
+        return (
+          <div style={cardStyle}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' }}>Admin • User Management</h3>
+            <iframe title="AdminUserManagement" src="/admin-users" style={{ width: '100%', height: '70vh', border: 'none', borderRadius: 8 }} />
+            <p style={{ color: '#6b7280', fontSize: 12, marginTop: 8 }}>Open full view at /admin-users if the embed is blocked by CSP.</p>
           </div>
         );
       default:

@@ -8,6 +8,62 @@ import User from '../models/User.js'; // ✅ Added missing import
 const db = getFirestore();
 const router = express.Router();
 
+// ===== Sync Firebase user into MongoDB profile (idempotent) =====
+router.post(
+  '/sync-profile',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    // req.user and req.firebaseUid populated by requireAuth
+    const { uid, email, role, provider } = {
+      uid: req.firebaseUid,
+      email: req.user?.email,
+      role: req.userRole,
+      provider: req.user?.provider || 'firebase',
+    };
+
+    const { firstName = '', lastName = '', phone = '', place = '', district = '', pincode = '' } = req.body?.profile || {};
+
+    // Check if user exists first
+    let user = await User.findOne({ firebaseUid: uid });
+    
+    if (user) {
+      // Update existing user (don't change isActive status)
+      user = await User.findOneAndUpdate(
+        { firebaseUid: uid },
+        {
+          email,
+          role,
+          provider,
+          ...(firstName ? { firstName } : {}),
+          ...(lastName ? { lastName } : {}),
+          ...(phone ? { phone } : {}),
+          ...(place ? { place } : {}),
+          ...(district ? { district } : {}),
+          ...(pincode ? { pincode } : {}),
+        },
+        { new: true }
+      );
+    } else {
+      // Create new user with pending status (null isActive)
+      user = await User.create({
+        firebaseUid: uid,
+        email,
+        role,
+        provider,
+        firstName: firstName || '',
+        lastName: lastName || '',
+        phone: phone || '',
+        place: place || '',
+        district: district || '',
+        pincode: pincode || '',
+        isActive: null, // Pending approval
+      });
+    }
+
+    return res.json({ success: true, user });
+  })
+);
+
 // ===== Admin-only login via Firebase ID token (Email/Password) =====
 router.post(
   '/admin/email-login',

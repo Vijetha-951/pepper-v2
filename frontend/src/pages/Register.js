@@ -58,13 +58,13 @@ export default function Register() {
       newErrors.firstName = "Only letters allowed";
     }
 
-    // Last Name: required, 2–50, letters only, no spaces
+    // Last Name: required, 1–50, letters only, no spaces
     if (!formData.lastName) {
       newErrors.lastName = "Last name is required";
     } else if (hasSpace(formData.lastName)) {
       newErrors.lastName = "No spaces allowed";
-    } else if (formData.lastName.length < 2 || formData.lastName.length > 50) {
-      newErrors.lastName = "Last name must be 2–50 characters";
+    } else if (formData.lastName.length < 1 || formData.lastName.length > 50) {
+      newErrors.lastName = "Last name must be 1–50 characters";
     } else if (!lettersOnly.test(formData.lastName)) {
       newErrors.lastName = "Only letters allowed";
     }

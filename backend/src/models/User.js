@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema(
     address: AddressSchema, // optional structured address
     provider: { type: String, default: 'firebase' }, // firebase, google.com, etc.
     profilePicture: { type: String, trim: true }, // URL to profile picture
-    isActive: { type: Boolean, default: true },
+    isActive: { type: Boolean, default: null }, // null = pending, true = approved, false = rejected
     assignedAreas: { // for delivery boys
       pincodes: [String],
       districts: [String],

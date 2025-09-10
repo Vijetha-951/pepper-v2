@@ -1,4 +1,5 @@
 import firebaseAuthService from './firebaseAuthService';
+import { apiFetch } from './api';
 
 class AuthService {
   constructor() {
@@ -6,16 +7,41 @@ class AuthService {
     this.user = this.firebaseAuth.getStoredUserData();
   }
 
+  async syncProfile(optionalProfile = {}) {
+    try {
+      await apiFetch('/api/auth/sync-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile: optionalProfile })
+      });
+    } catch (e) {
+      console.warn('Profile sync failed (non-fatal):', e?.message || e);
+    }
+  }
+
   // Regular email/password login
   async login(formData) {
     try {
-      // Support both object (formData) and separate parameters (email, password)
       const email = formData.email || formData;
       const password = formData.password || arguments[1];
-      
+
       const result = await this.firebaseAuth.signInWithEmailAndPassword(email, password);
       if (result.success) {
         this.user = result.user;
+
+        // Notify backend for role redirect logic (optional)
+        const firebaseUser = this.firebaseAuth.getCurrentUser();
+        const idToken = firebaseUser ? await firebaseUser.getIdToken(true) : null;
+        if (idToken) {
+          await fetch('/api/auth/email-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken })
+          }).catch(() => {});
+        }
+
+        // Ensure MongoDB has this profile
+        await this.syncProfile();
       }
       return result;
     } catch (error) {
@@ -24,47 +50,24 @@ class AuthService {
     }
   }
 
-  // Regular email/password registration (Hybrid: Firebase first, then backend)
+  // Regular email/password registration (Firebase first)
   async register(userData) {
     try {
-      // 1) Create user in Firebase (Auth + Firestore)
       const firebaseResult = await this.firebaseAuth.registerWithEmailAndPassword(userData);
-      if (!firebaseResult.success) {
-        return firebaseResult; // return Firebase validation/auth errors to UI
-      }
+      if (!firebaseResult.success) return firebaseResult;
 
-      // 2) Create backend session + user record using Firebase ID token
-      const firebaseUser = this.firebaseAuth.getCurrentUser();
-      const idToken = firebaseUser ? await firebaseUser.getIdToken(true) : null;
-
-      if (idToken) {
-        const resp = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            idToken,
-            role: userData.role,
-            phone: userData.phone,
-            place: userData.place,
-            district: userData.district,
-            pincode: userData.pincode
-          })
-        });
-
-        // If backend responds but not ok, log and continue (Firebase already succeeded)
-        if (!resp.ok) {
-          let data = null;
-          try { data = await resp.json(); } catch (_) {}
-          console.warn('Backend registration non-OK:', data);
-        }
-
-        // Optional: read backend data if needed
-        // const data = await resp.json();
-      }
-
-      // 3) Persist minimal user context (already set by firebaseAuth service)
       this.user = firebaseResult.user;
+
+      // Sync profile to MongoDB with available details
+      await this.syncProfile({
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        phone: userData.phone,
+        place: userData.place,
+        district: userData.district,
+        pincode: userData.pincode,
+      });
+
       return firebaseResult;
     } catch (error) {
       console.error('Registration error:', error);
@@ -78,6 +81,18 @@ class AuthService {
       const result = await this.firebaseAuth.signInWithGoogle();
       if (result.success) {
         this.user = result.user;
+
+        const firebaseUser = this.firebaseAuth.getCurrentUser();
+        const idToken = firebaseUser ? await firebaseUser.getIdToken(true) : null;
+        if (idToken) {
+          await fetch('/api/auth/google-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken })
+          }).catch(() => {});
+        }
+
+        await this.syncProfile();
       }
       return result;
     } catch (error) {
@@ -92,6 +107,18 @@ class AuthService {
       const result = await this.firebaseAuth.signUpWithGoogle();
       if (result.success) {
         this.user = result.user;
+
+        const firebaseUser = this.firebaseAuth.getCurrentUser();
+        const idToken = firebaseUser ? await firebaseUser.getIdToken(true) : null;
+        if (idToken) {
+          await fetch('/api/auth/google-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken })
+          }).catch(() => {});
+        }
+
+        await this.syncProfile();
       }
       return result;
     } catch (error) {
@@ -114,27 +141,24 @@ class AuthService {
     }
   }
 
-  // Check if user is authenticated
   isAuthenticated() {
     return this.firebaseAuth.isAuthenticated() && !!this.user;
   }
 
-  // Get current user
   getCurrentUser() {
     return this.user || this.firebaseAuth.getStoredUserData();
   }
 
-  // Get Firebase user
   getFirebaseUser() {
     return this.firebaseAuth.getCurrentUser();
   }
 
-  // Update user profile
   async updateProfile(updateData) {
     try {
       const result = await this.firebaseAuth.updateUserProfile(updateData);
       if (result.success) {
         this.user = result.user;
+        await this.syncProfile(updateData);
       }
       return result;
     } catch (error) {
@@ -143,7 +167,6 @@ class AuthService {
     }
   }
 
-  // Set auth state change listener
   onAuthStateChange(callback) {
     this.firebaseAuth.onAuthStateChange(callback);
   }

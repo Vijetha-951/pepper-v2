@@ -7,6 +7,7 @@ import Register from "./pages/Register";
 import RoleBasedDashboard from "./pages/RoleBasedDashboard";
 import CompleteProfile from "./pages/CompleteProfile";
 import AuthCallback from "./pages/AuthCallback";
+import AdminUserManagement from "./pages/AdminUserManagement";
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
         
         {/* Protected routes without navbar */}
         <Route path="/dashboard" element={<RoleBasedDashboard />} />
+        <Route path="/admin-users" element={<AdminUserManagement />} />
       </Routes>
     </Router>
   );
