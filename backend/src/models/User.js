@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { validateMeaningfulEmail } from '../middleware/emailValidation.js';
 
 const AddressSchema = new mongoose.Schema(
   {
@@ -14,7 +15,23 @@ const AddressSchema = new mongoose.Schema(
 const userSchema = new mongoose.Schema(
   {
     firebaseUid: { type: String, required: true, unique: true }, // Firebase user ID
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    email: { 
+      type: String, 
+      required: true, 
+      unique: true, 
+      lowercase: true, 
+      trim: true,
+      validate: {
+        validator: function(email) {
+          const validation = validateMeaningfulEmail(email);
+          return validation.isValid;
+        },
+        message: function(props) {
+          const validation = validateMeaningfulEmail(props.value);
+          return validation.reason || 'Invalid email address';
+        }
+      }
+    },
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
     phone: { type: String, trim: true },

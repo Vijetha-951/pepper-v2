@@ -6,10 +6,7 @@ const connectDB = async () => {
     if (!uri) {
       throw new Error('Missing MONGO_URI/MONGODB_URI in environment');
     }
-    await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(uri);
   } catch (error) {
     console.error('❌ MongoDB connection failed:', error.message);
     process.exit(1);

@@ -5,6 +5,7 @@ import backgroundImage from "../assets/loginreg.jpeg";
 import authService from "../services/authService";
 import { fetchSignInMethodsForEmail } from "firebase/auth";
 import { auth } from "../config/firebase";
+import { validateMeaningfulEmail } from "../utils/emailValidation";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -27,17 +28,107 @@ export default function Register() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Allow spaces only for 'place'; enforce digits-only and max 10 for phone
+    // Allow spaces only for 'place' and keep original input for validation
+    // Remove spaces for other fields except email (to allow proper validation)
     let newValue = value;
-    if (name !== 'place') {
+    if (name !== 'place' && name !== 'email') {
       newValue = newValue.replace(/\s+/g, "");
     }
     if (name === 'phone') {
       newValue = newValue.replace(/\D/g, '').slice(0, 10);
     }
-    setFormData({ ...formData, [name]: newValue });
-    if (errors[name]) {
+    
+    const updatedFormData = { ...formData, [name]: newValue };
+    setFormData(updatedFormData);
+    
+    // If there are existing errors, perform real-time validation for the current field
+    if (Object.keys(errors).length > 0) {
+      const currentErrors = { ...errors };
+      
+      // Validate the current field that's being typed in
+      const fieldError = validateSingleField(name, newValue, updatedFormData);
+      
+      if (fieldError) {
+        currentErrors[name] = fieldError;
+      } else {
+        delete currentErrors[name];
+      }
+      
+      setErrors(currentErrors);
+    } else if (errors[name]) {
+      // If only this field has an error, clear it
       setErrors({ ...errors, [name]: "" });
+    }
+  };
+
+  // Helper function to validate a single field
+  const validateSingleField = (fieldName, fieldValue, formData) => {
+    const lettersOnly = /^[\p{L}]+$/u;
+    const hasSpace = (s) => /\s/.test(s || "");
+
+    switch (fieldName) {
+      case 'firstName':
+        if (!fieldValue) return "First name is required";
+        if (hasSpace(fieldValue)) return "No spaces allowed";
+        if (fieldValue.length < 2 || fieldValue.length > 50) return "First name must be 2–50 characters";
+        if (!lettersOnly.test(fieldValue)) return "Only letters allowed";
+        return null;
+
+      case 'lastName':
+        if (!fieldValue) return "Last name is required";
+        if (hasSpace(fieldValue)) return "No spaces allowed";
+        if (fieldValue.length < 1 || fieldValue.length > 50) return "Last name must be 1–50 characters";
+        if (!lettersOnly.test(fieldValue)) return "Only letters allowed";
+        return null;
+
+      case 'email':
+        if (!fieldValue) return "Email is required";
+        if (hasSpace(fieldValue)) return "No spaces allowed";
+        if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(fieldValue)) return "Please enter a valid email";
+        
+        // Check for meaningless email patterns
+        const meaningfulValidation = validateMeaningfulEmail(fieldValue);
+        if (!meaningfulValidation.isValid) return meaningfulValidation.reason;
+        
+        return null;
+
+      case 'password':
+        if (!fieldValue) return "Password is required";
+        if (hasSpace(fieldValue)) return "No spaces allowed in password";
+        if (fieldValue.length < 8) return "Password must be at least 8 characters";
+        if (!/[A-Z]/.test(fieldValue)) return "Password must include at least one uppercase letter";
+        if (!/[a-z]/.test(fieldValue)) return "Password must include at least one lowercase letter";
+        if (!/\d/.test(fieldValue)) return "Password must include at least one number";
+        if (!/[^A-Za-z0-9]/.test(fieldValue)) return "Password must include at least one special character";
+        return null;
+
+      case 'phone':
+        if (!fieldValue) return "Phone number is required";
+        if (hasSpace(fieldValue)) return "No spaces allowed";
+        if (!/^\d{10}$/.test(fieldValue)) return "Phone must be exactly 10 digits (numbers only)";
+        return null;
+
+      case 'place':
+        if (!fieldValue) return "Place is required";
+        if (fieldValue.length < 2 || fieldValue.length > 100) return "Place must be 2–100 characters";
+        if (!/^[\p{L}\s]+$/u.test(fieldValue)) return "Only letters and spaces allowed";
+        return null;
+
+      case 'district':
+        if (!fieldValue) return "District is required";
+        if (hasSpace(fieldValue)) return "No spaces allowed";
+        if (fieldValue.length < 2 || fieldValue.length > 50) return "District must be 2–50 characters";
+        if (!lettersOnly.test(fieldValue)) return "Only letters allowed";
+        return null;
+
+      case 'pincode':
+        if (!fieldValue) return "Pincode is required";
+        if (hasSpace(fieldValue)) return "No spaces allowed";
+        if (!/^\d{6}$/.test(fieldValue)) return "Please enter a valid 6-digit pincode";
+        return null;
+
+      default:
+        return null;
     }
   };
 
@@ -69,14 +160,20 @@ export default function Register() {
       newErrors.lastName = "Only letters allowed";
     }
 
-    // Email: required, no spaces, valid format
+    // Email: required, no spaces, valid format, meaningful content
     const email = formData.email;
     if (!email) {
       newErrors.email = "Email is required";
     } else if (hasSpace(email)) {
       newErrors.email = "No spaces allowed";
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
+    } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
       newErrors.email = "Please enter a valid email";
+    } else {
+      // Check for meaningless email patterns
+      const meaningfulValidation = validateMeaningfulEmail(email);
+      if (!meaningfulValidation.isValid) {
+        newErrors.email = meaningfulValidation.reason;
+      }
     }
 
     // Password: required, no spaces, strength rules
@@ -153,7 +250,7 @@ export default function Register() {
     try {
       const methods = await fetchSignInMethodsForEmail(auth, formData.email);
       if (methods && methods.length > 0) {
-        setErrors({ email: "This email is already registered" });
+        setErrors({ ...newErrors, email: "This email is already registered" });
         return;
       }
     } catch (checkError) {
@@ -623,7 +720,7 @@ export default function Register() {
             <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, #e5e7eb, transparent)' }}></div>
           </div>
 
-          <form onSubmit={handleSubmit} autoComplete="off">
+          <form onSubmit={handleSubmit} autoComplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-dashlane-ignore="true">
             {/* First Name & Last Name Row */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
@@ -693,6 +790,10 @@ export default function Register() {
               </div>
             </div>
 
+            {/* Hidden dummy inputs to fool password managers */}
+            <input type="email" style={{ display: 'none' }} autoComplete="off" />
+            <input type="password" style={{ display: 'none' }} autoComplete="off" />
+
             {/* Email */}
             <div style={{ marginBottom: '1.5rem' }}>
               <div 
@@ -714,7 +815,7 @@ export default function Register() {
               >
                 <Mail color={errors.email ? "#ef4444" : "#10b981"} size={20} style={{ marginRight: '0.75rem' }} />
                 <input
-                  type="email"
+                  type="text"
                   name="email"
                   placeholder="Email Address"
                   value={formData.email}
@@ -724,6 +825,15 @@ export default function Register() {
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck="false"
+                  data-lpignore="true"
+                  data-form-type="register"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-dashlane-ignore="true"
+                  autoSave="off"
+                  autoFill="off"
+                  role="textbox"
+                  inputMode="email"
                 />
               </div>
               {errors.email && <p style={errorStyle}>{errors.email}</p>}
@@ -756,10 +866,12 @@ export default function Register() {
                   value={formData.password}
                   onChange={handleChange}
                   style={inputStyle}
-                  autoComplete="off"
+                  autoComplete="new-password"
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck="false"
+                  data-lpignore="true"
+                  data-form-type="register"
                 />
                 <button
                   type="button"

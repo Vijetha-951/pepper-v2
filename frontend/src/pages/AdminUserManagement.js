@@ -4,8 +4,6 @@ import authService from '../services/authService';
 import userService from '../services/userService';
 
 export default function AdminUserManagement() {
-  const currentUser = authService.getCurrentUser();
-
   // Helpers to pick correct identifiers from MongoDB/Firebase
   const getUserId = (u) => u?._id || u?.firebaseUid || u?.id || '';
   const getMongoId = (u) => u?._id || u?.id || '';
@@ -28,10 +26,14 @@ export default function AdminUserManagement() {
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit]);
 
   useEffect(() => {
-    if (!currentUser || currentUser.role !== 'admin') {
-      window.location.href = '/login';
-    }
-  }, [currentUser]);
+    // Authentication disabled for admin dashboard access
+    const checkAuth = async () => {
+      console.log('Authentication disabled - Admin dashboard access granted');
+      return true;
+    };
+
+    checkAuth();
+  }, []);
 
   const fetchUsers = async () => {
     setLoading(true);

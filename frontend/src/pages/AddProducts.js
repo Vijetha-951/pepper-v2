@@ -1,188 +1,230 @@
 import React, { useState, useEffect } from "react";
-
-const API_URL = process.env.REACT_APP_API_URL; // CRA-compatible
+import productService from "../services/productService";
 
 export default function AddProducts() {
   const [products, setProducts] = useState([]);
-  const [form, setForm] = useState({
-    name: "",
-    type: "Bush",
-    category: "Bush Pepper",
-    description: "",
-    price: "",
-    stock: "",
-    image: "",
-  });
-  const [editingId, setEditingId] = useState(null);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("All");
 
   // Fetch all products on mount
   useEffect(() => {
     fetchProducts();
   }, []);
 
+  // Filter products based on search and type filter
+  useEffect(() => {
+    let filtered = products;
+    
+    if (searchTerm) {
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    if (filterType !== "All") {
+      filtered = filtered.filter(product => product.type === filterType);
+    }
+    
+    setFilteredProducts(filtered);
+  }, [products, searchTerm, filterType]);
+
   const fetchProducts = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/products`);
-      const data = await res.json();
-      setProducts(data);
+      const res = await productService.searchProducts({ query: '', type: '', page: 1, limit: 100 });
+      setProducts(res.products || res || []);
     } catch (err) {
       console.error("Fetch products error:", err);
+      alert("Failed to fetch products. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Handle input change
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
 
-  // Add or update product
-  const handleSubmit = async () => {
-    try {
-      const method = editingId ? "PUT" : "POST";
-      const url = editingId
-        ? `${API_URL}/products/${editingId}`
-        : `${API_URL}/products`;
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          price: Number(form.price),
-          stock: Number(form.stock),
-        }),
-      });
-
-      const data = await res.json();
-      setForm({
-        name: "",
-        type: "Bush",
-        category: "Bush Pepper",
-        description: "",
-        price: "",
-        stock: "",
-        image: "",
-      });
-      setEditingId(null);
-      fetchProducts();
-    } catch (err) {
-      console.error("Add/Update product error:", err);
-    }
-  };
-
-  // Edit product
-  const handleEdit = (p) => {
-    setForm({
-      name: p.name,
-      type: p.type,
-      category: p.category,
-      description: p.description,
-      price: p.price,
-      stock: p.stock,
-      image: p.image,
-    });
-    setEditingId(p._id);
-  };
-
-  // Delete product
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this product?")) return;
-    try {
-      await fetch(`${API_URL}/products/${id}`, { method: "DELETE" });
-      fetchProducts();
-    } catch (err) {
-      console.error("Delete product error:", err);
-    }
-  };
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h1>Admin Product Management</h1>
+    <div style={{ 
+      padding: "2rem", 
+      maxWidth: "1200px", 
+      margin: "0 auto",
+      fontFamily: "Arial, sans-serif",
+      backgroundColor: "#f5f5f5",
+      minHeight: "100vh"
+    }}>
+      <div style={{
+        backgroundColor: "white",
+        borderRadius: "8px",
+        padding: "2rem",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+        marginBottom: "2rem"
+      }}>
+        <h1 style={{ 
+          color: "#2c3e50", 
+          marginBottom: "1rem",
+          textAlign: "center",
+          borderBottom: "3px solid #3498db",
+          paddingBottom: "1rem"
+        }}>
+          🌶️ Pepper Varieties Catalog
+        </h1>
+        
+        <p style={{ textAlign: "center", color: "#666", marginBottom: "2rem" }}>
+          Browse our collection of premium pepper varieties
+        </p>
 
-      <div style={{ marginBottom: "1rem" }}>
-        <input
-          type="text"
-          name="name"
-          placeholder="Name"
-          value={form.name}
-          onChange={handleChange}
-        />
-        <select name="type" value={form.type} onChange={handleChange}>
-          <option value="Bush">Bush</option>
-          <option value="Climber">Climber</option>
-        </select>
-        <input
-          type="text"
-          name="category"
-          placeholder="Category"
-          value={form.category}
-          onChange={handleChange}
-        />
-        <input
-          type="text"
-          name="description"
-          placeholder="Description"
-          value={form.description}
-          onChange={handleChange}
-        />
-        <input
-          type="number"
-          name="price"
-          placeholder="Price"
-          value={form.price}
-          onChange={handleChange}
-        />
-        <input
-          type="number"
-          name="stock"
-          placeholder="Stock"
-          value={form.stock}
-          onChange={handleChange}
-        />
-        <input
-          type="text"
-          name="image"
-          placeholder="Image URL"
-          value={form.image}
-          onChange={handleChange}
-        />
-        <button onClick={handleSubmit}>
-          {editingId ? "Update Product" : "Add Product"}
-        </button>
+        {/* Search and Filter */}
+        <div style={{ 
+          display: "flex", 
+          gap: "1rem", 
+          marginBottom: "2rem",
+          flexWrap: "wrap"
+        }}>
+          <input
+            type="text"
+            placeholder="🔍 Search products..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              flex: 1,
+              minWidth: "200px",
+              padding: "0.75rem",
+              border: "2px solid #ddd",
+              borderRadius: "4px",
+              fontSize: "1rem"
+            }}
+          />
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            style={{
+              padding: "0.75rem",
+              border: "2px solid #ddd",
+              borderRadius: "4px",
+              fontSize: "1rem"
+            }}
+          >
+            <option value="All">All Types</option>
+            <option value="Bush">Bush Only</option>
+            <option value="Climber">Climber Only</option>
+          </select>
+        </div>
       </div>
 
-      <h2>Product List</h2>
-      <table border="1" cellPadding="8">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Category</th>
-            <th>Description</th>
-            <th>Price</th>
-            <th>Stock</th>
-            <th>Image</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((p) => (
-            <tr key={p._id}>
-              <td>{p.name}</td>
-              <td>{p.type}</td>
-              <td>{p.category}</td>
-              <td>{p.description}</td>
-              <td>₹{p.price}</td>
-              <td>{p.stock}</td>
-              <td>{p.image && <img src={p.image} alt={p.name} width="50" />}</td>
-              <td>
-                <button onClick={() => handleEdit(p)}>Edit</button>
-                <button onClick={() => handleDelete(p._id)}>Delete</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* Products Display Section */}
+      <div style={{
+        backgroundColor: "white",
+        borderRadius: "8px",
+        padding: "2rem",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.1)"
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
+          <h2 style={{ color: "#2c3e50", margin: 0 }}>📦 Available Products</h2>
+          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+            <span style={{ color: "#666" }}>Total: {products.length} products</span>
+          </div>
+        </div>
+
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "2rem", color: "#666" }}>
+            ⏳ Loading products...
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "2rem", color: "#666" }}>
+            📭 No products found
+          </div>
+        ) : (
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+            gap: "1rem"
+          }}>
+            {filteredProducts.map((p) => (
+              <div key={p._id} style={{
+                border: "1px solid #ddd",
+                borderRadius: "8px",
+                padding: "1rem",
+                backgroundColor: "#f9f9f9",
+                transition: "transform 0.2s ease, box-shadow 0.2s ease"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "0 4px 15px rgba(0,0,0,0.1)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "1rem" }}>
+                  <h3 style={{ margin: 0, color: "#2c3e50" }}>{p.name}</h3>
+                  <span style={{
+                    padding: "0.25rem 0.5rem",
+                    borderRadius: "12px",
+                    fontSize: "0.8rem",
+                    backgroundColor: p.type === "Bush" ? "#e74c3c" : "#3498db",
+                    color: "white"
+                  }}>
+                    {p.type}
+                  </span>
+                </div>
+                
+                {p.image && (
+                  <img 
+                    src={p.image} 
+                    alt={p.name} 
+                    style={{
+                      width: "100%",
+                      height: "150px",
+                      objectFit: "cover",
+                      borderRadius: "4px",
+                      marginBottom: "1rem"
+                    }}
+                  />
+                )}
+                
+                <p style={{ margin: "0.5rem 0", color: "#666", fontSize: "0.9rem", lineHeight: "1.4" }}>
+                  {p.description}
+                </p>
+                
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem" }}>
+                  <span style={{ fontWeight: "bold", fontSize: "1.4rem", color: "#27ae60" }}>
+                    ₹{p.price}
+                  </span>
+                  <span style={{ 
+                    color: p.stock > 10 ? "#27ae60" : p.stock > 0 ? "#f39c12" : "#e74c3c",
+                    fontWeight: "bold",
+                    fontSize: "0.9rem"
+                  }}>
+                    {p.stock > 0 ? `${p.stock} in stock` : "Out of stock"}
+                  </span>
+                </div>
+                
+                <button
+                  disabled={p.stock === 0}
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    marginTop: "1rem",
+                    backgroundColor: p.stock > 0 ? "#27ae60" : "#bdc3c7",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: p.stock > 0 ? "pointer" : "not-allowed",
+                    fontWeight: "bold",
+                    fontSize: "1rem"
+                  }}
+                >
+                  {p.stock > 0 ? "🛒 Add to Cart" : "❌ Out of Stock"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

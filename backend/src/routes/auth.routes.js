@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler';
 import admin from '../config/firebase.js';
 import { getFirestore } from 'firebase-admin/firestore';
 import { requireAuth } from '../middleware/auth.js';
+import { validateMeaningfulEmailMiddleware } from '../middleware/emailValidation.js';
 import User from '../models/User.js'; // ✅ Added missing import
 
 const db = getFirestore();
@@ -12,6 +13,7 @@ const router = express.Router();
 router.post(
   '/sync-profile',
   requireAuth,
+  validateMeaningfulEmailMiddleware,
   asyncHandler(async (req, res) => {
     // req.user and req.firebaseUid populated by requireAuth
     const { uid, email, role, provider } = {

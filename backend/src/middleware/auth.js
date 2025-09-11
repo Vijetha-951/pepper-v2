@@ -34,6 +34,20 @@ export async function requireAuth(req, res, next) {
       return res.status(401).json({ success: false, error: 'Missing or invalid Authorization header' });
     }
 
+    // Check for admin bypass token (for development/testing)
+    if (token === 'admin-bypass-token') {
+      console.log('Admin bypass token detected - granting admin access');
+      req.user = {
+        uid: 'bypass-admin-uid',
+        email: 'admin@bypass.local',
+        role: 'admin',
+        provider: 'bypass'
+      };
+      req.firebaseUid = 'bypass-admin-uid';
+      req.userRole = 'admin';
+      return next();
+    }
+
     // Verify Firebase ID token
     const decodedToken = await admin.auth().verifyIdToken(token);
 

@@ -146,6 +146,15 @@ class AuthService {
   }
 
   getCurrentUser() {
+    // First check if Firebase user is authenticated
+    const firebaseUser = this.firebaseAuth.getCurrentUser();
+    if (!firebaseUser) {
+      // If no Firebase user, clear stored data and return null
+      this.user = null;
+      return null;
+    }
+    
+    // Return stored user data if Firebase user exists
     return this.user || this.firebaseAuth.getStoredUserData();
   }
 
