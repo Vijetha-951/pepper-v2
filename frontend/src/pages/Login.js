@@ -67,6 +67,7 @@ export default function Login() {
     
     try {
       const result = await authService.login(formData);
+      console.log('Login result:', result);
       
       if (result.success) {
         setSuccessMessage("Login successful! Redirecting...");
@@ -74,7 +75,8 @@ export default function Login() {
           navigate('/dashboard');
         }, 1000);
       } else {
-        setErrors({ general: result.error });
+        console.log('Login failed with error:', result.error);
+        setErrors({ general: result.error || "Login failed. Please try again." });
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -315,7 +317,28 @@ export default function Login() {
   }
 
   return (
-    <div style={containerStyle}>
+    <>
+      <style>
+        {`
+          @keyframes slideIn {
+            from {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          
+          @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+          }
+        `}
+      </style>
+      <div style={containerStyle}>
       {/* Left Side - Background Image */}
       <div style={leftSideStyle}>
         <div style={overlayStyle}></div>
@@ -391,22 +414,25 @@ export default function Login() {
           {errors.general && (
             <div style={{
               background: '#fef2f2',
-              border: '1px solid #fecaca',
+              border: '2px solid #fecaca',
               color: '#dc2626',
-              padding: '0.75rem 1rem',
-              borderRadius: '0.5rem',
+              padding: '1rem 1.25rem',
+              borderRadius: '0.75rem',
               fontSize: '0.875rem',
-              marginBottom: '1rem',
+              fontWeight: '500',
+              marginBottom: '1.5rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem'
+              gap: '0.75rem',
+              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)',
+              animation: 'slideIn 0.3s ease-out'
             }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="15" y1="9" x2="9" y2="15"/>
                 <line x1="9" y1="9" x2="15" y2="15"/>
               </svg>
-              {errors.general}
+              <span>{errors.general}</span>
             </div>
           )}
 
@@ -431,7 +457,7 @@ export default function Login() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} autoComplete="off">
+          <form onSubmit={handleSubmit} autoComplete="off" noValidate>
             {/* Email */}
             <div style={{ marginBottom: '1.5rem' }}>
               <div 
@@ -725,6 +751,7 @@ export default function Login() {
           }
         }
       `}</style>
-    </div>
+      </div>
+    </>
   );
 }

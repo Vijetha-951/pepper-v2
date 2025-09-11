@@ -46,6 +46,7 @@ class AuthService {
       return result;
     } catch (error) {
       console.error('Login error:', error);
+      console.error('Error details:', error.code, error.message);
       return { success: false, error: 'Network error. Please try again.' };
     }
   }

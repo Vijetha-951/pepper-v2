@@ -246,7 +246,13 @@ class FirebaseAuthService {
 
     } catch (error) {
       console.error('Sign in error:', error);
-      return { success: false, error: this.getErrorMessage(error.code) };
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      
+      const errorMessage = this.getErrorMessage(error.code);
+      console.log('Translated error message:', errorMessage);
+      
+      return { success: false, error: errorMessage };
     }
   }
 
@@ -297,11 +303,14 @@ class FirebaseAuthService {
   getErrorMessage(errorCode) {
     switch (errorCode) {
       case 'auth/user-disabled': return 'Your account has been disabled. Please contact support.';
-      case 'auth/user-not-found': return 'No account found with this email address.';
+      case 'auth/user-not-found': return 'No account found with this email address. Please check your email or register first.';
       case 'auth/wrong-password': return 'Incorrect password. Please try again.';
+      case 'auth/invalid-credential': return 'Invalid email or password. Please check your credentials and try again.';
       case 'auth/email-already-in-use': return 'An account with this email already exists.';
       case 'auth/weak-password': return 'Password is too weak. Please choose a stronger password.';
       case 'auth/invalid-email': return 'Please enter a valid email address.';
+      case 'auth/too-many-requests': return 'Too many failed attempts. Please try again later.';
+      case 'auth/network-request-failed': return 'Network error. Please check your connection and try again.';
       default: return 'An error occurred during authentication. Please try again.';
     }
   }
