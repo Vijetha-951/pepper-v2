@@ -265,7 +265,7 @@ export default function Register() {
       const result = await authService.register(formData);
       
       if (result.success) {
-        setSuccessMessage(result.message || "Registration successful!");
+        setSuccessMessage("Registration successful! Please login to continue.");
         
         // Clear form
         setFormData({
@@ -280,9 +280,9 @@ export default function Register() {
           pincode: ""
         });
 
-        // Redirect to dashboard after a short delay
+        // Redirect to login page after a short delay
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/login');
         }, 2000);
       } else {
         setErrors({ general: result.error });
@@ -304,14 +304,14 @@ export default function Register() {
       const result = await authService.googleSignUp();
       
       if (result.success) {
-        setSuccessMessage(result.message || "Google signup successful!");
+        setSuccessMessage(result.isNewUser ? "Google signup successful! Please complete your profile." : "Google signup successful! Please login to continue.");
         
         // Redirect based on whether user is new or existing
         setTimeout(() => {
           if (result.isNewUser) {
             navigate('/complete-profile');
           } else {
-            navigate('/dashboard');
+            navigate('/login');
           }
         }, 1500);
       } else {

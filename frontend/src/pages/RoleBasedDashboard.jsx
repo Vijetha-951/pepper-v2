@@ -8,13 +8,42 @@ export default function RoleBasedDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const u = authService.getCurrentUser();
-    if (!u) {
-      window.location.href = '/login';
-      return;
-    }
-    setUser(u);
-    setLoading(false);
+    const loadUserWithRefresh = async () => {
+      const u = authService.getCurrentUser();
+      if (!u) {
+        window.location.href = '/login';
+        return;
+      }
+      
+      // Refresh profile from backend to get latest role information
+      await authService.refreshUserProfile();
+      
+      // Get updated user after refresh
+      const refreshedUser = authService.getCurrentUser();
+      setUser(refreshedUser || u);
+      setLoading(false);
+    };
+
+    loadUserWithRefresh();
+
+    // Set up periodic role checking every 30 seconds
+    const roleCheckInterval = setInterval(async () => {
+      try {
+        const roleChanged = await authService.checkForRoleChange();
+        if (roleChanged) {
+          // The checkForRoleChange method handles the redirect
+          return;
+        }
+        // Update local user state if role hasn't changed but other data might have
+        const currentUser = authService.getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        console.warn('Role check failed:', error);
+      }
+    }, 30000); // Check every 30 seconds
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(roleCheckInterval);
   }, []);
 
   if (loading) {

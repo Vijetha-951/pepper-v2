@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search, CheckCircle2, XCircle, Shield, MapPin, Loader2, AlertTriangle, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Search, CheckCircle2, XCircle, Loader2, AlertTriangle, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import authService from '../services/authService';
 import userService from '../services/userService';
 
@@ -22,7 +22,7 @@ export default function AdminUserManagement() {
   const [total, setTotal] = useState(0);
 
   const [pendingAction, setPendingAction] = useState(null); // {type, userId}
-  const [modal, setModal] = useState(null); // { type: 'reject'|'role'|'areas'|'delete', user, payload }
+  const [modal, setModal] = useState(null); // { type: 'reject'|'delete', user, payload }
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit]);
 
   useEffect(() => {
@@ -40,14 +40,10 @@ export default function AdminUserManagement() {
     setError('');
     try {
       const res = await userService.searchUsers({ query, role: roleFilter, status: statusFilter, page, limit });
-      // Transform backend data to add computed status and areas
+      // Transform backend data to add computed status
       const usersWithStatus = res.users.map(user => ({
         ...user,
-        status: user.isActive === true ? 'approved' : user.isActive === false ? 'rejected' : 'pending',
-        areas: [
-          ...(user.assignedAreas?.pincodes || []),
-          ...(user.assignedAreas?.districts || [])
-        ]
+        status: user.isActive === true ? 'approved' : user.isActive === false ? 'rejected' : 'pending'
       }));
       setUsers(usersWithStatus);
       setTotal(res.total);
@@ -96,33 +92,7 @@ export default function AdminUserManagement() {
     }
   };
 
-  const doUpdateRole = async (userId, role) => {
-    setPendingAction({ type: 'role', userId });
-    setError('');
-    try {
-      await userService.updateUserRole(userId, role);
-      await fetchUsers();
-    } catch (e) {
-      setError(e.message || 'Failed to update role');
-    } finally {
-      setPendingAction(null);
-      setModal(null);
-    }
-  };
 
-  const doUpdateAreas = async (userId, areas) => {
-    setPendingAction({ type: 'areas', userId });
-    setError('');
-    try {
-      await userService.updateUserAreas(userId, areas);
-      await fetchUsers();
-    } catch (e) {
-      setError(e.message || 'Failed to update areas');
-    } finally {
-      setPendingAction(null);
-      setModal(null);
-    }
-  };
 
   const isActingOn = (type, userId) => pendingAction && pendingAction.type === type && pendingAction.userId === userId;
 
@@ -187,7 +157,6 @@ export default function AdminUserManagement() {
             <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #e5e7eb' }}>User</th>
             <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #e5e7eb' }}>Contact</th>
             <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #e5e7eb' }}>Role</th>
-            <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #e5e7eb' }}>Areas</th>
             <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #e5e7eb' }}>Status</th>
             <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #e5e7eb' }}>Actions</th>
           </tr>
@@ -195,13 +164,13 @@ export default function AdminUserManagement() {
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+              <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
                 <Loader2 className="spin" size={18} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} /> Loading users...
               </td>
             </tr>
           ) : users.length === 0 ? (
             <tr>
-              <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>No users found</td>
+              <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>No users found</td>
             </tr>
           ) : (
             users.map((u) => (
@@ -225,25 +194,6 @@ export default function AdminUserManagement() {
                 </td>
                 <td style={{ padding: '0.75rem', borderBottom: '1px solid #f3f4f6' }}>
                   <span style={{ textTransform: 'capitalize' }}>{u.role || 'user'}</span>
-                  <button
-                    onClick={() => setModal({ type: 'role', user: u })}
-                    style={{ marginLeft: 8, padding: '0.25rem 0.5rem', fontSize: 12, background: 'white', border: '1px solid #e5e7eb', borderRadius: 6, cursor: 'pointer' }}
-                  >
-                    <Shield size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} /> Change
-                  </button>
-                </td>
-                <td style={{ padding: '0.75rem', borderBottom: '1px solid #f3f4f6' }}>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {(u.areas || u.area || []).map((a, i) => (
-                      <span key={i} style={{ background: '#ecfeff', color: '#155e75', border: '1px solid #a5f3fc', padding: '0.15rem 0.4rem', borderRadius: 6, fontSize: 12 }}>{a}</span>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => setModal({ type: 'areas', user: u })}
-                    style={{ marginTop: 6, padding: '0.25rem 0.5rem', fontSize: 12, background: 'white', border: '1px solid #e5e7eb', borderRadius: 6, cursor: 'pointer' }}
-                  >
-                    <MapPin size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} /> Edit areas
-                  </button>
                 </td>
                 <td style={{ padding: '0.75rem', borderBottom: '1px solid #f3f4f6' }}>
                   <span style={{
@@ -323,12 +273,6 @@ export default function AdminUserManagement() {
         {modal.type === 'reject' && (
           <RejectModal user={modal.user} onClose={() => setModal(null)} onConfirm={(reason) => doReject(getUserId(modal.user), reason)} loading={isActingOn('reject', getUserId(modal.user))} />
         )}
-        {modal.type === 'role' && (
-          <RoleModal user={modal.user} onClose={() => setModal(null)} onConfirm={(role) => doUpdateRole(getUserId(modal.user), role)} loading={isActingOn('role', getUserId(modal.user))} />
-        )}
-        {modal.type === 'areas' && (
-          <AreasModal user={modal.user} onClose={() => setModal(null)} onConfirm={(areas) => doUpdateAreas(getUserId(modal.user), areas)} loading={isActingOn('areas', getUserId(modal.user))} />
-        )}
       </div>
     </div>
   ) : null;
@@ -377,51 +321,3 @@ function RejectModal({ user, onClose, onConfirm, loading }) {
   );
 }
 
-function RoleModal({ user, onClose, onConfirm, loading }) {
-  const [role, setRole] = useState(user.role || 'user');
-  return (
-    <div>
-      <h3 style={{ marginTop: 0, marginBottom: 8 }}>Change role</h3>
-      <p style={{ color: '#6b7280', marginTop: 0 }}>User: <strong>{user.displayName || user.email || user.uid || user.id}</strong></p>
-      <select value={role} onChange={(e) => setRole(e.target.value)} style={{ width: '100%', padding: 8, border: '1px solid #e5e7eb', borderRadius: 8 }}>
-        <option value="user">User</option>
-        <option value="deliveryboy">Delivery</option>
-        <option value="admin">Admin</option>
-      </select>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
-        <button onClick={onClose} style={{ padding: '0.5rem 0.75rem', background: 'white', border: '1px solid #e5e7eb', borderRadius: 8, cursor: 'pointer' }}>Cancel</button>
-        <button disabled={loading} onClick={() => onConfirm(role)} style={{ padding: '0.5rem 0.75rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
-          {loading ? 'Updating...' : 'Update'}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function AreasModal({ user, onClose, onConfirm, loading }) {
-  const [text, setText] = useState((user.areas || user.area || []).join(', '));
-  const parseAreas = (s) => s.split(',').map(x => x.trim()).filter(Boolean);
-
-  return (
-    <div>
-      <h3 style={{ marginTop: 0, marginBottom: 8 }}>Edit areas</h3>
-      <p style={{ color: '#6b7280', marginTop: 0 }}>User: <strong>{user.displayName || user.email || user.uid || user.id}</strong></p>
-      <textarea
-        placeholder="Enter comma-separated areas (e.g., Kochi, Thrissur)"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        rows={3}
-        style={{ width: '100%', padding: 8, border: '1px solid #e5e7eb', borderRadius: 8 }}
-      />
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, color: '#6b7280', fontSize: 12 }}>
-        <span>Preview: {parseAreas(text).map((a, i) => (<span key={i} style={{ marginRight: 6, background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '0.1rem 0.4rem' }}>{a}</span>))}</span>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
-        <button onClick={onClose} style={{ padding: '0.5rem 0.75rem', background: 'white', border: '1px solid #e5e7eb', borderRadius: 8, cursor: 'pointer' }}>Cancel</button>
-        <button disabled={loading} onClick={() => onConfirm(parseAreas(text))} style={{ padding: '0.5rem 0.75rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
-          {loading ? 'Saving...' : 'Save'}
-        </button>
-      </div>
-    </div>
-  );
-}

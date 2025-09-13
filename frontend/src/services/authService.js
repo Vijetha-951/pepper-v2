@@ -19,6 +19,47 @@ class AuthService {
     }
   }
 
+  async refreshUserProfile() {
+    try {
+      const response = await apiFetch('/api/auth/profile', {
+        method: 'GET'
+      });
+      const profileData = await response.json();
+      
+      if (response.ok && profileData && profileData.user) {
+        // Update stored user data with fresh profile from backend
+        this.user = { ...this.user, ...profileData.user };
+        
+        // Update Firebase stored data as well
+        const firebaseUser = this.firebaseAuth.getCurrentUser();
+        if (firebaseUser) {
+          const updatedUserData = { ...this.user };
+          localStorage.setItem('user', JSON.stringify(updatedUserData));
+        }
+        
+        return this.user;
+      }
+      return null;
+    } catch (e) {
+      console.warn('Profile refresh failed (non-fatal):', e?.message || e);
+      return null;
+    }
+  }
+
+  // Force profile refresh and redirect if role changed
+  async checkForRoleChange() {
+    const currentRole = this.user?.role;
+    const refreshedUser = await this.refreshUserProfile();
+    
+    if (refreshedUser && refreshedUser.role !== currentRole) {
+      console.log(`Role changed from ${currentRole} to ${refreshedUser.role}, redirecting to dashboard`);
+      window.location.href = '/dashboard';
+      return true;
+    }
+    
+    return false;
+  }
+
   // Regular email/password login
   async login(formData) {
     try {
@@ -42,6 +83,9 @@ class AuthService {
 
         // Ensure MongoDB has this profile
         await this.syncProfile();
+
+        // Fetch fresh user profile from backend to get latest role
+        await this.refreshUserProfile();
       }
       return result;
     } catch (error) {
@@ -69,7 +113,11 @@ class AuthService {
         pincode: userData.pincode,
       });
 
-      return firebaseResult;
+      // Sign out user after registration so they have to login manually
+      await this.firebaseAuth.signOut();
+      this.user = null;
+
+      return { success: true, message: 'Registration successful! Please login to continue.' };
     } catch (error) {
       console.error('Registration error:', error);
       return { success: false, error: 'Network error. Please try again.' };
@@ -94,6 +142,9 @@ class AuthService {
         }
 
         await this.syncProfile();
+        
+        // Fetch fresh user profile from backend to get latest role
+        await this.refreshUserProfile();
       }
       return result;
     } catch (error) {
@@ -120,6 +171,12 @@ class AuthService {
         }
 
         await this.syncProfile();
+
+        // If this is not a new user (existing user), sign them out so they have to login manually
+        if (!result.isNewUser) {
+          await this.firebaseAuth.signOut();
+          this.user = null;
+        }
       }
       return result;
     } catch (error) {
@@ -134,6 +191,10 @@ class AuthService {
       const result = await this.firebaseAuth.signOut();
       if (result.success) {
         this.user = null;
+        // Clear any cached data
+        localStorage.removeItem('user');
+        // Redirect to login page
+        window.location.href = '/login';
       }
       return result;
     } catch (error) {
@@ -169,6 +230,12 @@ class AuthService {
       if (result.success) {
         this.user = result.user;
         await this.syncProfile(updateData);
+        
+        // If this is completing profile (isNewUser: false), sign out so user has to login
+        if (updateData.isNewUser === false) {
+          await this.firebaseAuth.signOut();
+          this.user = null;
+        }
       }
       return result;
     } catch (error) {

@@ -228,7 +228,35 @@ router.get(
   '/profile',
   requireAuth,
   asyncHandler(async (req, res) => {
-    res.json({ success: true, user: req.user });
+    // Get the most up-to-date user info from MongoDB (not just req.user)
+    try {
+      const mongoUser = await User.findOne({ 
+        $or: [
+          { firebaseUid: req.firebaseUid },
+          { email: req.user.email }
+        ]
+      }).select('-__v');
+
+      if (mongoUser) {
+        // Return the MongoDB user data which has the latest role
+        res.json({ 
+          success: true, 
+          user: {
+            ...req.user,
+            ...mongoUser.toObject(),
+            uid: req.user.uid,
+            firebaseUid: req.firebaseUid
+          }
+        });
+      } else {
+        // Fallback to req.user if no MongoDB record
+        res.json({ success: true, user: req.user });
+      }
+    } catch (error) {
+      console.error('Profile fetch error:', error);
+      // Fallback to req.user on error
+      res.json({ success: true, user: req.user });
+    }
   })
 );
 

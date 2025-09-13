@@ -91,11 +91,42 @@ router.patch('/users/:id/reject', asyncHandler(async (req, res) => {
 router.patch('/users/:id/role', asyncHandler(async (req, res) => {
   const { role } = req.body; // 'user' | 'admin' | 'deliveryboy'
   const id = String(req.params.id);
+  
+  // Validate role
+  if (!role || !['user', 'admin', 'deliveryboy'].includes(role)) {
+    return res.status(400).json({ success: false, error: 'Valid role (user/admin/deliveryboy) is required' });
+  }
+  
   let user = null;
   try { user = await User.findByIdAndUpdate(id, { role }, { new: true }); } catch { /* ignore */ }
   if (!user) user = await User.findOneAndUpdate({ firebaseUid: id }, { role }, { new: true });
   if (!user) return res.status(404).json({ success: false, error: 'User not found' });
-  res.json(user);
+  
+  // Also update Firestore and Firebase Claims to ensure consistency
+  if (user.firebaseUid) {
+    try {
+      const db = getFirestore();
+      
+      // Update Firestore
+      await db.collection('users').doc(user.firebaseUid).set({ 
+        uid: user.firebaseUid,
+        email: user.email,
+        role: role,
+        provider: 'firebase'
+      }, { merge: true });
+      
+      // Update Firebase custom claims
+      await admin.auth().setCustomUserClaims(user.firebaseUid, { role });
+      
+      console.log(`Successfully updated role to ${role} for user ${user.email} (${user.firebaseUid})`);
+      
+    } catch (err) {
+      console.error('Failed to update Firestore/Firebase claims for role change:', err);
+      // Don't fail the request, but log the error
+    }
+  }
+  
+  res.json({ success: true, user, message: `Role updated to ${role}` });
 }));
 
 // Delete user in Firebase Auth, Firestore (users collection), and MongoDB

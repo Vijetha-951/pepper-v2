@@ -21,9 +21,9 @@ export default function Dashboard() {
     setUser(currentUser);
   }, []);
 
-  const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
-      authService.logout();
+  const handleLogout = async () => {
+    if (window.confirm('Are you sure you want to logout?\n\nYou will be redirected to the login page. When you log back in, any role changes will be applied.')) {
+      await authService.logout();
     }
   };
 
@@ -496,36 +496,53 @@ export default function Dashboard() {
         </nav>
 
         {/* Logout Button */}
-        <button
-          onClick={handleLogout}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            padding: '0.75rem 1rem',
-            marginTop: '1rem',
-            background: 'rgba(239, 68, 68, 0.2)',
-            color: 'white',
-            border: 'none',
+        <div style={{ marginTop: 'auto' }}>
+          {/* Role refresh info */}
+          <div style={{
+            padding: '0.75rem',
+            marginBottom: '0.5rem',
+            background: 'rgba(255, 255, 255, 0.1)',
             borderRadius: '8px',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            fontSize: '0.875rem',
-            fontWeight: '500',
-            backdropFilter: 'blur(16px)',
-            position: 'relative',
-            zIndex: 10
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.background = 'rgba(239, 68, 68, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.background = 'rgba(239, 68, 68, 0.2)';
-          }}
-        >
-          <LogOut size={18} style={{ marginRight: '0.75rem' }} />
-          Logout
-        </button>
+            fontSize: '0.75rem',
+            color: 'rgba(255, 255, 255, 0.8)',
+            textAlign: 'center',
+            lineHeight: '1.3'
+          }}>
+            💡 Role updated by admin? Click logout to apply changes!
+          </div>
+          
+          <button
+            onClick={handleLogout}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '0.75rem 1rem',
+              background: 'rgba(239, 68, 68, 0.2)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              backdropFilter: 'blur(16px)',
+              position: 'relative',
+              zIndex: 10
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(239, 68, 68, 0.3)';
+              e.target.style.transform = 'scale(1.02)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(239, 68, 68, 0.2)';
+              e.target.style.transform = 'scale(1)';
+            }}
+          >
+            <LogOut size={18} style={{ marginRight: '0.75rem' }} />
+            Logout
+          </button>
+        </div>
       </div>
 
       {/* Main Content */}

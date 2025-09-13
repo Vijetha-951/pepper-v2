@@ -20,9 +20,9 @@ export default function DeliveryDashboard() {
     setUser(currentUser);
   }, []);
 
-  const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
-      authService.logout();
+  const handleLogout = async () => {
+    if (window.confirm('Are you sure you want to logout?\n\nYou will be redirected to the login page. When you log back in, any role changes will be applied.')) {
+      await authService.logout();
     }
   };
 
@@ -153,7 +153,44 @@ export default function DeliveryDashboard() {
         </div>
 
         <div style={{ marginTop: 'auto', zIndex: 10 }}>
-          <button onClick={handleLogout} style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer' }}>
+          {/* Role refresh info */}
+          <div style={{
+            padding: '0.75rem',
+            marginBottom: '0.5rem',
+            background: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '8px',
+            fontSize: '0.75rem',
+            color: 'rgba(255, 255, 255, 0.8)',
+            textAlign: 'center',
+            lineHeight: '1.3'
+          }}>
+            💡 Role updated by admin? Click logout to apply changes!
+          </div>
+          
+          <button 
+            onClick={handleLogout} 
+            style={{ 
+              width: '100%', 
+              padding: '0.75rem 1rem', 
+              borderRadius: '10px', 
+              border: '1px solid rgba(255,255,255,0.3)', 
+              background: 'rgba(255,255,255,0.1)', 
+              color: 'white', 
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(255,255,255,0.2)';
+              e.target.style.transform = 'scale(1.02)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255,255,255,0.1)';
+              e.target.style.transform = 'scale(1)';
+            }}
+          >
             <LogOut size={16} style={{ marginRight: '0.5rem' }} /> Logout
           </button>
         </div>

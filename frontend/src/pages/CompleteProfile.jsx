@@ -28,9 +28,9 @@ export default function CompleteProfile() {
       return;
     }
     
-    // If user profile is already complete, redirect to dashboard
+    // If user profile is already complete, redirect to login
     if (!currentUser.isNewUser && currentUser.phone && currentUser.place && currentUser.district && currentUser.pincode) {
-      navigate('/dashboard');
+      navigate('/login');
       return;
     }
 
@@ -130,9 +130,9 @@ export default function CompleteProfile() {
       });
       
       if (result.success) {
-        setSuccessMessage("Profile completed successfully! Redirecting to dashboard...");
+        setSuccessMessage("Profile completed successfully! Redirecting to login...");
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/login');
         }, 2000);
       } else {
         setErrors({ general: result.error });
@@ -147,7 +147,7 @@ export default function CompleteProfile() {
 
   const handleSkip = () => {
     if (window.confirm('Are you sure you want to skip profile completion? You can complete it later from your dashboard.')) {
-      navigate('/dashboard');
+      navigate('/login');
     }
   };
 
