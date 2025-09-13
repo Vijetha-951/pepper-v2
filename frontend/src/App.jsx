@@ -1,14 +1,14 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Navbar from "./components/Navbar";
-import Home from "./pages/Home";
-import AddProducts from "./pages/AddProducts";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import RoleBasedDashboard from "./pages/RoleBasedDashboard";
-import CompleteProfile from "./pages/CompleteProfile";
-import AuthCallback from "./pages/AuthCallback";
-import AdminUserManagement from "./pages/AdminUserManagement";
-import AdminProductManagement from "./pages/AdminProductManagement";
+import Navbar from "./components/Navbar.jsx";
+import Home from "./pages/Home.jsx";
+import AddProducts from "./pages/AddProducts.jsx";
+import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
+import RoleBasedDashboard from "./pages/RoleBasedDashboard.jsx";
+import CompleteProfile from "./pages/CompleteProfile.jsx";
+import AuthCallback from "./pages/AuthCallback.jsx";
+import AdminUserManagement from "./pages/AdminUserManagement.jsx";
+import AdminProductManagement from "./pages/AdminProductManagement.jsx";
 
 function App() {
   return (

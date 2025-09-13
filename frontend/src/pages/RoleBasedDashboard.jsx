@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import authService from "../services/authService";
-import Dashboard from "./Dashboard";
-import DeliveryDashboard from "./DeliveryDashboard";
+import Dashboard from "./Dashboard.jsx";
+import DeliveryDashboard from "./DeliveryDashboard.jsx";
 
 export default function RoleBasedDashboard() {
   const [user, setUser] = useState(null);
