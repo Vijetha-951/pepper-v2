@@ -21,7 +21,7 @@ export default function DeliveryDashboard() {
   }, []);
 
   const handleLogout = async () => {
-    if (window.confirm('Are you sure you want to logout?\n\nYou will be redirected to the login page. When you log back in, any role changes will be applied.')) {
+    if (window.confirm('Are you sure you want to logout?\n\nYou will be redirected to the login page.')) {
       await authService.logout();
     }
   };
@@ -153,20 +153,6 @@ export default function DeliveryDashboard() {
         </div>
 
         <div style={{ marginTop: 'auto', zIndex: 10 }}>
-          {/* Role refresh info */}
-          <div style={{
-            padding: '0.75rem',
-            marginBottom: '0.5rem',
-            background: 'rgba(255, 255, 255, 0.1)',
-            borderRadius: '8px',
-            fontSize: '0.75rem',
-            color: 'rgba(255, 255, 255, 0.8)',
-            textAlign: 'center',
-            lineHeight: '1.3'
-          }}>
-            💡 Role updated by admin? Click logout to apply changes!
-          </div>
-          
           <button 
             onClick={handleLogout} 
             style={{ 
