@@ -135,12 +135,20 @@ router.post(
           console.error('Failed to set admin custom claims for Google login:', err);
         }
       } else {
+        // STRICT: Non-admin emails can NEVER get admin role
         const doc = await db.collection('users').doc(decoded.uid).get();
-        if (doc.exists && doc.data()?.role) role = String(doc.data().role);
+        if (doc.exists && doc.data()?.role) {
+          const firestoreRole = String(doc.data().role);
+          role = firestoreRole === 'admin' ? 'user' : firestoreRole; // Block unauthorized admin
+        }
         if (!role) {
           const snap = await db.collection('users').where('email', '==', email).limit(1).get();
-          if (!snap.empty) role = String(snap.docs[0].data().role || '');
+          if (!snap.empty) {
+            const firestoreRole = String(snap.docs[0].data().role || '');
+            role = firestoreRole === 'admin' ? 'user' : firestoreRole; // Block unauthorized admin
+          }
         }
+        if (!role) role = 'user'; // Default to user for authenticated users
       }
 
       if (!role) {
@@ -180,14 +188,26 @@ router.post(
       }
 
       let role = null;
-      const doc = await db.collection('users').doc(decoded.uid).get();
-      if (doc.exists && doc.data()?.role) role = String(doc.data().role);
-      if (!role) {
-        const snap = await db.collection('users').where('email', '==', email).limit(1).get();
-        if (!snap.empty) role = String(snap.docs[0].data().role || '');
+      
+      // STRICT ADMIN CHECK: Only vj.vijetha01@gmail.com can be admin
+      if (email === 'vj.vijetha01@gmail.com') {
+        role = 'admin';
+      } else {
+        // For other users, get role but NEVER allow admin
+        const doc = await db.collection('users').doc(decoded.uid).get();
+        if (doc.exists && doc.data()?.role) {
+          const firestoreRole = String(doc.data().role);
+          role = firestoreRole === 'admin' ? 'user' : firestoreRole; // Block unauthorized admin
+        }
+        if (!role) {
+          const snap = await db.collection('users').where('email', '==', email).limit(1).get();
+          if (!snap.empty) {
+            const firestoreRole = String(snap.docs[0].data().role || '');
+            role = firestoreRole === 'admin' ? 'user' : firestoreRole; // Block unauthorized admin
+          }
+        }
+        if (!role) role = 'user'; // Default to user for authenticated users
       }
-
-      if (email === 'vj.vijetha01@gmail.com') role = 'admin';
 
       if (!role) return res.status(403).json({ success: false, error: 'Role not assigned in Firestore' });
 

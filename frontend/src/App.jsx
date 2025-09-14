@@ -9,6 +9,7 @@ import CompleteProfile from "./pages/CompleteProfile.jsx";
 import AuthCallback from "./pages/AuthCallback.jsx";
 import AdminUserManagement from "./pages/AdminUserManagement.jsx";
 import AdminProductManagement from "./pages/AdminProductManagement.jsx";
+import AdminStockManagement from "./pages/AdminStockManagement.jsx";
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
         <Route path="/dashboard" element={<RoleBasedDashboard />} />
         <Route path="/admin-users" element={<AdminUserManagement />} />
         <Route path="/admin-products" element={<AdminProductManagement />} />
+        <Route path="/admin-stock" element={<AdminStockManagement />} />
       </Routes>
     </Router>
   );

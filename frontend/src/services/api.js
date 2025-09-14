@@ -36,16 +36,14 @@ export async function apiFetch(input, init = {}) {
 
   const headers = new Headers(init.headers || {});
 
-  // Check if this is an admin API call - bypass auth for admin operations
-  const isAdminCall = typeof input === 'string' && input.includes('/api/admin/');
-  
   // If caller didn't set Authorization, attach stored token or Firebase ID token
   if (!headers.has('Authorization')) {
-    if (isAdminCall) {
-      // For admin calls, use a bypass token or skip auth
-      console.log('Admin API call detected - bypassing authentication');
-      headers.set('Authorization', 'Bearer admin-bypass-token');
+    // DEVELOPMENT: Use bypass token for stock management testing
+    if (process.env.NODE_ENV !== 'production' && 
+        (input.includes('/admin/stock') || input.includes('/products/restock') || input.includes('/admin/low-stock-alerts'))) {
+      headers.set('Authorization', 'Bearer dev-admin-bypass');
     } else {
+      // REMOVED BYPASS: All API calls must use proper authentication
       if (!token) {
         token = await getFirebaseIdTokenWithWait();
       }

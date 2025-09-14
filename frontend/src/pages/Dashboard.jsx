@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Package, ShoppingCart, Truck, LogOut, Settings, Bell, Search, Plus } from "lucide-react";
+import { User, Package, ShoppingCart, Truck, LogOut, Settings, Bell, Search, Plus, Package2 } from "lucide-react";
 import authService from "../services/authService";
 
 export default function Dashboard() {
@@ -90,7 +90,8 @@ export default function Dashboard() {
     ...(user.role === 'deliveryboy' ? [{ id: 'deliveries', label: 'Deliveries', icon: Truck }] : []),
     ...(user.role === 'admin' ? [
       { id: 'admin-users', label: 'User Management', icon: User },
-      { id: 'admin-products', label: 'Product Management', icon: Package }
+      { id: 'admin-products', label: 'Product Management', icon: Package },
+      { id: 'admin-stock', label: 'Stock Management', icon: Package2 }
     ] : []),
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'settings', label: 'Settings', icon: Settings }
@@ -364,6 +365,14 @@ export default function Dashboard() {
             <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' }}>Admin • Product Management</h3>
             <iframe title="AdminProductManagement" src="/admin-products" style={{ width: '100%', height: '70vh', border: 'none', borderRadius: 8 }} />
             <p style={{ color: '#6b7280', fontSize: 12, marginTop: 8 }}>Open full view at /admin-products if the embed is blocked by CSP.</p>
+          </div>
+        );
+      case 'admin-stock':
+        return (
+          <div style={cardStyle}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' }}>Admin • Stock Management</h3>
+            <iframe title="AdminStockManagement" src="/admin-stock" style={{ width: '100%', height: '70vh', border: 'none', borderRadius: 8 }} />
+            <p style={{ color: '#6b7280', fontSize: 12, marginTop: 8 }}>Open full view at /admin-stock if the embed is blocked by CSP.</p>
           </div>
         );
       default:

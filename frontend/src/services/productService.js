@@ -119,6 +119,79 @@ class ProductService {
       throw error;
     }
   }
+
+  // Stock Management Functions
+  
+  // Get stock overview with enhanced information
+  async getStockOverview({ status = '', type = '', search = '', sortBy = '', sortOrder = 'asc' } = {}) {
+    try {
+      const params = new URLSearchParams({
+        ...(status && { status }),
+        ...(type && { type }),
+        ...(search && { search }),
+        ...(sortBy && { sortBy }),
+        ...(sortOrder && { sortOrder })
+      });
+
+      const response = await apiFetch(`/api/admin/stock?${params}`, {
+        method: 'GET'
+      });
+
+      return await handleJson(response);
+    } catch (error) {
+      console.error('Get stock overview error:', error);
+      throw error;
+    }
+  }
+
+  // Restock product
+  async restockProduct(productId, quantity, reason = '') {
+    try {
+      const response = await apiFetch(`/api/products/restock/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          quantity: Number(quantity),
+          reason
+        })
+      });
+
+      return await handleJson(response);
+    } catch (error) {
+      console.error('Restock product error:', error);
+      throw error;
+    }
+  }
+
+  // Get stock history for a product
+  async getStockHistory(productId) {
+    try {
+      const response = await apiFetch(`/api/products/${productId}/stock-history`, {
+        method: 'GET'
+      });
+
+      return await handleJson(response);
+    } catch (error) {
+      console.error('Get stock history error:', error);
+      throw error;
+    }
+  }
+
+  // Get low stock alerts
+  async getLowStockAlerts(threshold = 5) {
+    try {
+      const response = await apiFetch(`/api/admin/low-stock-alerts?threshold=${threshold}`, {
+        method: 'GET'
+      });
+
+      return await handleJson(response);
+    } catch (error) {
+      console.error('Get low stock alerts error:', error);
+      throw error;
+    }
+  }
 }
 
 export default new ProductService();

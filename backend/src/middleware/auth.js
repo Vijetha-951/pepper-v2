@@ -34,16 +34,15 @@ export async function requireAuth(req, res, next) {
       return res.status(401).json({ success: false, error: 'Missing or invalid Authorization header' });
     }
 
-    // Check for admin bypass token (for development/testing)
-    if (token === 'admin-bypass-token') {
-      console.log('Admin bypass token detected - granting admin access');
+    // DEVELOPMENT BYPASS: Allow admin bypass for testing stock management
+    if (process.env.NODE_ENV !== 'production' && token === 'dev-admin-bypass') {
       req.user = {
-        uid: 'bypass-admin-uid',
-        email: 'admin@bypass.local',
+        uid: 'dev-admin',
+        email: 'dev@admin.local',
         role: 'admin',
-        provider: 'bypass'
+        provider: 'dev-bypass'
       };
-      req.firebaseUid = 'bypass-admin-uid';
+      req.firebaseUid = 'dev-admin';
       req.userRole = 'admin';
       return next();
     }
@@ -53,9 +52,24 @@ export async function requireAuth(req, res, next) {
 
     const email = (decodedToken.email || '').toLowerCase();
 
-    // Determine role: admin hardcoded email OR Firestore role; reject if missing
-    let role = email === 'vj.vijetha01@gmail.com' ? 'admin' : null;
-    if (!role) role = await getRoleFromFirestore({ uid: decodedToken.uid, email });
+    // STRICT ADMIN CHECK: Only vj.vijetha01@gmail.com can be admin
+    let role = null;
+    
+    if (email === 'vj.vijetha01@gmail.com') {
+      role = 'admin';
+    } else {
+      // For non-admin emails, get role from Firestore but NEVER allow admin
+      const firestoreRole = await getRoleFromFirestore({ uid: decodedToken.uid, email });
+      if (firestoreRole && firestoreRole !== 'admin') {
+        role = firestoreRole;
+      } else if (firestoreRole === 'admin') {
+        // Block unauthorized admin access
+        console.warn(`🚨 SECURITY ALERT: Unauthorized admin access attempt by ${email}`);
+        role = 'user'; // Downgrade to user
+      } else {
+        role = 'user'; // Default role for authenticated users
+      }
+    }
 
     if (!role) {
       return res.status(403).json({ success: false, error: 'Unauthorized or unassigned role' });

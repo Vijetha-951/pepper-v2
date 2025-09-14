@@ -10,6 +10,7 @@ import authRouter from './routes/auth.routes.js';
 import adminRouter from './routes/admin.routes.js';
 import userRouter from './routes/user.routes.js';
 import deliveryRouter from './routes/delivery.routes.js';
+import stockRouter from './routes/stockManagement.routes.js';
 
 // Get current directory in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -42,6 +43,7 @@ app.use('/api/products', productsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/user', userRouter);
 app.use('/api/delivery', deliveryRouter);
+app.use('/api', stockRouter);
 
 // ====== Start server after DB connect ======
 connectDB()
