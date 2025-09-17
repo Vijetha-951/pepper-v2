@@ -1,10 +1,19 @@
 import { useState, useEffect } from "react";
-import { User, Package, ShoppingCart, Truck, LogOut, Settings, Bell, Search, Plus, Package2 } from "lucide-react";
+import { User, Package, ShoppingCart, Truck, LogOut, Bell, Search, Plus, Package2, AlertCircle, CheckCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import authService from "../services/authService";
+import customerProductService from "../services/customerProductService";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [products, setProducts] = useState([]);
+  const [cart, setCart] = useState({ items: [], total: 0 });
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [cartLoading, setCartLoading] = useState({});
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [stats, setStats] = useState({
     totalOrders: 15,
     pendingDeliveries: 3,
@@ -20,6 +29,123 @@ export default function Dashboard() {
     }
     setUser(currentUser);
   }, []);
+
+  // Fetch products when products tab is active
+  useEffect(() => {
+    if (activeTab === 'products') {
+      fetchProducts();
+    }
+  }, [activeTab]);
+
+  // Fetch cart when cart tab is active
+  useEffect(() => {
+    if (activeTab === 'cart') {
+      fetchCart();
+    }
+  }, [activeTab]);
+
+  // Add CSS animation for spinner
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
+    };
+  }, []);
+
+  const fetchProducts = async () => {
+    setProductsLoading(true);
+    setErrorMessage("");
+    try {
+      const fetchedProducts = await customerProductService.getProducts({ available: true });
+      setProducts(Array.isArray(fetchedProducts) ? fetchedProducts : []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      setErrorMessage("Failed to load products. Please try again.");
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
+  const fetchCart = async () => {
+    if (!user) return;
+    try {
+      const cartData = await customerProductService.getCart();
+      setCart(cartData || { items: [], total: 0 });
+    } catch (error) {
+      console.error('Error fetching cart:', error);
+      setCart({ items: [], total: 0 });
+    }
+  };
+
+  const addToCart = async (productId, productName) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    setCartLoading(prev => ({ ...prev, [productId]: true }));
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      await customerProductService.addToCart(productId, 1);
+      setSuccessMessage(`${productName} added to cart!`);
+      
+      // Update product stock locally
+      setProducts(prev => prev.map(p => 
+        p._id === productId ? { ...p, stock: Math.max(0, p.stock - 1) } : p
+      ));
+
+      // Refresh cart if we're on cart tab
+      if (activeTab === 'cart') {
+        fetchCart();
+      }
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage("");
+      }, 3000);
+
+    } catch (err) {
+      console.error("Add to cart error:", err);
+      setErrorMessage(err.message || "Failed to add product to cart");
+      setTimeout(() => {
+        setErrorMessage("");
+      }, 5000);
+    } finally {
+      setCartLoading(prev => ({ ...prev, [productId]: false }));
+    }
+  };
+
+  const updateCartQuantity = async (productId, quantity) => {
+    try {
+      await customerProductService.updateCartQuantity(productId, quantity);
+      fetchCart(); // Refresh cart
+    } catch (error) {
+      console.error('Error updating cart:', error);
+      setErrorMessage("Failed to update cart item");
+    }
+  };
+
+  const removeFromCart = async (productId) => {
+    try {
+      await customerProductService.removeFromCart(productId);
+      fetchCart(); // Refresh cart
+    } catch (error) {
+      console.error('Error removing from cart:', error);
+      setErrorMessage("Failed to remove cart item");
+    }
+  };
 
   const handleLogout = async () => {
     if (window.confirm('Are you sure you want to logout?\n\nYou will be redirected to the login page.')) {
@@ -87,14 +213,14 @@ export default function Dashboard() {
     { id: 'overview', label: 'Overview', icon: Package },
     { id: 'orders', label: 'My Orders', icon: ShoppingCart },
     { id: 'products', label: 'Products', icon: Package },
+    { id: 'cart', label: 'My Cart', icon: ShoppingCart },
     ...(user.role === 'deliveryboy' ? [{ id: 'deliveries', label: 'Deliveries', icon: Truck }] : []),
     ...(user.role === 'admin' ? [
       { id: 'admin-users', label: 'User Management', icon: User },
       { id: 'admin-products', label: 'Product Management', icon: Package },
       { id: 'admin-stock', label: 'Stock Management', icon: Package2 }
     ] : []),
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'settings', label: 'Settings', icon: Settings }
+    { id: 'profile', label: 'Profile', icon: User }
   ];
 
   const renderOverview = () => (
@@ -248,10 +374,489 @@ export default function Dashboard() {
       case 'products':
         return (
           <div style={cardStyle}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' }}>
-              Our Products
-            </h3>
-            <p style={{ color: '#6b7280' }}>Browse our premium pepper plants and seeds collection.</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                🌶️ Available Products
+              </h3>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button
+                  onClick={() => setActiveTab('cart')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#059669',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  <ShoppingCart size={16} />
+                  View Cart ({cart.items.length})
+                </button>
+                <button
+                  onClick={fetchProducts}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#6b7280',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  <Package size={16} />
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            {/* Success/Error Messages */}
+            {successMessage && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '1rem',
+                marginBottom: '1.5rem',
+                backgroundColor: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                borderRadius: '8px',
+                color: '#166534'
+              }}>
+                <CheckCircle size={20} />
+                {successMessage}
+              </div>
+            )}
+
+            {errorMessage && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '1rem',
+                marginBottom: '1.5rem',
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: '8px',
+                color: '#dc2626'
+              }}>
+                <AlertCircle size={20} />
+                {errorMessage}
+              </div>
+            )}
+
+            {/* Products Display */}
+            {productsLoading ? (
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '3rem', 
+                color: '#6b7280' 
+              }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  border: '4px solid #e5e7eb',
+                  borderTop: '4px solid #10b981',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                  margin: '0 auto 1rem'
+                }}></div>
+                Loading products...
+              </div>
+            ) : products.length === 0 ? (
+              <div style={{ 
+                padding: '3rem', 
+                backgroundColor: '#f9fafb', 
+                borderRadius: '8px', 
+                textAlign: 'center',
+                border: '2px dashed #d1d5db'
+              }}>
+                <Package size={48} color="#9ca3af" style={{ marginBottom: '1rem' }} />
+                <h4 style={{ color: '#374151', marginBottom: '0.5rem' }}>No Products Available</h4>
+                <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
+                  No products found. Admin may not have added any products yet.
+                </p>
+                <button
+                  onClick={fetchProducts}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  <Package size={16} />
+                  Refresh Products
+                </button>
+              </div>
+            ) : (
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: '1.5rem'
+              }}>
+                {products.map((product) => (
+                  <div 
+                    key={product._id} 
+                    style={{
+                      background: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      padding: '1.5rem',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                      transition: 'all 0.3s ease',
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                    }}
+                  >
+                    {/* Product Header */}
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'start', 
+                      marginBottom: '1rem' 
+                    }}>
+                      <h4 style={{ 
+                        margin: 0, 
+                        color: '#1f2937', 
+                        fontSize: '1.1rem',
+                        fontWeight: '600' 
+                      }}>
+                        {product.name}
+                      </h4>
+                      <span style={{
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '16px',
+                        fontSize: '0.75rem',
+                        fontWeight: '500',
+                        backgroundColor: product.type === 'Bush' ? '#fee2e2' : '#dbeafe',
+                        color: product.type === 'Bush' ? '#991b1b' : '#1e40af'
+                      }}>
+                        {product.type}
+                      </span>
+                    </div>
+
+                    {/* Product Image */}
+                    {product.image && (
+                      <img 
+                        src={product.image} 
+                        alt={product.name} 
+                        style={{
+                          width: '100%',
+                          height: '160px',
+                          objectFit: 'cover',
+                          borderRadius: '8px',
+                          marginBottom: '1rem'
+                        }}
+                      />
+                    )}
+
+                    {/* Product Description */}
+                    <p style={{ 
+                      color: '#6b7280', 
+                      fontSize: '0.875rem', 
+                      lineHeight: '1.4',
+                      marginBottom: '1rem',
+                      height: '40px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}>
+                      {product.description}
+                    </p>
+
+                    {/* Price and Stock */}
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      marginBottom: '1rem' 
+                    }}>
+                      <span style={{ 
+                        fontWeight: '700', 
+                        fontSize: '1.5rem', 
+                        color: '#059669' 
+                      }}>
+                        ₹{product.price}
+                      </span>
+                      <span style={{ 
+                        color: product.stock > 10 ? '#059669' : product.stock > 0 ? '#d97706' : '#dc2626',
+                        fontWeight: '600',
+                        fontSize: '0.875rem'
+                      }}>
+                        {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
+                      </span>
+                    </div>
+
+                    {/* Add to Cart Button */}
+                    <button
+                      onClick={() => addToCart(product._id, product.name)}
+                      disabled={product.stock === 0 || cartLoading[product._id]}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        padding: '0.75rem',
+                        backgroundColor: product.stock > 0 ? (cartLoading[product._id] ? '#059669' : '#10b981') : '#9ca3af',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: product.stock > 0 && !cartLoading[product._id] ? 'pointer' : 'not-allowed',
+                        fontWeight: '600',
+                        fontSize: '0.875rem',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {cartLoading[product._id] ? (
+                        <>
+                          <div style={{
+                            width: '16px',
+                            height: '16px',
+                            border: '2px solid transparent',
+                            borderTop: '2px solid white',
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite'
+                          }}></div>
+                          Adding...
+                        </>
+                      ) : product.stock > 0 ? (
+                        <>
+                          <ShoppingCart size={16} />
+                          Add to Cart
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle size={16} />
+                          Out of Stock
+                        </>
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      case 'cart':
+        return (
+          <div style={cardStyle}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                🛒 My Cart
+              </h3>
+              <button
+                onClick={() => setActiveTab('products')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500'
+                }}
+              >
+                <Package size={16} />
+                Continue Shopping
+              </button>
+            </div>
+
+            {cart.items && cart.items.length === 0 ? (
+              <div style={{ 
+                padding: '3rem', 
+                backgroundColor: '#f9fafb', 
+                borderRadius: '8px', 
+                textAlign: 'center',
+                border: '2px dashed #d1d5db'
+              }}>
+                <ShoppingCart size={48} color="#9ca3af" style={{ marginBottom: '1rem' }} />
+                <h4 style={{ color: '#374151', marginBottom: '0.5rem' }}>Your Cart is Empty</h4>
+                <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
+                  Add some pepper plants to your cart to get started.
+                </p>
+                <button
+                  onClick={() => setActiveTab('products')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  <Package size={16} />
+                  Browse Products
+                </button>
+              </div>
+            ) : (
+              <div>
+                {/* Cart Items */}
+                <div style={{ marginBottom: '2rem' }}>
+                  {cart.items && cart.items.map((item) => (
+                    <div key={item.product._id} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem',
+                      padding: '1rem',
+                      backgroundColor: '#f9fafb',
+                      borderRadius: '8px',
+                      marginBottom: '1rem',
+                      border: '1px solid #e5e7eb'
+                    }}>
+                      {/* Product Image */}
+                      {item.product.image && (
+                        <img 
+                          src={item.product.image} 
+                          alt={item.product.name} 
+                          style={{
+                            width: '60px',
+                            height: '60px',
+                            objectFit: 'cover',
+                            borderRadius: '8px'
+                          }}
+                        />
+                      )}
+                      
+                      {/* Product Info */}
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{ margin: '0 0 0.5rem 0', color: '#1f2937', fontSize: '1rem' }}>
+                          {item.product.name}
+                        </h4>
+                        <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>
+                          ₹{item.product.price} each
+                        </p>
+                      </div>
+                      
+                      {/* Quantity Controls */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <button
+                          onClick={() => updateCartQuantity(item.product._id, item.quantity - 1)}
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            backgroundColor: '#e5e7eb',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            color: '#374151'
+                          }}
+                        >
+                          -
+                        </button>
+                        <span style={{ 
+                          padding: '0.25rem 0.5rem', 
+                          minWidth: '2rem', 
+                          textAlign: 'center',
+                          fontWeight: '600'
+                        }}>
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateCartQuantity(item.product._id, item.quantity + 1)}
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            backgroundColor: '#e5e7eb',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            color: '#374151'
+                          }}
+                        >
+                          +
+                        </button>
+                      </div>
+                      
+                      {/* Subtotal */}
+                      <div style={{ textAlign: 'right', minWidth: '80px' }}>
+                        <span style={{ 
+                          fontWeight: '600', 
+                          color: '#059669',
+                          fontSize: '1rem'
+                        }}>
+                          ₹{item.product.price * item.quantity}
+                        </span>
+                      </div>
+                      
+                      {/* Remove Button */}
+                      <button
+                        onClick={() => removeFromCart(item.product._id)}
+                        style={{
+                          padding: '0.5rem',
+                          backgroundColor: '#fee2e2',
+                          color: '#dc2626',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem'
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Cart Total */}
+                <div style={{
+                  borderTop: '2px solid #e5e7eb',
+                  paddingTop: '1rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#1f2937' }}>
+                    Total: ₹{cart.total || 0}
+                  </h3>
+                  <button style={{
+                    padding: '0.75rem 2rem',
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    fontWeight: '600'
+                  }}>
+                    Checkout
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         );
       case 'deliveries':
