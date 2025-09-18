@@ -188,8 +188,28 @@ router.patch('/delivery-boys/:id/areas', asyncHandler(async (req, res) => {
 }));
 
 // Product Management
+// Normalize inputs and ensure enhanced stock fields are set for new products
 router.post('/products', asyncHandler(async (req, res) => {
-  const created = await Product.create(req.body);
+  const { name, type, category, description, price, stock, image, isActive } = req.body;
+
+  if (!name || !type || price === undefined || stock === undefined) {
+    return res.status(400).json({ success: false, message: 'Missing required fields: name, type, price, stock' });
+  }
+
+  const normalized = {
+    name: String(name).trim(),
+    type,
+    category: category || 'Bush Pepper',
+    description: description || '',
+    price: Number(price),
+    stock: Number(stock),
+    total_stock: Number(stock),
+    available_stock: Number(stock),
+    image: image || '',
+    isActive: typeof isActive === 'boolean' ? isActive : true,
+  };
+
+  const created = await Product.create(normalized);
   res.status(201).json(created);
 }));
 

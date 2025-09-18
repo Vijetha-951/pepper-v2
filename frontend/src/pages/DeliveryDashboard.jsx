@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Truck, Package, MapPin, CheckCircle, Clock, LogOut, Settings } from "lucide-react";
+import { Truck, Package, MapPin, CheckCircle, Clock, LogOut } from "lucide-react";
 import authService from "../services/authService";
 
 export default function DeliveryDashboard() {
@@ -59,8 +59,7 @@ export default function DeliveryDashboard() {
   const menuItems = [
     { id: 'deliveries', label: 'Deliveries', icon: Truck },
     { id: 'routes', label: 'Routes', icon: MapPin },
-    { id: 'history', label: 'History', icon: CheckCircle },
-    { id: 'settings', label: 'Settings', icon: Settings }
+    { id: 'history', label: 'History', icon: CheckCircle }
   ];
 
   const renderDeliveries = () => (
@@ -111,8 +110,7 @@ export default function DeliveryDashboard() {
         return <div style={cardStyle}>Route planning coming soon.</div>;
       case 'history':
         return <div style={cardStyle}>History coming soon.</div>;
-      case 'settings':
-        return <div style={cardStyle}>Settings coming soon.</div>;
+
       default:
         return renderDeliveries();
     }

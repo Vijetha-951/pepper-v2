@@ -67,7 +67,8 @@ router.get('/admin/stock', requireAuth, requireAdmin, asyncHandler(async (req, r
     
     // Apply filters
     if (type && type !== 'all') {
-      filter.type = type;
+      // Case-insensitive exact match for type (e.g., 'bush' matches 'Bush')
+      filter.type = { $regex: `^${type}$`, $options: 'i' };
     }
     
     if (search) {
@@ -83,6 +84,8 @@ router.get('/admin/stock', requireAuth, requireAdmin, asyncHandler(async (req, r
       
       switch (sortBy) {
         case 'name':
+          // Case-insensitive sorting for names
+          query = query.collation({ locale: 'en', strength: 1 });
           sortObj.name = sortDirection;
           break;
         case 'price':
@@ -148,6 +151,16 @@ router.get('/admin/stock', requireAuth, requireAdmin, asyncHandler(async (req, r
       stockData = stockData.filter(product => 
         product.status.toLowerCase() === status.toLowerCase()
       );
+    }
+
+    // Ensure correct sorting for derived stock fields (sort after mapping)
+    if (sortBy === 'available_stock' || sortBy === 'total_stock') {
+      const sortDirection = sortOrder === 'desc' ? -1 : 1;
+      stockData.sort((a, b) => {
+        const av = sortBy === 'available_stock' ? a.available_stock : a.total_stock;
+        const bv = sortBy === 'available_stock' ? b.available_stock : b.total_stock;
+        return (av - bv) * sortDirection;
+      });
     }
 
     // Calculate summary statistics
