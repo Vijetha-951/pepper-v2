@@ -136,10 +136,19 @@ router.post(
         }
       } else {
         // STRICT: Non-admin emails can NEVER get admin role
-        const doc = await db.collection('users').doc(decoded.uid).get();
-        if (doc.exists && doc.data()?.role) {
-          const firestoreRole = String(doc.data().role);
-          role = firestoreRole === 'admin' ? 'user' : firestoreRole; // Block unauthorized admin
+        // Prefer client-selected role when provided (and valid) to support role selection UI
+        const requestedRole = String((req.body?.role || '')).toLowerCase();
+        if (['user', 'deliveryboy'].includes(requestedRole)) {
+          role = requestedRole;
+        }
+
+        // If not provided by client, resolve from Firestore
+        if (!role) {
+          const doc = await db.collection('users').doc(decoded.uid).get();
+          if (doc.exists && doc.data()?.role) {
+            const firestoreRole = String(doc.data().role);
+            role = firestoreRole === 'admin' ? 'user' : firestoreRole; // Block unauthorized admin
+          }
         }
         if (!role) {
           const snap = await db.collection('users').where('email', '==', email).limit(1).get();

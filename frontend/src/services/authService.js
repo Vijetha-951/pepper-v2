@@ -154,9 +154,10 @@ class AuthService {
   }
 
   // Google OAuth Sign Up
-  async googleSignUp() {
+  async googleSignUp(role = 'user') {
     try {
-      const result = await this.firebaseAuth.signUpWithGoogle();
+      // pass selected role to firebase signup so Firestore doc reflects it
+      const result = await this.firebaseAuth.signUpWithGoogle(role);
       if (result.success) {
         this.user = result.user;
 
@@ -166,7 +167,7 @@ class AuthService {
           await fetch('/api/auth/google-login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idToken })
+            body: JSON.stringify({ idToken, role })
           }).catch(() => {});
         }
 
@@ -246,6 +247,12 @@ class AuthService {
 
   onAuthStateChange(callback) {
     this.firebaseAuth.onAuthStateChange(callback);
+  }
+
+  // Forgot password helper
+  async forgotPassword(email) {
+    if (!email) return { success: false, error: 'Please enter your email address.' };
+    return this.firebaseAuth.sendPasswordReset(email);
   }
 }
 

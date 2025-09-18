@@ -4,7 +4,8 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   updateProfile,
-  onAuthStateChanged
+  onAuthStateChanged,
+  sendPasswordResetEmail
 } from "firebase/auth";
 
 import {
@@ -82,12 +83,13 @@ class FirebaseAuthService {
   }
 
   // Google Sign up / Sign in (Admin included)
-  async signUpWithGoogle() {
+  async signUpWithGoogle(selectedRole) {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      const role = user.email === ADMIN_EMAIL ? 'admin' : 'user';
+      // Determine role: admin email is forced admin; otherwise use selected role or default 'user'
+      const role = user.email === ADMIN_EMAIL ? 'admin' : (selectedRole || 'user');
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
 
@@ -122,7 +124,11 @@ class FirebaseAuthService {
         userData = userDoc.data();
         userData.isNewUser = false;
 
-        if (userData.role !== role) {
+        // If an existing doc has different role and it's not admin-forced, update it
+        if (user.email !== ADMIN_EMAIL && selectedRole && userData.role !== selectedRole) {
+          await updateDoc(userDocRef, { role: selectedRole, updatedAt: serverTimestamp() });
+          userData.role = selectedRole;
+        } else if (userData.role !== role) {
           await updateDoc(userDocRef, { role, updatedAt: serverTimestamp() });
           userData.role = role;
         }
@@ -298,6 +304,17 @@ class FirebaseAuthService {
 
   getStoredUserData() {
     try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; }
+  }
+
+  // Trigger password reset email
+  async sendPasswordReset(email) {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      return { success: true, message: 'Password reset email sent. Please check your inbox.' };
+    } catch (error) {
+      console.error('Password reset error:', error);
+      return { success: false, error: this.getErrorMessage(error.code) };
+    }
   }
 
   getErrorMessage(errorCode) {

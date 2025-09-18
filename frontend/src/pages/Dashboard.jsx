@@ -211,9 +211,11 @@ export default function Dashboard() {
 
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: Package },
-    { id: 'orders', label: 'My Orders', icon: ShoppingCart },
-    { id: 'products', label: 'Products', icon: Package },
-    { id: 'cart', label: 'My Cart', icon: ShoppingCart },
+    ...(user.role !== 'admin' ? [
+      { id: 'orders', label: 'My Orders', icon: ShoppingCart },
+      { id: 'products', label: 'Products', icon: Package },
+      { id: 'cart', label: 'My Cart', icon: ShoppingCart },
+    ] : []),
     ...(user.role === 'deliveryboy' ? [{ id: 'deliveries', label: 'Deliveries', icon: Truck }] : []),
     ...(user.role === 'admin' ? [
       { id: 'admin-users', label: 'User Management', icon: User },

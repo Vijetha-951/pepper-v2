@@ -445,9 +445,6 @@ export default function AdminStockManagement() {
                         )}
                         <div>
                           <div style={{ fontWeight: '600', color: '#111827' }}>{product.name}</div>
-                          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                            {product.category || 'Bush Pepper'}
-                          </div>
                         </div>
                       </div>
                     </td>

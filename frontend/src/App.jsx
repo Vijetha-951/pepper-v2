@@ -10,6 +10,7 @@ import AuthCallback from "./pages/AuthCallback.jsx";
 import AdminUserManagement from "./pages/AdminUserManagement.jsx";
 import AdminProductManagement from "./pages/AdminProductManagement.jsx";
 import AdminStockManagement from "./pages/AdminStockManagement.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
         {/* Authentication routes without navbar */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/complete-profile" element={<CompleteProfile />} />
         <Route path="/auth/google/callback" element={<AuthCallback />} />
         

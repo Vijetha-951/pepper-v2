@@ -154,13 +154,6 @@ export default function AdminProductManagement() {
         >
           <Plus size={16} /> Add Product
         </button>
-        <button
-          onClick={doSeedProducts}
-          disabled={pendingAction?.type === 'seed'}
-          style={{ padding: '0.6rem 0.9rem', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-        >
-          {pendingAction?.type === 'seed' ? <Loader2 className="spin" size={16} style={{ verticalAlign: 'middle' }} /> : '🌱'} Seed All
-        </button>
       </div>
     </div>
   );
