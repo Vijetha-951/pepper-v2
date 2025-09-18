@@ -261,8 +261,29 @@ router.get('/products/:id', asyncHandler(async (req, res) => {
   res.json(item);
 }));
 router.put('/products/:id', asyncHandler(async (req, res) => {
-  const updated = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  const body = { ...req.body };
+
+  // Keep enhanced stock fields in sync when legacy stock is updated
+  if (typeof body.stock === 'number') {
+    // If caller did not provide enhanced fields, derive from stock
+    if (typeof body.available_stock !== 'number') body.available_stock = body.stock;
+    if (typeof body.total_stock !== 'number') {
+      // Preserve existing total_stock if possible; otherwise use max of current and new available
+      const existing = await Product.findById(req.params.id).select('total_stock available_stock stock');
+      const currentTotal = existing?.total_stock ?? existing?.stock ?? 0;
+      body.total_stock = Math.max(currentTotal, body.available_stock);
+    }
+  }
+
+  const updated = await Product.findByIdAndUpdate(req.params.id, body, { new: true });
   if (!updated) return res.status(404).json({ message: 'Not found' });
+
+  // Ensure legacy stock mirrors available_stock for backward compatibility
+  if (updated.available_stock !== undefined && updated.stock !== updated.available_stock) {
+    updated.stock = updated.available_stock;
+    await updated.save();
+  }
+
   res.json(updated);
 }));
 router.delete('/products/:id', asyncHandler(async (req, res) => {
