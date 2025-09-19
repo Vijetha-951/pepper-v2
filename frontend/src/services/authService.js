@@ -103,8 +103,9 @@ class AuthService {
 
       this.user = firebaseResult.user;
 
-      // Sync profile to MongoDB with available details
+      // Sync profile to MongoDB with available details (include role to avoid Firestore timing issues)
       await this.syncProfile({
+        role: userData.role,
         firstName: userData.firstName,
         lastName: userData.lastName,
         phone: userData.phone,
@@ -137,11 +138,17 @@ class AuthService {
           await fetch('/api/auth/google-login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idToken })
+            body: JSON.stringify({ idToken, role: result.user?.role })
           }).catch(() => {});
         }
 
-        await this.syncProfile();
+        // Use role as-is from Firestore (do not default to user on sign-in)
+        if (result.user?.role) {
+          await this.syncProfile({ role: result.user.role });
+        } else {
+          // Still sync to ensure Mongo creation with names if needed
+          await this.syncProfile({});
+        }
         
         // Fetch fresh user profile from backend to get latest role
         await this.refreshUserProfile();
@@ -171,7 +178,27 @@ class AuthService {
           }).catch(() => {});
         }
 
-        await this.syncProfile();
+        // Sync to Mongo with explicit role, include names, and force Authorization with current ID token
+        if (idToken) {
+          try {
+            await apiFetch('/api/auth/sync-profile', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+              body: JSON.stringify({ profile: {
+                role,
+                firstName: result.user?.firstName || '',
+                lastName: result.user?.lastName || ''
+              } })
+            });
+          } catch (e) {
+            console.warn('Profile sync (Google SignUp) failed:', e?.message || e);
+          }
+        } else {
+          await this.syncProfile({ role });
+        }
+
+        // Fetch fresh profile from backend so UI gets the resolved role
+        await this.refreshUserProfile();
 
         // If this is not a new user (existing user), sign them out so they have to login manually
         if (!result.isNewUser) {

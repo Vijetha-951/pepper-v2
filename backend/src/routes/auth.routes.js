@@ -23,7 +23,34 @@ router.post(
       provider: req.user?.provider || 'firebase',
     };
 
-    const { firstName = '', lastName = '', phone = '', place = '', district = '', pincode = '' } = req.body?.profile || {};
+    let { firstName = '', lastName = '', phone = '', place = '', district = '', pincode = '', role: requestedRole } = req.body?.profile || {};
+
+    // If names are missing, try to backfill from Firestore users doc
+    if (!firstName || !lastName) {
+      try {
+        const fDoc = await db.collection('users').doc(uid).get();
+        if (fDoc.exists) {
+          const d = fDoc.data() || {};
+          firstName = firstName || d.firstName || '';
+          lastName = lastName || d.lastName || '';
+          // If still missing, derive from displayName or email local-part
+          if (!firstName && !lastName) {
+            const displayName = d.displayName || '';
+            if (displayName) {
+              const [fn, ...lnParts] = displayName.split(' ');
+              firstName = fn || '';
+              lastName = lnParts.join(' ') || '';
+            }
+          }
+        }
+      } catch (e) {
+        // non-fatal
+      }
+    }
+
+    // Final fallback: ensure non-empty strings to satisfy Mongo required fields
+    if (!firstName) firstName = 'User';
+    if (!lastName) lastName = 'Account';
 
     // Check if user exists first
     let user = await User.findOne({ firebaseUid: uid });
@@ -34,7 +61,10 @@ router.post(
         { firebaseUid: uid },
         {
           email,
-          role,
+          // If client explicitly sent role as user/deliveryboy, prefer it; otherwise keep resolved role
+          role: (requestedRole && ['user', 'deliveryboy'].includes(String(requestedRole).toLowerCase()))
+            ? String(requestedRole).toLowerCase()
+            : role,
           provider,
           ...(firstName ? { firstName } : {}),
           ...(lastName ? { lastName } : {}),
@@ -50,7 +80,9 @@ router.post(
       user = await User.create({
         firebaseUid: uid,
         email,
-        role,
+        role: (requestedRole && ['user', 'deliveryboy'].includes(String(requestedRole).toLowerCase()))
+          ? String(requestedRole).toLowerCase()
+          : role,
         provider,
         firstName: firstName || '',
         lastName: lastName || '',

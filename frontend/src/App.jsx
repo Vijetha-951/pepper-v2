@@ -6,7 +6,11 @@ import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import RoleBasedDashboard from "./pages/RoleBasedDashboard.jsx";
 import CompleteProfile from "./pages/CompleteProfile.jsx";
-import AuthCallback from "./pages/AuthCallback.jsx";
+
+// Direct dashboards for backend redirect paths
+import Dashboard from "./pages/Dashboard.jsx";
+import DeliveryDashboard from "./pages/DeliveryDashboard.jsx";
+
 import AdminUserManagement from "./pages/AdminUserManagement.jsx";
 import AdminProductManagement from "./pages/AdminProductManagement.jsx";
 import AdminStockManagement from "./pages/AdminStockManagement.jsx";
@@ -35,10 +39,15 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/complete-profile" element={<CompleteProfile />} />
-        <Route path="/auth/google/callback" element={<AuthCallback />} />
+        
         
         {/* Protected routes without navbar */}
         <Route path="/dashboard" element={<RoleBasedDashboard />} />
+        {/* Direct dashboard routes for explicit backend redirects */}
+        <Route path="/user/dashboard" element={<Dashboard />} />
+        <Route path="/deliveryboy/dashboard" element={<DeliveryDashboard />} />
+        {/* Admin management routes (require auth checks inside components) */}
+        <Route path="/admin/dashboard" element={<AdminUserManagement />} />
         <Route path="/admin-users" element={<AdminUserManagement />} />
         <Route path="/admin-products" element={<AdminProductManagement />} />
         <Route path="/admin-stock" element={<AdminStockManagement />} />

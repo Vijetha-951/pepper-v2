@@ -128,10 +128,8 @@ class FirebaseAuthService {
         if (user.email !== ADMIN_EMAIL && selectedRole && userData.role !== selectedRole) {
           await updateDoc(userDocRef, { role: selectedRole, updatedAt: serverTimestamp() });
           userData.role = selectedRole;
-        } else if (userData.role !== role) {
-          await updateDoc(userDocRef, { role, updatedAt: serverTimestamp() });
-          userData.role = role;
         }
+        // Do NOT overwrite existing role when no selectedRole is provided (e.g., plain sign-in)
 
         await updateDoc(userDocRef, { lastLogin: serverTimestamp(), updatedAt: serverTimestamp() });
       }

@@ -298,8 +298,8 @@ export default function Register() {
   };
 
   const handleGoogleSignup = async () => {
-    // Open role selection modal first
-    setShowRoleModal(true);
+    // Use the selected role directly without modal
+    await confirmGoogleSignup();
   };
 
   const confirmGoogleSignup = async () => {
@@ -664,6 +664,22 @@ export default function Register() {
             </div>
           )}
 
+          {/* Role picker for Google Signup */}
+          <div style={{ marginBottom: '0.75rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.4rem', color: '#374151', fontSize: '0.9rem', fontWeight: 600 }}>Select role for Google signup</label>
+            <select
+              value={googleRole}
+              onChange={(e) => setGoogleRole(e.target.value)}
+              style={{
+                width: '100%', padding: '0.75rem', border: '2px solid #e5e7eb', borderRadius: '0.5rem',
+                fontSize: '1rem', background: '#f9fafb', color: '#111827'
+              }}
+            >
+              <option value="user">User</option>
+              <option value="deliveryboy">Delivery Boy</option>
+            </select>
+          </div>
+
           {/* Google Signup Button */}
           <button
             type="button"
@@ -712,33 +728,7 @@ export default function Register() {
             )}
           </button>
 
-          {/* Role Selection Modal for Google Signup */}
-          {showRoleModal && (
-            <div style={{
-              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000
-            }}>
-              <div style={{ background: 'white', padding: '1.25rem', borderRadius: '0.75rem', width: '100%', maxWidth: '420px', boxShadow: '0 20px 50px rgba(0,0,0,0.2)' }}>
-                <h3 style={{ margin: 0, marginBottom: '0.75rem', fontSize: '1.125rem', fontWeight: 600, color: '#111827' }}>Select your role</h3>
-                <p style={{ marginTop: 0, marginBottom: '0.75rem', color: '#6b7280', fontSize: '0.9rem' }}>Choose how you want to use the app before continuing with Google.</p>
-                <select
-                  value={googleRole}
-                  onChange={(e) => setGoogleRole(e.target.value)}
-                  style={{
-                    width: '100%', padding: '0.75rem', border: '2px solid #e5e7eb', borderRadius: '0.5rem',
-                    fontSize: '1rem', background: '#f9fafb', color: '#111827', marginBottom: '1rem'
-                  }}
-                >
-                  <option value="user">User</option>
-                  <option value="deliveryboy">Delivery Boy</option>
-                </select>
-                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                  <button type="button" onClick={() => setShowRoleModal(false)} style={{ padding: '0.6rem 1rem', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '0.5rem', color: '#374151' }}>Cancel</button>
-                  <button type="button" onClick={confirmGoogleSignup} style={{ padding: '0.6rem 1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '0.5rem', fontWeight: 600 }}>Continue</button>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Role Selection Modal for Google Signup (removed, inline picker used) */}
 
           {/* Divider */}
           <div style={{ 

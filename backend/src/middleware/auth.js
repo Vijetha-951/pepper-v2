@@ -1,6 +1,7 @@
 // src/middleware/auth.js
 import admin from '../config/firebase.js';
 import { getFirestore } from 'firebase-admin/firestore';
+import User from '../models/User.js';
 
 const db = getFirestore();
 
@@ -23,6 +24,18 @@ async function getRoleFromFirestore({ uid, email }) {
     }
   }
   return null;
+}
+
+// Helper to resolve role from MongoDB if Firestore has not propagated yet
+async function getRoleFromMongo({ uid, email }) {
+  try {
+    const query = uid ? { firebaseUid: uid } : { email };
+    if (!query) return null;
+    const user = await User.findOne(query).select('role');
+    return user?.role || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function requireAuth(req, res, next) {
@@ -58,11 +71,13 @@ export async function requireAuth(req, res, next) {
     if (email === 'vj.vijetha01@gmail.com') {
       role = 'admin';
     } else {
-      // For non-admin emails, get role from Firestore but NEVER allow admin
+      // For non-admin emails, prefer Firestore role; if absent, fallback to Mongo; NEVER allow admin
       const firestoreRole = await getRoleFromFirestore({ uid: decodedToken.uid, email });
-      if (firestoreRole && firestoreRole !== 'admin') {
-        role = firestoreRole;
-      } else if (firestoreRole === 'admin') {
+      const mongoRole = firestoreRole ? null : await getRoleFromMongo({ uid: decodedToken.uid, email });
+      const resolved = firestoreRole || mongoRole;
+      if (resolved && resolved !== 'admin') {
+        role = resolved;
+      } else if (resolved === 'admin') {
         // Block unauthorized admin access
         console.warn(`🚨 SECURITY ALERT: Unauthorized admin access attempt by ${email}`);
         role = 'user'; // Downgrade to user
