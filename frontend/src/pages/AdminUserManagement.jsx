@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search, CheckCircle2, XCircle, Loader2, AlertTriangle, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Search, Loader2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import authService from '../services/authService';
 import userService from '../services/userService';
 
@@ -138,12 +138,7 @@ export default function AdminUserManagement() {
           <option value="deliveryboy">Delivery</option>
           <option value="admin">Admin</option>
         </select>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ padding: '0.5rem', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
-          <option value="">All Status</option>
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-        </select>
+        
         <button type="submit" style={{ padding: '0.6rem 0.9rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Search</button>
       </form>
     </div>
@@ -157,20 +152,18 @@ export default function AdminUserManagement() {
             <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #e5e7eb' }}>User</th>
             <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #e5e7eb' }}>Contact</th>
             <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #e5e7eb' }}>Role</th>
-            <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #e5e7eb' }}>Status</th>
-            <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #e5e7eb' }}>Actions</th>
           </tr>
         </thead>
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+              <td colSpan={3} style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
                 <Loader2 className="spin" size={18} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} /> Loading users...
               </td>
             </tr>
           ) : users.length === 0 ? (
             <tr>
-              <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>No users found</td>
+              <td colSpan={3} style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>No users found</td>
             </tr>
           ) : (
             users.map((u) => (
@@ -195,45 +188,8 @@ export default function AdminUserManagement() {
                 <td style={{ padding: '0.75rem', borderBottom: '1px solid #f3f4f6' }}>
                   <span style={{ textTransform: 'capitalize' }}>{u.role || 'user'}</span>
                 </td>
-                <td style={{ padding: '0.75rem', borderBottom: '1px solid #f3f4f6' }}>
-                  <span style={{
-                    padding: '0.15rem 0.5rem',
-                    borderRadius: 6,
-                    fontSize: 12,
-                    color: (u.status || '').toLowerCase() === 'approved' ? '#065f46' : (u.status || '').toLowerCase() === 'rejected' ? '#7f1d1d' : '#92400e',
-                    background: (u.status || '').toLowerCase() === 'approved' ? '#d1fae5' : (u.status || '').toLowerCase() === 'rejected' ? '#fee2e2' : '#fef3c7',
-                    border: '1px solid',
-                    borderColor: (u.status || '').toLowerCase() === 'approved' ? '#a7f3d0' : (u.status || '').toLowerCase() === 'rejected' ? '#fecaca' : '#fde68a',
-                    textTransform: 'capitalize'
-                  }}>
-                    {u.status || 'pending'}
-                  </span>
-                </td>
-                <td style={{ padding: '0.75rem', borderBottom: '1px solid #f3f4f6' }}>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button
-                      disabled={isActingOn('approve', getUserId(u))}
-                      onClick={() => doApprove(getUserId(u))}
-                      style={{ padding: '0.4rem 0.6rem', background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0', borderRadius: 6, cursor: 'pointer' }}
-                    >
-                      {isActingOn('approve', getUserId(u)) ? <Loader2 className="spin" size={14} style={{ verticalAlign: 'middle' }} /> : <CheckCircle2 size={14} style={{ verticalAlign: 'middle' }} />} Approve
-                    </button>
-                    <button
-                      disabled={isActingOn('reject', getUserId(u))}
-                      onClick={() => setModal({ type: 'reject', user: u })}
-                      style={{ padding: '0.4rem 0.6rem', background: '#fef2f2', color: '#7f1d1d', border: '1px solid #fecaca', borderRadius: 6, cursor: 'pointer' }}
-                    >
-                      <XCircle size={14} style={{ verticalAlign: 'middle' }} /> Reject
-                    </button>
-                    <button
-                      disabled={isActingOn('delete', getDeleteId(u))}
-                      onClick={() => doDelete(getDeleteId(u))}
-                      style={{ padding: '0.4rem 0.6rem', background: '#fff7ed', color: '#7c2d12', border: '1px solid #fed7aa', borderRadius: 6, cursor: 'pointer' }}
-                    >
-                      {isActingOn('delete', getDeleteId(u)) ? <Loader2 className="spin" size={14} style={{ verticalAlign: 'middle' }} /> : <Trash2 size={14} style={{ verticalAlign: 'middle' }} />} Delete
-                    </button>
-                  </div>
-                </td>
+                
+
               </tr>
             ))
           )}
