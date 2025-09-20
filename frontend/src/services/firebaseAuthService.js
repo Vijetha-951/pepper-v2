@@ -17,6 +17,7 @@ import {
 } from "firebase/firestore";
 
 import { auth, googleProvider, db } from '../config/firebase';
+import { apiFetch } from './api';
 
 const ADMIN_EMAIL = process.env.REACT_APP_ADMIN_EMAIL || '';
 const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD || '';
@@ -132,6 +133,23 @@ class FirebaseAuthService {
         // Do NOT overwrite existing role when no selectedRole is provided (e.g., plain sign-in)
 
         await updateDoc(userDocRef, { lastLogin: serverTimestamp(), updatedAt: serverTimestamp() });
+      }
+
+      // Ensure MongoDB has this user so Admin panel can list them
+      try {
+        await apiFetch('/api/auth/sync-profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            profile: {
+              role: userData.role || (user.email === ADMIN_EMAIL ? 'admin' : (selectedRole || 'user')),
+              firstName: userData.firstName || '',
+              lastName: userData.lastName || ''
+            }
+          })
+        });
+      } catch (e) {
+        console.warn('Profile sync failed:', e?.message || e);
       }
 
       localStorage.setItem('user', JSON.stringify(userData));

@@ -201,6 +201,31 @@ router.post(
         { merge: true }
       );
 
+      // Ensure MongoDB user exists so Admin User Management can see Google signups immediately
+      try {
+        const name = decoded.name || '';
+        const [fn, ...lnParts] = name.split(' ');
+        const firstName = fn || 'User';
+        const lastName = lnParts.join(' ') || 'Account';
+
+        await User.findOneAndUpdate(
+          { firebaseUid: decoded.uid },
+          {
+            $set: {
+              email,
+              role: role === 'admin' ? 'admin' : role,
+              provider: 'google.com',
+              firstName,
+              lastName
+            },
+            $setOnInsert: { isActive: null }
+          },
+          { upsert: true, new: true }
+        );
+      } catch (mongoErr) {
+        console.error('Failed to upsert Mongo user on Google login:', mongoErr);
+      }
+
       let redirectPath = '/user/dashboard';
       if (role === 'admin') redirectPath = '/admin/dashboard';
       else if (role === 'deliveryboy') redirectPath = '/deliveryboy/dashboard';
