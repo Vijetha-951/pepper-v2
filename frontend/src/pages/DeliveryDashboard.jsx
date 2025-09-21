@@ -51,9 +51,9 @@ export default function DeliveryDashboard() {
   const statCardStyle = { ...cardStyle, textAlign: 'center' };
 
   const deliveriesList = [
-    { id: 'DL-001', item: 'Black Pepper Seedlings', qty: 5, address: 'MG Road, Kochi', status: 'Pending' },
-    { id: 'DL-002', item: 'White Pepper Seeds', qty: 2, address: 'Fort, Thrissur', status: 'In Transit' },
-    { id: 'DL-003', item: 'Pepper Vines', qty: 3, address: 'Vyttila, Kochi', status: 'Pending' }
+    { id: 'DL-001', item: 'Thekkan 1', qty: 5, address: 'MG Road, Kochi', status: 'Pending' },
+    { id: 'DL-002', item: 'karimunda', qty: 2, address: 'Fort, Thrissur', status: 'In Transit' },
+    { id: 'DL-003', item: 'Panniyur 3', qty: 3, address: 'Vyttila, Kochi', status: 'Pending' }
   ];
 
   const menuItems = [
@@ -125,6 +125,9 @@ export default function DeliveryDashboard() {
             <Truck color="white" size={28} />
           </div>
           <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>Delivery Dashboard</h1>
+          <h2 style={{ fontSize: '1rem', margin: '0.25rem 0 0', opacity: 0.9 }}>
+            {user?.firstName || user?.lastName ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : (user?.displayName || user?.email || 'User')}
+          </h2>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', zIndex: 10 }}>

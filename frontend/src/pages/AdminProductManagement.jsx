@@ -334,7 +334,6 @@ function ProductFormModal({ isEdit, product, onClose, onSuccess, varieties, vari
   const [form, setForm] = useState({
     name: product?.name || '',
     type: product?.type || 'Bush',
-    category: product?.category || 'Bush Pepper',
     description: product?.description || '',
     price: product?.price ? product.price.toString() : '',
     stock: product?.stock ? product.stock.toString() : '',
@@ -353,7 +352,6 @@ function ProductFormModal({ isEdit, product, onClose, onSuccess, varieties, vari
       setForm({
         name: varietyName,
         type: data.type,
-        category: 'Bush Pepper',
         description: data.description,
         price: data.price.toString(),
         stock: '50',
@@ -514,16 +512,7 @@ function ProductFormModal({ isEdit, product, onClose, onSuccess, varieties, vari
             </div>
           </div>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Category</label>
-            <input
-              type="text"
-              name="category"
-              value={form.category}
-              onChange={handleChange}
-              style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px' }}
-            />
-          </div>
+
 
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Image URL</label>
