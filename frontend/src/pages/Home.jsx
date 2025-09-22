@@ -20,7 +20,6 @@ export default function Home() {
           <img src={logo} alt="Pepper Logo" className="logo" />
           <h1>Welcome to Pepper Nursery</h1>
           <p>Fresh seedlings delivered to your doorstep</p>
-          <a href="/shop" className="cta-btn">Shop Now</a>
         </div>
       </section>
 

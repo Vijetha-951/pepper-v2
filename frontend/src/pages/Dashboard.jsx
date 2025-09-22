@@ -14,6 +14,7 @@ export default function Dashboard() {
   const [cartLoading, setCartLoading] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [cartPrompt, setCartPrompt] = useState({ productId: null, visible: false });
   const [stats, setStats] = useState({
     totalOrders: 15,
     pendingDeliveries: 3,
@@ -100,6 +101,14 @@ export default function Dashboard() {
     try {
       await customerProductService.addToCart(productId, 1);
       setSuccessMessage(`${productName} added to cart!`);
+
+      // Show inline "View Cart" prompt near this product
+      setCartPrompt({ productId, visible: true });
+
+      // Auto-hide the prompt after 4 seconds
+      setTimeout(() => {
+        setCartPrompt({ productId: null, visible: false });
+      }, 4000);
       
       // Update product stock locally
       setProducts(prev => prev.map(p => 
@@ -632,7 +641,8 @@ export default function Dashboard() {
                         cursor: product.stock > 0 && !cartLoading[product._id] ? 'pointer' : 'not-allowed',
                         fontWeight: '600',
                         fontSize: '0.875rem',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        position: 'relative'
                       }}
                     >
                       {cartLoading[product._id] ? (
@@ -659,6 +669,41 @@ export default function Dashboard() {
                         </>
                       )}
                     </button>
+
+                    {/* Inline View Cart prompt (appears after add) */}
+                    {cartPrompt.visible && cartPrompt.productId === product._id && (
+                      <div style={{
+                        position: 'absolute',
+                        right: '1rem',
+                        bottom: '4rem',
+                        background: 'white',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                        padding: '0.75rem 1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        zIndex: 5
+                      }}>
+                        <span style={{ color: '#065f46', fontWeight: 600 }}>Added!</span>
+                        <button
+                          onClick={() => setActiveTab('cart')}
+                          style={{
+                            backgroundColor: '#059669',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '0.4rem 0.75rem',
+                            cursor: 'pointer',
+                            fontSize: '0.8rem',
+                            fontWeight: 600
+                          }}
+                        >
+                          View Cart
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
