@@ -553,29 +553,14 @@ export default function Login() {
               {errors.password && <p style={errorStyle}>{errors.password}</p>}
             </div>
 
-            {/* Remember Me & Forgot Password */}
+            {/* Forgot Password only */}
             <div style={{ 
               display: 'flex', 
-              justifyContent: 'space-between', 
+              justifyContent: 'flex-end', 
               alignItems: 'center',
               marginBottom: '2rem',
               fontSize: '0.875rem'
             }}>
-              <label style={{ 
-                display: 'flex', 
-                alignItems: 'center',
-                cursor: 'pointer',
-                color: '#374151'
-              }}>
-                <input 
-                  type="checkbox" 
-                  style={{ 
-                    marginRight: '0.5rem',
-                    accentColor: '#10b981'
-                  }} 
-                />
-                Remember me
-              </label>
               <a 
                 href="/forgot-password"
                 style={{ 

@@ -231,6 +231,21 @@ class AuthService {
     }
   }
 
+  // Logout without redirect (for showing inline message before navigating)
+  async logoutNoRedirect() {
+    try {
+      const result = await this.firebaseAuth.signOut();
+      if (result.success) {
+        this.user = null;
+        localStorage.removeItem('user');
+      }
+      return result;
+    } catch (error) {
+      console.error('Logout error:', error);
+      return { success: false, error: 'Logout failed. Please try again.' };
+    }
+  }
+
   isAuthenticated() {
     return this.firebaseAuth.isAuthenticated() && !!this.user;
   }

@@ -157,8 +157,15 @@ export default function Dashboard() {
   };
 
   const handleLogout = async () => {
-    if (window.confirm('Are you sure you want to logout?\n\nYou will be redirected to the login page.')) {
-      await authService.logout();
+    // show inline banner and delay redirect
+    setSuccessMessage('You have been logged out. Redirecting to login...');
+    const result = await authService.logoutNoRedirect();
+    if (result?.success) {
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1500);
+    } else {
+      setErrorMessage('Logout failed. Please try again.');
     }
   };
 
@@ -1253,6 +1260,43 @@ export default function Dashboard() {
             </button>
           </div>
         </header>
+
+        {/* Global Messages */}
+        {(successMessage || errorMessage) && (
+          <div style={{ marginBottom: '1rem' }}>
+            {successMessage && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '1rem',
+                backgroundColor: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                borderRadius: '8px',
+                color: '#166534',
+                marginBottom: errorMessage ? '0.5rem' : 0
+              }}>
+                <CheckCircle size={20} />
+                {successMessage}
+              </div>
+            )}
+            {errorMessage && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '1rem',
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: '8px',
+                color: '#dc2626'
+              }}>
+                <AlertCircle size={20} />
+                {errorMessage}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Content Area */}
         {renderContent()}

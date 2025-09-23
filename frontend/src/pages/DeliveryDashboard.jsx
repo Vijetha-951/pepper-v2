@@ -21,8 +21,22 @@ export default function DeliveryDashboard() {
   }, []);
 
   const handleLogout = async () => {
-    if (window.confirm('Are you sure you want to logout?\n\nYou will be redirected to the login page.')) {
-      await authService.logout();
+    // show inline banner and delay redirect
+    const banner = document.createElement('div');
+    banner.textContent = 'You have been logged out. Redirecting to login...';
+    banner.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;padding:10px 14px;border-radius:8px;z-index:9999;box-shadow:0 6px 18px rgba(0,0,0,0.08)';
+    document.body.appendChild(banner);
+    const result = await authService.logoutNoRedirect();
+    if (result?.success) {
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1500);
+    } else {
+      banner.textContent = 'Logout failed. Please try again.';
+      banner.style.background = '#fef2f2';
+      banner.style.border = '1px solid #fecaca';
+      banner.style.color = '#dc2626';
+      setTimeout(() => banner.remove(), 3000);
     }
   };
 
