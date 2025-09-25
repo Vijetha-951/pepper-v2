@@ -95,9 +95,10 @@ export function validateMeaningfulEmail(email) {
     }
   }
 
-  // Check for suspicious domains
+  // Check for suspicious domains using the full domain (e.g., example.com),
+  // not just the first label, to avoid false positives like abc.com or xyz.in
   for (const pattern of SUSPICIOUS_DOMAINS) {
-    if (pattern.test(domain)) {
+    if (pattern.test(domainPart)) {
       return {
         isValid: false,
         reason: 'Please use a valid email domain.'

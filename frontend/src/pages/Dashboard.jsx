@@ -896,16 +896,19 @@ export default function Dashboard() {
                   <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#1f2937' }}>
                     Total: ₹{cart.total || 0}
                   </h3>
-                  <button style={{
-                    padding: '0.75rem 2rem',
-                    backgroundColor: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '1rem',
-                    fontWeight: '600'
-                  }}>
+                  <button
+                    onClick={() => navigate('/checkout')}
+                    style={{
+                      padding: '0.75rem 2rem',
+                      backgroundColor: '#10b981',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '1rem',
+                      fontWeight: '600'
+                    }}
+                  >
                     Checkout
                   </button>
                 </div>

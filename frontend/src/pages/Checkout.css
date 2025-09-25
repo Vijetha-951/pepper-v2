@@ -1,0 +1,145 @@
+/* Checkout Page Themed Styles (Pepper Nursery) */
+:root {
+  --green: #10b981;        /* primary */
+  --green-dark: #059669;   /* primary dark */
+  --green-forest: #2c5f2d; /* legacy brand */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-500: #6b7280;
+  --gray-700: #374151;
+}
+
+/* Scope all styles under checkout wrapper */
+.pepper-checkout {
+  background: var(--gray-50);
+}
+
+.pepper-checkout .checkout-card {
+  background: #ffffff;
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.08);
+}
+
+.pepper-checkout .section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.pepper-checkout .section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+/* Inputs */
+.pepper-checkout label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--gray-700);
+  margin-bottom: 6px;
+}
+
+.pepper-checkout input[type="text"],
+.pepper-checkout input[type="email"],
+.pepper-checkout input[type="number"],
+.pepper-checkout input[type="tel"] {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--gray-300);
+  border-radius: 10px;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.pepper-checkout input:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+}
+
+/* Payment options */
+.pepper-checkout .payment-options label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  background: #fafafa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pepper-checkout .payment-options label:hover {
+  background: #f5fff9;
+  border-color: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.12);
+}
+
+.pepper-checkout .payment-options input[type="radio"] {
+  accent-color: var(--green);
+}
+
+/* Action button */
+.pepper-checkout .primary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--green), var(--green-dark));
+  box-shadow: 0 10px 24px rgba(16, 185, 129, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.pepper-checkout .primary-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px rgba(16, 185, 129, 0.32);
+  filter: saturate(1.05);
+}
+
+.pepper-checkout .primary-action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Meta text */
+.pepper-checkout .muted {
+  color: var(--gray-500);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Summary rows */
+.pepper-checkout .summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0;
+  color: #111827;
+}
+
+.pepper-checkout .summary-row.muted {
+  color: var(--gray-500);
+}
+
+.pepper-checkout .summary-total {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin-top: 8px;
+}

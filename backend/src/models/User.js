@@ -12,6 +12,19 @@ const AddressSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// For address book entries we want stable IDs for updates/deletes
+const AddressItemSchema = new mongoose.Schema(
+  {
+    line1: String,
+    line2: String,
+    district: String,
+    state: String,
+    pincode: String,
+    phone: String,
+  },
+  { _id: true }
+);
+
 const userSchema = new mongoose.Schema(
   {
     firebaseUid: { type: String, required: true, unique: true }, // Firebase user ID
@@ -39,7 +52,8 @@ const userSchema = new mongoose.Schema(
     place: { type: String, trim: true },
     district: { type: String, trim: true },
     pincode: { type: String, trim: true },
-    address: AddressSchema, // optional structured address
+    address: AddressSchema, // optional structured address (legacy/primary)
+    addresses: { type: [AddressItemSchema], default: [] }, // address book
     provider: { type: String, default: 'firebase' }, // firebase, google.com, etc.
     profilePicture: { type: String, trim: true }, // URL to profile picture
     isActive: { type: Boolean, default: null }, // null = pending, true = approved, false = rejected

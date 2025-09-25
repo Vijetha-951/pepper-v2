@@ -3,6 +3,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
 import { CreditCard, MapPin, AlertCircle, CheckCircle } from 'lucide-react';
+import './Checkout.css';
 
 const Checkout = () => {
   const [user] = useAuthState(auth);
@@ -13,18 +14,24 @@ const Checkout = () => {
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
   
-  const [shippingAddress, setShippingAddress] = useState({
-    line1: '',
-    line2: '',
-    district: '',
-    state: '',
-    pincode: ''
-  });
+  // Normalize address objects so all fields exist and are strings
+  const emptyAddress = { line1: '', line2: '', district: '', state: '', pincode: '', phone: '' };
+  const normalizeAddress = (addr) => {
+    const merged = { ...emptyAddress, ...(addr || {}) };
+    Object.keys(merged).forEach((k) => { if (merged[k] == null) merged[k] = ''; });
+    return merged;
+  };
+
+  const [shippingAddress, setShippingAddress] = useState(emptyAddress);
+  const [paymentMethod, setPaymentMethod] = useState('COD'); // 'COD' | 'ONLINE'
+  const [addressBook, setAddressBook] = useState({ addresses: [], primary: null });
+  const [selectedAddressId, setSelectedAddressId] = useState('');
 
   useEffect(() => {
     if (user) {
       fetchCart();
       loadUserAddress();
+      loadAddressBook();
     } else {
       navigate('/login');
     }
@@ -61,7 +68,7 @@ const Checkout = () => {
   const loadUserAddress = async () => {
     try {
       const token = await user.getIdToken();
-      const response = await fetch('/api/user/profile', {
+      const response = await fetch('/api/user/me', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -70,20 +77,79 @@ const Checkout = () => {
 
       if (response.ok) {
         const userData = await response.json();
-        if (userData.address) {
-          setShippingAddress(userData.address);
-        } else if (userData.place || userData.district || userData.pincode) {
-          setShippingAddress({
-            line1: userData.place || '',
-            line2: '',
-            district: userData.district || '',
-            state: '',
-            pincode: userData.pincode || ''
-          });
-        }
+        // Prefer structured primary address, else fall back to legacy fields
+        const primary = userData.address || null;
+        const addr = primary || {
+          line1: userData.place || '',
+          line2: '',
+          district: userData.district || '',
+          state: '',
+          pincode: userData.pincode || '',
+          phone: userData.phone || ''
+        };
+        const safe = normalizeAddress(addr);
+        setShippingAddress(safe);
+        try { localStorage.setItem('shippingAddress', JSON.stringify(safe)); } catch {}
+      } else {
+        // Fallback to local storage if available
+        const cached = localStorage.getItem('shippingAddress');
+        if (cached) setShippingAddress(normalizeAddress(JSON.parse(cached)));
       }
     } catch (error) {
       console.error('Error loading user address:', error);
+      const cached = localStorage.getItem('shippingAddress');
+      if (cached) setShippingAddress(normalizeAddress(JSON.parse(cached)));
+    }
+  };
+
+  const loadAddressBook = async () => {
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch('/api/user/addresses', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setAddressBook({ addresses: data.addresses || [], primary: data.primary || null });
+    } catch (e) {
+      // ignore non-blocking error
+    }
+  };
+
+  const saveAddress = async () => {
+    try {
+      const token = await user.getIdToken();
+      // Persist both structured primary address and legacy fields
+      const payload = {
+        address: {
+          line1: shippingAddress.line1 || '',
+          line2: shippingAddress.line2 || '',
+          district: shippingAddress.district || '',
+          state: shippingAddress.state || '',
+          pincode: shippingAddress.pincode || ''
+        },
+        place: shippingAddress.line1 || '',
+        district: shippingAddress.district || '',
+        pincode: shippingAddress.pincode || '',
+        phone: shippingAddress.phone || ''
+      };
+      const response = await fetch('/api/user/me', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ message: 'Failed to save address' }));
+        throw new Error(err.message || 'Failed to save address');
+      }
+      try { localStorage.setItem('shippingAddress', JSON.stringify(shippingAddress)); } catch {}
+      return true;
+    } catch (e) {
+      setError(e.message || 'Failed to save address');
+      return false;
     }
   };
 
@@ -95,9 +161,25 @@ const Checkout = () => {
   };
 
   const validateAddress = () => {
-    const { line1, district, pincode } = shippingAddress;
+    const { line1, district, pincode, phone } = shippingAddress;
     if (!line1.trim() || !district.trim() || !pincode.trim()) {
-      setError('Please fill in required address fields (Address Line 1, District, Pincode)');
+      setError('Please fill in required fields: Address Line 1, District, Pincode');
+      return false;
+    }
+    if (line1.trim().length < 3) {
+      setError('Address Line 1 must be at least 3 characters');
+      return false;
+    }
+    if (district.trim().length < 2) {
+      setError('District must be at least 2 characters');
+      return false;
+    }
+    if (!/^\d{6}$/.test(pincode.trim())) {
+      setError('Pincode must be a 6-digit number');
+      return false;
+    }
+    if (phone && !/^\+?\d{7,15}$/.test(phone.trim())) {
+      setError('Phone must be 7-15 digits (optionally with +)');
       return false;
     }
     return true;
@@ -119,7 +201,37 @@ const Checkout = () => {
     setProcessing(true);
     setError('');
 
+    // Always persist address before attempting any order
+    const saved = await saveAddress();
+    if (!saved) { setProcessing(false); return; }
+
     try {
+      const token = await user.getIdToken();
+
+      // COD flow: directly create order via /api/user/orders
+      if (paymentMethod === 'COD') {
+        const createRes = await fetch('/api/user/orders', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            items: cart.items.map(i => ({ productId: i.product._id, quantity: i.quantity })),
+            payment: { method: 'COD' },
+            notes: ''
+          })
+        });
+        if (!createRes.ok) {
+          const err = await createRes.json().catch(() => ({ message: 'Failed to place COD order' }));
+          throw new Error(err.message || 'Failed to place COD order');
+        }
+        setSuccess('Order placed with Cash on Delivery!');
+        setTimeout(() => navigate('/orders'), 1200);
+        return;
+      }
+
+      // Online flow: Razorpay
       // Load Razorpay script
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) {
@@ -127,7 +239,6 @@ const Checkout = () => {
       }
 
       // Create order on backend
-      const token = await user.getIdToken();
       const orderResponse = await fetch('/api/payment/create-order', {
         method: 'POST',
         headers: {
@@ -169,7 +280,7 @@ const Checkout = () => {
             });
 
             if (verifyResponse.ok) {
-              const data = await verifyResponse.json();
+              await verifyResponse.json();
               setSuccess('Payment successful! Order has been placed.');
               setTimeout(() => {
                 navigate('/orders');
@@ -184,17 +295,13 @@ const Checkout = () => {
           }
         },
         prefill: {
-          name: user.displayName || `${user.firstName} ${user.lastName}`,
+          name: user.displayName || `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
           email: user.email,
           contact: user.phoneNumber || ''
         },
-        theme: {
-          color: '#059669'
-        },
+        theme: { color: '#2c5f2d' }, // match theme
         modal: {
-          ondismiss: () => {
-            setProcessing(false);
-          }
+          ondismiss: () => { setProcessing(false); }
         }
       };
 
@@ -220,137 +327,245 @@ const Checkout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center mb-6">
-          <CreditCard className="h-6 w-6 text-green-600 mr-2" />
-          <h1 className="text-2xl font-bold text-gray-900">Checkout</h1>
+    <div className="pepper-checkout" style={{ minHeight: '100vh', padding: '32px 0' }}>
+      <div className="max-w-4xl" style={{ maxWidth: 1024, margin: '0 auto', padding: '0 20px' }}>
+        <div className="section-header" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+          <CreditCard size={24} color="#10b981" />
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#111827', margin: 0 }}>Checkout</h1>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center">
-            <AlertCircle className="h-5 w-5 mr-2" />
+          <div style={{
+            marginBottom: 16,
+            padding: 12,
+            background: '#fee2e2',
+            border: '1px solid #fecaca',
+            color: '#b91c1c',
+            borderRadius: 10,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
+          }}>
+            <AlertCircle size={18} style={{ marginRight: 4 }} />
             {error}
           </div>
         )}
 
         {success && (
-          <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center">
-            <CheckCircle className="h-5 w-5 mr-2" />
+          <div style={{
+            marginBottom: 16,
+            padding: 12,
+            background: '#dcfce7',
+            border: '1px solid #bbf7d0',
+            color: '#166534',
+            borderRadius: 10,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
+          }}>
+            <CheckCircle size={18} style={{ marginRight: 4 }} />
             {success}
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 24 }}>
           {/* Shipping Address */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center mb-4">
-              <MapPin className="h-5 w-5 text-green-600 mr-2" />
-              <h2 className="text-lg font-medium text-gray-900">Shipping Address</h2>
+          <div className="checkout-card">
+            <div className="section-header">
+              <MapPin size={18} color="#10b981" />
+              <h2 className="section-title">Shipping Address</h2>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4" style={{ display: 'grid', gap: 16 }}>
               <div>
-                <label htmlFor="line1" className="block text-sm font-medium text-gray-700">
-                  Address Line 1 *
-                </label>
+                <label htmlFor="line1">Address Line 1 *</label>
+                {addressBook.addresses.length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    <select
+                      value={selectedAddressId}
+                      onChange={async (e) => {
+                        const id = e.target.value;
+                        setSelectedAddressId(id);
+                        if (!id) return;
+                        const token = await user.getIdToken();
+                        try {
+                          const res = await fetch(`/api/user/addresses/${id}/select`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                          if (res.ok) {
+                            const { primary } = await res.json();
+                            const safePrimary = normalizeAddress(primary);
+                            setShippingAddress(safePrimary);
+                            try { localStorage.setItem('shippingAddress', JSON.stringify(safePrimary)); } catch {}
+                          }
+                        } catch {}
+                      }}
+                      style={{ width: '100%', padding: '10px', borderRadius: 10, border: '1px solid #e5e7eb', background: '#fff' }}
+                    >
+                      <option value="">Select a saved address</option>
+                      {addressBook.addresses.map(a => (
+                        <option key={a._id} value={a._id}>
+                          {`${a.line1}${a.line2 ? ', ' + a.line2 : ''}, ${a.district}${a.state ? ', ' + a.state : ''} - ${a.pincode}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <input
                   type="text"
                   id="line1"
-                  value={shippingAddress.line1}
+                  value={shippingAddress.line1 ?? ''}
                   onChange={(e) => handleAddressChange('line1', e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
                   placeholder="House number, street name"
                 />
               </div>
 
               <div>
-                <label htmlFor="line2" className="block text-sm font-medium text-gray-700">
-                  Address Line 2
-                </label>
+                <label htmlFor="line2">Address Line 2</label>
                 <input
                   type="text"
                   id="line2"
-                  value={shippingAddress.line2}
+                  value={shippingAddress.line2 ?? ''}
                   onChange={(e) => handleAddressChange('line2', e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
                   placeholder="Apartment, suite, etc. (optional)"
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
-                  <label htmlFor="district" className="block text-sm font-medium text-gray-700">
-                    District *
-                  </label>
+                  <label htmlFor="district">District *</label>
                   <input
                     type="text"
                     id="district"
-                    value={shippingAddress.district}
+                    value={shippingAddress.district ?? ''}
                     onChange={(e) => handleAddressChange('district', e.target.value)}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
                     placeholder="District"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="state" className="block text-sm font-medium text-gray-700">
-                    State
-                  </label>
+                  <label htmlFor="state">State</label>
                   <input
                     type="text"
                     id="state"
-                    value={shippingAddress.state}
+                    value={shippingAddress.state ?? ''}
                     onChange={(e) => handleAddressChange('state', e.target.value)}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
                     placeholder="State"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="pincode" className="block text-sm font-medium text-gray-700">
-                  Pincode *
-                </label>
+                <label htmlFor="pincode">Pincode *</label>
                 <input
                   type="text"
                   id="pincode"
-                  value={shippingAddress.pincode}
+                  value={shippingAddress.pincode ?? ''}
                   onChange={(e) => handleAddressChange('pincode', e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
                   placeholder="6-digit pincode"
                   maxLength={6}
                 />
+              </div>
+
+              <div>
+                <label htmlFor="phone">Phone</label>
+                <input
+                  type="tel"
+                  id="phone"
+                  value={shippingAddress.phone ?? ''}
+                  onChange={(e) => handleAddressChange('phone', e.target.value)}
+                  placeholder="Phone number"
+                />
+              </div>
+
+              {/* Save button: placed below all fields */}
+              <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+                <button
+                  type="button"
+                  className="primary-action"
+                  style={{ padding: '10px 14px' }}
+                  onClick={async () => {
+                    if (!validateAddress()) return;
+                    try {
+                      const token = await user.getIdToken();
+                      const res = await fetch('/api/user/addresses', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(normalizeAddress(shippingAddress))
+                      });
+                      if (res.ok) {
+                        const data = await res.json();
+                        setAddressBook(prev => ({ ...prev, addresses: data.addresses }));
+                        setSuccess('Address saved to your profile');
+                        setTimeout(() => setSuccess(''), 1500);
+                      } else {
+                        const err = await res.json().catch(() => ({ message: 'Failed to save address' }));
+                        setError(err.message || 'Failed to save address');
+                        setTimeout(() => setError(''), 2000);
+                      }
+                    } catch (e) {
+                      setError('Failed to save address');
+                      setTimeout(() => setError(''), 2000);
+                    }
+                  }}
+                >
+                  Save to address book
+                </button>
               </div>
             </div>
           </div>
 
           {/* Order Summary */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Order Summary</h2>
+          <div className="checkout-card">
+            <h2 className="section-title" style={{ marginBottom: 16 }}>Order Summary</h2>
             
-            <div className="space-y-4 mb-6">
+            <div style={{ display: 'grid', gap: 12, marginBottom: 20 }}>
               {cart.items.map((item) => (
-                <div key={item.product._id} className="flex justify-between">
+                <div key={item.product._id} className="summary-row">
                   <div>
-                    <h3 className="font-medium text-gray-900">{item.product.name}</h3>
-                    <p className="text-sm text-gray-600">Qty: {item.quantity} × ₹{item.product.price}</p>
+                    <h3 style={{ margin: 0, fontSize: '1rem', color: '#111827', fontWeight: 600 }}>{item.product.name}</h3>
+                    <p className="muted" style={{ margin: 0 }}>Qty: {item.quantity} × ₹{item.product.price}</p>
                   </div>
-                  <span className="font-medium">₹{item.subtotal}</span>
+                  <span style={{ fontWeight: 600 }}>₹{item.subtotal}</span>
                 </div>
               ))}
             </div>
 
-            <div className="border-t pt-4 space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Subtotal</span>
+            {/* Payment Method */}
+            <div style={{ marginBottom: 20 }}>
+              <h3 className="section-title" style={{ fontSize: '0.95rem', marginBottom: 8 }}>Payment Method</h3>
+              <div className="payment-options" style={{ display: 'grid', gap: 10 }}>
+                <label>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="COD"
+                    checked={paymentMethod === 'COD'}
+                    onChange={() => setPaymentMethod('COD')}
+                  />
+                  <span style={{ color: '#374151' }}>Cash on Delivery</span>
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="ONLINE"
+                    checked={paymentMethod === 'ONLINE'}
+                    onChange={() => setPaymentMethod('ONLINE')}
+                  />
+                  <span style={{ color: '#374151' }}>Online Payment (Razorpay)</span>
+                </label>
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 16 }}>
+              <div className="summary-row muted">
+                <span>Subtotal</span>
                 <span>₹{cart.total}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Shipping</span>
+              <div className="summary-row muted">
+                <span>Shipping</span>
                 <span>Free</span>
               </div>
-              <div className="flex justify-between font-medium text-lg">
+              <div className="summary-total">
                 <span>Total</span>
                 <span>₹{cart.total}</span>
               </div>
@@ -359,23 +574,24 @@ const Checkout = () => {
             <button
               onClick={handlePayment}
               disabled={processing}
-              className="w-full mt-6 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="primary-action"
+              style={{ marginTop: 16 }}
             >
               {processing ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 16, height: 16, border: '2px solid #ffffff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
                   Processing...
                 </div>
               ) : (
                 <>
-                  <CreditCard className="h-5 w-5 mr-2" />
-                  Pay ₹{cart.total}
+                  <CreditCard size={18} style={{ marginRight: 8 }} />
+                  {paymentMethod === 'COD' ? 'Place Order (COD)' : `Pay ₹${cart.total}`}
                 </>
               )}
             </button>
 
-            <p className="text-xs text-gray-500 mt-2 text-center">
-              Secure payment powered by Razorpay
+            <p className="muted" style={{ marginTop: 8 }}>
+              {paymentMethod === 'ONLINE' ? 'Secure payment powered by Razorpay' : 'Pay in cash when your order arrives'}
             </p>
           </div>
         </div>
