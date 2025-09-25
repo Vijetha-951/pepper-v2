@@ -154,14 +154,25 @@ const Checkout = () => {
   };
 
   const handleAddressChange = (field, value) => {
+    let v = value;
+    if (field === 'district' || field === 'state') {
+      // Allow only letters and spaces
+      v = String(value).replace(/[^A-Za-z ]/g, '');
+    } else if (field === 'phone') {
+      // Digits only, max 10
+      v = String(value).replace(/\D/g, '').slice(0, 10);
+    } else if (field === 'pincode') {
+      // Digits only, max 6 (UI hint)
+      v = String(value).replace(/\D/g, '').slice(0, 6);
+    }
     setShippingAddress(prev => ({
       ...prev,
-      [field]: value
+      [field]: v
     }));
   };
 
   const validateAddress = () => {
-    const { line1, district, pincode, phone } = shippingAddress;
+    const { line1, district, state, pincode, phone } = shippingAddress;
     if (!line1.trim() || !district.trim() || !pincode.trim()) {
       setError('Please fill in required fields: Address Line 1, District, Pincode');
       return false;
@@ -170,16 +181,20 @@ const Checkout = () => {
       setError('Address Line 1 must be at least 3 characters');
       return false;
     }
-    if (district.trim().length < 2) {
-      setError('District must be at least 2 characters');
+    if (!/^[A-Za-z ]+$/.test(district.trim())) {
+      setError('District should contain letters only');
+      return false;
+    }
+    if (state && !/^[A-Za-z ]+$/.test(state.trim())) {
+      setError('State should contain letters only');
       return false;
     }
     if (!/^\d{6}$/.test(pincode.trim())) {
       setError('Pincode must be a 6-digit number');
       return false;
     }
-    if (phone && !/^\+?\d{7,15}$/.test(phone.trim())) {
-      setError('Phone must be 7-15 digits (optionally with +)');
+    if (!/^\d{10}$/.test(String(phone || '').trim())) {
+      setError('Phone number must be exactly 10 digits');
       return false;
     }
     return true;
@@ -472,7 +487,9 @@ const Checkout = () => {
                   id="phone"
                   value={shippingAddress.phone ?? ''}
                   onChange={(e) => handleAddressChange('phone', e.target.value)}
-                  placeholder="Phone number"
+                  placeholder="10-digit phone"
+                  inputMode="numeric"
+                  maxLength={10}
                 />
               </div>
 
