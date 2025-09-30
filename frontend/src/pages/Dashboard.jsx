@@ -782,8 +782,8 @@ export default function Dashboard() {
               <div>
                 {/* Cart Items */}
                 <div style={{ marginBottom: '2rem' }}>
-                  {cart.items && cart.items.map((item) => (
-                    <div key={item.product._id} style={{
+                  {(cart.items || []).filter(item => item && item.product).map((item, idx) => (
+                    <div key={item.product?._id || idx} style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '1rem',
@@ -794,10 +794,10 @@ export default function Dashboard() {
                       border: '1px solid #e5e7eb'
                     }}>
                       {/* Product Image */}
-                      {item.product.image && (
+                      {item.product?.image ? (
                         <img 
                           src={item.product.image} 
-                          alt={item.product.name} 
+                          alt={item.product?.name || 'Product'} 
                           style={{
                             width: '60px',
                             height: '60px',
@@ -805,22 +805,36 @@ export default function Dashboard() {
                             borderRadius: '8px'
                           }}
                         />
+                      ) : (
+                        <div style={{
+                          width: '60px',
+                          height: '60px',
+                          backgroundColor: '#e5e7eb',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#6b7280',
+                          fontSize: '0.75rem'
+                        }}>
+                          No Image
+                        </div>
                       )}
                       
                       {/* Product Info */}
                       <div style={{ flex: 1 }}>
                         <h4 style={{ margin: '0 0 0.5rem 0', color: '#1f2937', fontSize: '1rem' }}>
-                          {item.product.name}
+                          {item.product?.name || 'Unknown product'}
                         </h4>
                         <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>
-                          ₹{item.product.price} each
+                          ₹{item.product?.price ?? 0} each
                         </p>
                       </div>
                       
                       {/* Quantity Controls */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <button
-                          onClick={() => updateCartQuantity(item.product._id, item.quantity - 1)}
+                          onClick={() => updateCartQuantity(item.product?._id, item.quantity - 1)}
                           style={{
                             padding: '0.25rem 0.5rem',
                             backgroundColor: '#e5e7eb',
@@ -829,6 +843,7 @@ export default function Dashboard() {
                             cursor: 'pointer',
                             color: '#374151'
                           }}
+                          disabled={!item.product?._id}
                         >
                           -
                         </button>
@@ -841,7 +856,7 @@ export default function Dashboard() {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => updateCartQuantity(item.product._id, item.quantity + 1)}
+                          onClick={() => updateCartQuantity(item.product?._id, item.quantity + 1)}
                           style={{
                             padding: '0.25rem 0.5rem',
                             backgroundColor: '#e5e7eb',
@@ -850,6 +865,7 @@ export default function Dashboard() {
                             cursor: 'pointer',
                             color: '#374151'
                           }}
+                          disabled={!item.product?._id}
                         >
                           +
                         </button>
@@ -862,13 +878,13 @@ export default function Dashboard() {
                           color: '#059669',
                           fontSize: '1rem'
                         }}>
-                          ₹{item.product.price * item.quantity}
+                          ₹{(item.product?.price ?? 0) * item.quantity}
                         </span>
                       </div>
                       
                       {/* Remove Button */}
                       <button
-                        onClick={() => removeFromCart(item.product._id)}
+                        onClick={() => removeFromCart(item.product?._id)}
                         style={{
                           padding: '0.5rem',
                           backgroundColor: '#fee2e2',
@@ -878,6 +894,7 @@ export default function Dashboard() {
                           cursor: 'pointer',
                           fontSize: '0.875rem'
                         }}
+                        disabled={!item.product?._id}
                       >
                         Remove
                       </button>

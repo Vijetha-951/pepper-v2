@@ -232,7 +232,9 @@ const Checkout = () => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            items: cart.items.map(i => ({ productId: i.product._id, quantity: i.quantity })),
+            items: (cart.items || [])
+              .filter(i => i && i.product && i.product._id)
+              .map(i => ({ productId: i.product._id, quantity: i.quantity })),
             payment: { method: 'COD' },
             notes: ''
           })
@@ -535,13 +537,13 @@ const Checkout = () => {
             <h2 className="section-title" style={{ marginBottom: 16 }}>Order Summary</h2>
             
             <div style={{ display: 'grid', gap: 12, marginBottom: 20 }}>
-              {cart.items.map((item) => (
-                <div key={item.product._id} className="summary-row">
+              {(cart.items || []).filter(i => i && i.product).map((item, idx) => (
+                <div key={item.product?._id || idx} className="summary-row">
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '1rem', color: '#111827', fontWeight: 600 }}>{item.product.name}</h3>
-                    <p className="muted" style={{ margin: 0 }}>Qty: {item.quantity} × ₹{item.product.price}</p>
+                    <h3 style={{ margin: 0, fontSize: '1rem', color: '#111827', fontWeight: 600 }}>{item.product?.name || 'Unknown product'}</h3>
+                    <p className="muted" style={{ margin: 0 }}>Qty: {item.quantity} × ₹{item.product?.price ?? 0}</p>
                   </div>
-                  <span style={{ fontWeight: 600 }}>₹{item.subtotal}</span>
+                  <span style={{ fontWeight: 600 }}>₹{item.subtotal ?? ((item.product?.price ?? 0) * item.quantity)}</span>
                 </div>
               ))}
             </div>
