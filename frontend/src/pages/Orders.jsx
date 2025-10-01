@@ -2,25 +2,36 @@ import React, { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
-import { Package, Calendar, IndianRupee, AlertCircle } from 'lucide-react';
+import { Package, Search, Eye, Trash2 } from 'lucide-react';
+import './Orders.css';
 
 const Orders = () => {
   const [user] = useAuthState(auth);
   const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
       fetchOrders();
+    } else {
+      navigate('/login');
     }
-  }, [user]);
+  }, [user, navigate]);
+
+  useEffect(() => {
+    filterOrders();
+  }, [orders, searchTerm, statusFilter, dateRange]);
 
   const fetchOrders = async () => {
     try {
       const token = await user.getIdToken();
-      const response = await fetch('/api/orders', {
+      const response = await fetch('/api/user/orders', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -30,6 +41,7 @@ const Orders = () => {
       if (response.ok) {
         const data = await response.json();
         setOrders(data);
+        setFilteredOrders(data);
       } else {
         setError('Failed to fetch orders');
       }
@@ -41,175 +53,280 @@ const Orders = () => {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'APPROVED': return 'bg-blue-100 text-blue-800';
-      case 'OUT_FOR_DELIVERY': return 'bg-purple-100 text-purple-800';
-      case 'DELIVERED': return 'bg-green-100 text-green-800';
-      case 'CANCELLED': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const filterOrders = () => {
+    let filtered = [...orders];
+
+    // Filter by search term (Order ID or Product name)
+    if (searchTerm) {
+      filtered = filtered.filter(order => 
+        order._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.items.some(item => 
+          item.name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
     }
+
+    // Filter by status
+    if (statusFilter !== 'ALL') {
+      filtered = filtered.filter(order => order.status === statusFilter);
+    }
+
+    // Filter by date range
+    if (dateRange.start) {
+      filtered = filtered.filter(order => 
+        new Date(order.createdAt) >= new Date(dateRange.start)
+      );
+    }
+    if (dateRange.end) {
+      filtered = filtered.filter(order => 
+        new Date(order.createdAt) <= new Date(dateRange.end)
+      );
+    }
+
+    setFilteredOrders(filtered);
   };
 
-  const getPaymentStatusColor = (status) => {
+  const getStatusBadgeClass = (status) => {
     switch (status) {
-      case 'PAID': return 'bg-green-100 text-green-800';
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'FAILED': return 'bg-red-100 text-red-800';
-      case 'REFUNDED': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'PENDING': return 'status-badge status-pending';
+      case 'APPROVED': return 'status-badge status-processing';
+      case 'OUT_FOR_DELIVERY': return 'status-badge status-processing';
+      case 'DELIVERED': return 'status-badge status-delivered';
+      case 'CANCELLED': return 'status-badge status-cancelled';
+      default: return 'status-badge';
     }
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
+    return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: 'numeric'
     });
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2
+    }).format(amount);
+  };
+
+  const handleViewDetails = (orderId) => {
+    // Navigate to order details page or show modal
+    console.log('View order:', orderId);
+    // You can implement a modal or navigate to a detail page
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    if (window.confirm('Are you sure you want to cancel this order?')) {
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch(`/api/user/orders/${orderId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          fetchOrders(); // Refresh orders
+        } else {
+          alert('Failed to cancel order');
+        }
+      } catch (error) {
+        console.error('Error canceling order:', error);
+        alert('Failed to cancel order');
+      }
+    }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500"></div>
-          <p className="mt-4 text-gray-600">Loading your orders...</p>
+      <div className="orders-container">
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>Loading your orders...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center mb-6">
-          <Package className="h-6 w-6 text-green-600 mr-2" />
-          <h1 className="text-2xl font-bold text-gray-900">Your Orders</h1>
+    <div className="orders-container">
+      {/* Decorative leaves */}
+      <div className="leaf-decoration top-left">
+        <div className="leaf">🌿</div>
+        <div className="leaf">🍃</div>
+      </div>
+      <div className="leaf-decoration top-right">
+        <div className="leaf">🌿</div>
+        <div className="leaf">🍃</div>
+      </div>
+
+      <div className="orders-content">
+        {/* Header */}
+        <div className="orders-header">
+          <div className="logo-section">
+            <span className="logo-icon">🌱</span>
+            <span className="brand-name">PEPPER NURSERY</span>
+          </div>
         </div>
 
+        {/* Title */}
+        <h1 className="page-title">My Order History</h1>
+
+        {/* Filters Section */}
+        <div className="filters-section">
+          {/* Search Bar */}
+          <div className="search-bar">
+            <Search className="search-icon" size={18} />
+            <input
+              type="text"
+              placeholder="Filter by Status"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+
+          {/* Status Filter Buttons */}
+          <div className="status-filters">
+            <button
+              className={`filter-btn ${statusFilter === 'ALL' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('ALL')}
+            >
+              All Orders
+            </button>
+            <button
+              className={`filter-btn ${statusFilter === 'PENDING' || statusFilter === 'APPROVED' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('PENDING')}
+            >
+              Processing
+            </button>
+            <button
+              className={`filter-btn ${statusFilter === 'CANCELLED' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('CANCELLED')}
+            >
+              Cancelled
+            </button>
+          </div>
+
+          {/* Date Range Filter */}
+          <div className="date-filter">
+            <span className="filter-label">Filter by Date Range</span>
+          </div>
+        </div>
+
+        {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center">
-            <AlertCircle className="h-5 w-5 mr-2" />
-            {error}
+          <div className="error-message">
+            <p>{error}</p>
           </div>
         )}
 
-        {orders.length === 0 ? (
-          <div className="text-center py-12">
-            <Package className="h-24 w-24 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-xl font-medium text-gray-600 mb-2">No orders yet</h2>
-            <p className="text-gray-500 mb-6">Your order history will appear here once you make your first purchase.</p>
+        {/* Orders Table */}
+        {filteredOrders.length === 0 ? (
+          <div className="empty-state">
+            <Package className="empty-icon" size={64} />
+            <h2>No orders found</h2>
+            <p>Your order history will appear here once you make your first purchase.</p>
             <button
               onClick={() => navigate('/add-products')}
-              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+              className="btn-primary"
             >
               Start Shopping
             </button>
           </div>
         ) : (
-          <div className="space-y-6">
-            {orders.map((order) => (
-              <div key={order._id} className="bg-white rounded-lg shadow-sm border border-gray-200">
-                {/* Order Header */}
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900">
-                        Order #{order._id.slice(-8).toUpperCase()}
-                      </h3>
-                      <div className="flex items-center mt-1 text-sm text-gray-600">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        {formatDate(order.createdAt)}
+          <div className="table-container">
+            <table className="orders-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Order Date</th>
+                  <th>Product & Quantity</th>
+                  <th>Unit Price</th>
+                  <th>Total Price</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredOrders.map((order) => (
+                  <tr key={order._id}>
+                    <td className="order-id">
+                      <div className="id-wrapper">
+                        <div className="order-id-text">#{order._id.slice(-8).toUpperCase()}</div>
+                        {order.payment?.transactionId && (
+                          <div className="payment-id">Pay ID: {order.payment.transactionId.slice(-10)}</div>
+                        )}
                       </div>
-                    </div>
-                    <div className="mt-3 sm:mt-0 flex items-center space-x-3">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                        {order.status.replace('_', ' ')}
+                    </td>
+                    <td className="order-date">
+                      {formatDate(order.createdAt)}
+                    </td>
+                    <td className="products-cell">
+                      <div className="products-list">
+                        {order.items.map((item, index) => (
+                          <div key={index} className="product-item">
+                            <span className="product-name">{item.name}</span>
+                            <span className="product-quantity">({item.quantity}x)</span>
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="unit-price">
+                      <div className="price-list">
+                        {order.items.map((item, index) => (
+                          <div key={index} className="price-item">
+                            {formatCurrency(item.priceAtOrder)}
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="total-price">
+                      <span className="price-highlight">{formatCurrency(order.totalAmount)}</span>
+                    </td>
+                    <td className="status-cell">
+                      <span className={getStatusBadgeClass(order.status)}>
+                        {order.status === 'OUT_FOR_DELIVERY' ? 'Processing' : order.status}
                       </span>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(order.payment.status)}`}>
-                        {order.payment.status}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Order Items */}
-                <div className="p-6">
-                  <div className="space-y-4">
-                    {order.items.map((item, index) => (
-                      <div key={index} className="flex items-start space-x-4">
-                        <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
-                          {item.product?.image ? (
-                            <img
-                              src={item.product.image}
-                              alt={item.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="text-gray-400 text-xs text-center">No Image</div>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">{item.name}</h4>
-                          <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
-                          <p className="text-sm text-gray-600">Price: ₹{item.priceAtOrder} each</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium text-gray-900">₹{item.priceAtOrder * item.quantity}</p>
-                        </div>
+                    </td>
+                    <td className="action-cell">
+                      <div className="action-buttons">
+                        <button
+                          className="action-btn view-btn"
+                          onClick={() => handleViewDetails(order._id)}
+                          title="View Details"
+                        >
+                          <Eye size={16} />
+                          <span>View Details / Invoice</span>
+                        </button>
+                        {order.status === 'PENDING' && (
+                          <button
+                            className="action-btn delete-btn"
+                            onClick={() => handleDeleteOrder(order._id)}
+                            title="Cancel Order"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Order Total */}
-                  <div className="border-t border-gray-200 mt-4 pt-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Total Amount</span>
-                      <div className="flex items-center">
-                        <IndianRupee className="h-4 w-4 text-gray-600 mr-1" />
-                        <span className="text-lg font-semibold text-gray-900">{order.totalAmount}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Shipping Address */}
-                  {order.shippingAddress && (
-                    <div className="border-t border-gray-200 mt-4 pt-4">
-                      <h5 className="text-sm font-medium text-gray-900 mb-2">Shipping Address</h5>
-                      <div className="text-sm text-gray-600">
-                        <p>{order.shippingAddress.line1}</p>
-                        {order.shippingAddress.line2 && <p>{order.shippingAddress.line2}</p>}
-                        <p>
-                          {order.shippingAddress.district}
-                          {order.shippingAddress.state && `, ${order.shippingAddress.state}`}
-                          {order.shippingAddress.pincode && ` - ${order.shippingAddress.pincode}`}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Payment Method */}
-                  <div className="border-t border-gray-200 mt-4 pt-4">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Payment Method</span>
-                      <span className="text-gray-900">{order.payment.method}</span>
-                    </div>
-                    {order.payment.transactionId && (
-                      <div className="flex justify-between text-sm mt-1">
-                        <span className="text-gray-600">Transaction ID</span>
-                        <span className="text-gray-900 font-mono text-xs">{order.payment.transactionId}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
+
+        {/* Footer */}
+        <div className="orders-footer">
+          <p>Need help? Contact us: support@peppernursery.com | 1-800-PLANT-GO</p>
+        </div>
       </div>
     </div>
   );
