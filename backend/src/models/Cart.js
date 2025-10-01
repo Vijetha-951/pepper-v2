@@ -19,10 +19,16 @@ const CartSchema = new mongoose.Schema(
 
 // Instance methods
 CartSchema.methods.getCartTotal = async function() {
-  await this.populate('items.product');
+  // Check if items.product is already populated (has price property)
+  const isPopulated = this.items.length > 0 && this.items[0].product && typeof this.items[0].product === 'object' && this.items[0].product.price !== undefined;
+  
+  if (!isPopulated) {
+    await this.populate('items.product');
+  }
+  
   let total = 0;
   for (const item of this.items) {
-    if (item.product) {
+    if (item.product && item.product.price) {
       total += item.product.price * item.quantity;
     }
   }

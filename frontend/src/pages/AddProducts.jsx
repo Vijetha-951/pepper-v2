@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
-import productService from "../services/productService";
+import { auth } from "../config/firebase";
+import { useAuthState } from "react-firebase-hooks/auth";
 
 export default function AddProducts() {
+  const [user] = useAuthState(auth);
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -10,8 +12,10 @@ export default function AddProducts() {
 
   // Fetch all products on mount
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    if (user) {
+      fetchProducts();
+    }
+  }, [user]);
 
   // Filter products based on search and type filter
   useEffect(() => {
@@ -20,7 +24,7 @@ export default function AddProducts() {
     if (searchTerm) {
       filtered = filtered.filter(product =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchTerm.toLowerCase())
+        (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
     
@@ -34,17 +38,77 @@ export default function AddProducts() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await productService.searchProducts({ query: '', type: '', page: 1, limit: 100 });
-      setProducts(res.products || res || []);
+      const token = await user.getIdToken();
+      const response = await fetch('/api/user/products', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch products');
+      }
+
+      const data = await response.json();
+      setProducts(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Fetch products error:", err);
-      alert("Failed to fetch products. Please check your connection and try again.");
+      alert(`Failed to fetch products: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
+  const addToCart = async (productId, productName) => {
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch('/api/cart', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          product_id: productId,
+          quantity: 1
+        })
+      });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to add to cart');
+      }
+
+      alert(`${productName} added to cart successfully!`);
+    } catch (err) {
+      console.error("Add to cart error:", err);
+      alert(`Failed to add to cart: ${err.message}`);
+    }
+  };
+
+
+
+  if (!user) {
+    return (
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "center", 
+        alignItems: "center", 
+        minHeight: "100vh",
+        backgroundColor: "#f5f5f5"
+      }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ 
+            fontSize: "2rem", 
+            marginBottom: "1rem" 
+          }}>⏳</div>
+          <p style={{ color: "#666" }}>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ 
@@ -204,6 +268,7 @@ export default function AddProducts() {
                 </div>
                 
                 <button
+                  onClick={() => addToCart(p._id, p.name)}
                   disabled={p.stock === 0}
                   style={{
                     width: "100%",

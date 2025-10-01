@@ -78,10 +78,21 @@ router.get('/:user_id', requireAuth, asyncHandler(async (req, res) => {
     return res.status(200).json({ items: [], total: 0 });
   }
 
+  // Filter out items where product no longer exists (was deleted)
+  const validItems = cart.items.filter(item => item.product !== null);
+  const removedItemsCount = cart.items.length - validItems.length;
+  
+  // If some products were removed, clean up the cart
+  if (removedItemsCount > 0) {
+    cart.items = validItems;
+    await cart.save();
+    console.log(`⚠️ Cleaned up ${removedItemsCount} invalid items from cart for user ${user_id}`);
+  }
+
   // Calculate subtotals and total
   const cartWithSubtotals = {
     ...cart.toObject(),
-    items: cart.items.map(item => ({
+    items: validItems.map(item => ({
       ...item.toObject(),
       subtotal: item.product ? item.product.price * item.quantity : 0
     }))

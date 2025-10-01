@@ -20,6 +20,7 @@ import ForgotPassword from "./pages/ForgotPassword.jsx";
 import Cart from "./pages/Cart.jsx";
 import Checkout from "./pages/Checkout.jsx";
 import Orders from "./pages/Orders.jsx";
+import PaymentSuccess from "./pages/PaymentSuccess.jsx";
 
 function App() {
   return (
@@ -54,6 +55,12 @@ function App() {
           <>
             <Navbar />
             <Orders />
+          </>
+        } />
+        <Route path="/payment-success" element={
+          <>
+            <Navbar />
+            <PaymentSuccess />
           </>
         } />
         

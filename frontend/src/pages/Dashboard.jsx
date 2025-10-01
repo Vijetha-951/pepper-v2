@@ -103,12 +103,8 @@ export default function Dashboard() {
       setSuccessMessage(`${productName} added to cart!`);
 
       // Show inline "View Cart" prompt near this product
+      // It will stay visible until another product is added
       setCartPrompt({ productId, visible: true });
-
-      // Auto-hide the prompt after 4 seconds
-      setTimeout(() => {
-        setCartPrompt({ productId: null, visible: false });
-      }, 4000);
       
       // Update product stock locally
       setProducts(prev => prev.map(p => 
@@ -708,6 +704,22 @@ export default function Dashboard() {
                           }}
                         >
                           View Cart
+                        </button>
+                        <button
+                          onClick={() => setCartPrompt({ productId: null, visible: false })}
+                          style={{
+                            backgroundColor: 'transparent',
+                            color: '#6b7280',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '1.2rem',
+                            padding: '0 0.25rem',
+                            lineHeight: 1,
+                            fontWeight: 'bold'
+                          }}
+                          title="Close"
+                        >
+                          ×
                         </button>
                       </div>
                     )}

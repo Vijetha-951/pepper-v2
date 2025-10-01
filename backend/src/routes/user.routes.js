@@ -4,6 +4,7 @@ import Product from '../models/Product.js';
 import Order from '../models/Order.js';
 import User from '../models/User.js';
 import { requireAuth } from '../middleware/auth.js';
+import { sendOrderConfirmationEmail } from '../services/emailService.js';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -242,6 +243,21 @@ router.post('/orders', requireCustomer, asyncHandler(async (req, res) => {
   await Promise.all(orderItems.map(i =>
     Product.updateOne({ _id: i.product }, { $inc: { stock: -i.quantity } })
   ));
+
+  // Populate product details for the response
+  await order.populate('items.product', 'name image price');
+
+  // Send order confirmation email for COD orders (non-blocking)
+  if (payment.method === 'COD') {
+    sendOrderConfirmationEmail({
+      to: me.email,
+      userName: me.name || `${me.firstName} ${me.lastName}`,
+      order: order
+    }).catch(err => {
+      console.error('Failed to send order confirmation email:', err);
+      // Don't fail the request if email fails
+    });
+  }
 
   res.status(201).json(order);
 }));

@@ -2,6 +2,7 @@ import express from 'express';
 import asyncHandler from 'express-async-handler';
 import Product from '../models/Product.js';
 import Order from '../models/Order.js';
+import User from '../models/User.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -190,7 +191,7 @@ router.get('/admin/stock', requireAuth, requireAdmin, asyncHandler(async (req, r
 router.post('/orders', requireAuth, asyncHandler(async (req, res) => {
   try {
     const { items, shippingAddress, notes } = req.body;
-    const userId = req.user.mongoId || req.user._id;
+    const firebaseUid = req.user.uid;
     
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ 
@@ -199,10 +200,19 @@ router.post('/orders', requireAuth, asyncHandler(async (req, res) => {
       });
     }
 
-    if (!userId) {
+    if (!firebaseUid) {
       return res.status(401).json({
         success: false,
         message: 'User authentication required'
+      });
+    }
+
+    // Get user document by Firebase UID to get MongoDB _id
+    const user = await User.findOne({ firebaseUid });
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
       });
     }
 
@@ -247,7 +257,7 @@ router.post('/orders', requireAuth, asyncHandler(async (req, res) => {
 
     // Create order
     const order = await Order.create({
-      user: userId,
+      user: user._id, // Use MongoDB ObjectId instead of Firebase UID
       items: orderItems,
       totalAmount,
       status: 'PENDING',

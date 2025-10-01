@@ -255,8 +255,9 @@ const Checkout = () => {
           const err = await createRes.json().catch(() => ({ message: 'Failed to place COD order' }));
           throw new Error(err.message || 'Failed to place COD order');
         }
+        const orderData = await createRes.json();
         setSuccess('Order placed with Cash on Delivery!');
-        setTimeout(() => navigate('/orders'), 1200);
+        setTimeout(() => navigate('/payment-success', { state: { order: orderData } }), 1200);
         return;
       }
 
@@ -278,7 +279,11 @@ const Checkout = () => {
 
       if (!orderResponse.ok) {
         const errorData = await orderResponse.json();
-        throw new Error(errorData.message || 'Failed to create order');
+        console.error('Order creation failed:', errorData);
+        const errorMsg = errorData.error 
+          ? `${errorData.message}: ${errorData.error}` 
+          : errorData.message || 'Failed to create order';
+        throw new Error(errorMsg);
       }
 
       const { order_id, amount, currency, key } = await orderResponse.json();
@@ -309,10 +314,10 @@ const Checkout = () => {
             });
 
             if (verifyResponse.ok) {
-              await verifyResponse.json();
+              const verifyData = await verifyResponse.json();
               setSuccess('Payment successful! Order has been placed.');
               setTimeout(() => {
-                navigate('/orders');
+                navigate('/payment-success', { state: { order: verifyData.order } });
               }, 2000);
             } else {
               const errorData = await verifyResponse.json();

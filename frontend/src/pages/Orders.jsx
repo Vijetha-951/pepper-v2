@@ -29,7 +29,7 @@ const Orders = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setOrders(data.orders);
+        setOrders(data);
       } else {
         setError('Failed to fetch orders');
       }
