@@ -82,10 +82,9 @@ router.post('/addresses', requireCustomer, asyncHandler(async (req, res) => {
   state = String(state).trim();
   pincode = String(pincode).trim();
   phone = String(phone).trim();
-  // Normalize common formats: remove spaces/dashes; keep leading + for phone
+  // Normalize common formats: remove spaces/dashes
   const normalizedPincode = pincode.replace(/\D/g, ''); // digits only
-  const normalizedPhone = phone.replace(/[^\d+]/g, '');
-  const phoneDigits = normalizedPhone.startsWith('+') ? normalizedPhone.slice(1) : normalizedPhone;
+  const normalizedPhone = phone.replace(/\D/g, ''); // digits only
 
   if (!line1 || !district || !normalizedPincode) {
     return res.status(400).json({ message: 'Address Line 1, district, and pincode are required' });
@@ -93,7 +92,8 @@ router.post('/addresses', requireCustomer, asyncHandler(async (req, res) => {
   if (line1.length < 3) return res.status(400).json({ message: 'Address Line 1 must be at least 3 characters' });
   if (district.length < 2) return res.status(400).json({ message: 'District must be at least 2 characters' });
   if (!/^\d{6}$/.test(normalizedPincode)) return res.status(400).json({ message: 'Pincode must be a 6-digit number' });
-  if (phone && !(phoneDigits.length >= 7 && phoneDigits.length <= 15)) return res.status(400).json({ message: 'Phone must be 7-15 digits (optionally prefixed with +)' });
+  if (!normalizedPhone) return res.status(400).json({ message: 'Phone number is required' });
+  if (!/^\d{10}$/.test(normalizedPhone)) return res.status(400).json({ message: 'Phone number must be exactly 10 digits' });
 
   // Ensure user exists, create minimal record if missing
   let me = await User.findOne({ email: req.user.email });
@@ -132,8 +132,7 @@ router.put('/addresses/:id', requireCustomer, asyncHandler(async (req, res) => {
   phone = String(phone).trim();
   // Normalize
   const normalizedPincode = pincode.replace(/\D/g, '');
-  const normalizedPhone = phone.replace(/[^\d+]/g, '');
-  const phoneDigits = normalizedPhone.startsWith('+') ? normalizedPhone.slice(1) : normalizedPhone;
+  const normalizedPhone = phone.replace(/\D/g, '');
 
   if (!line1 || !district || !normalizedPincode) {
     return res.status(400).json({ message: 'Address Line 1, district, and pincode are required' });
@@ -141,7 +140,8 @@ router.put('/addresses/:id', requireCustomer, asyncHandler(async (req, res) => {
   if (line1.length < 3) return res.status(400).json({ message: 'Address Line 1 must be at least 3 characters' });
   if (district.length < 2) return res.status(400).json({ message: 'District must be at least 2 characters' });
   if (!/^\d{6}$/.test(normalizedPincode)) return res.status(400).json({ message: 'Pincode must be a 6-digit number' });
-  if (phone && !(phoneDigits.length >= 7 && phoneDigits.length <= 15)) return res.status(400).json({ message: 'Phone must be 7-15 digits (optionally prefixed with +)' });
+  if (!normalizedPhone) return res.status(400).json({ message: 'Phone number is required' });
+  if (!/^\d{10}$/.test(normalizedPhone)) return res.status(400).json({ message: 'Phone number must be exactly 10 digits' });
 
   const me = await User.findOne({ email: req.user.email });
   const addr = me.addresses.id(id);

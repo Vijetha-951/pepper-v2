@@ -173,6 +173,10 @@ const Checkout = () => {
 
   const validateAddress = () => {
     const { line1, district, state, pincode, phone } = shippingAddress;
+    
+    // Clear any previous errors
+    setError('');
+    
     if (!line1.trim() || !district.trim() || !pincode.trim()) {
       setError('Please fill in required fields: Address Line 1, District, Pincode');
       return false;
@@ -193,10 +197,18 @@ const Checkout = () => {
       setError('Pincode must be a 6-digit number');
       return false;
     }
-    if (!/^\d{10}$/.test(String(phone || '').trim())) {
+    
+    // Phone is required and must be exactly 10 digits
+    const phoneStr = String(phone || '').trim();
+    if (!phoneStr) {
+      setError('Phone number is required');
+      return false;
+    }
+    if (!/^\d{10}$/.test(phoneStr)) {
       setError('Phone number must be exactly 10 digits');
       return false;
     }
+    
     return true;
   };
 
@@ -483,7 +495,7 @@ const Checkout = () => {
               </div>
 
               <div>
-                <label htmlFor="phone">Phone</label>
+                <label htmlFor="phone">Phone *</label>
                 <input
                   type="tel"
                   id="phone"
