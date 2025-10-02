@@ -232,7 +232,8 @@ export default function Dashboard() {
     ...(user.role === 'admin' ? [
       { id: 'admin-users', label: 'User Management', icon: User },
       { id: 'admin-products', label: 'Product Management', icon: Package },
-      { id: 'admin-stock', label: 'Stock Management', icon: Package2 }
+      { id: 'admin-stock', label: 'Stock Management', icon: Package2 },
+      { id: 'admin-orders', label: 'All Orders', icon: ShoppingCart }
     ] : []),
     { id: 'profile', label: 'Profile', icon: User }
   ];
@@ -1064,6 +1065,14 @@ export default function Dashboard() {
             <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' }}>Admin • Stock Management</h3>
             <iframe title="AdminStockManagement" src="/admin-stock" style={{ width: '100%', height: '70vh', border: 'none', borderRadius: 8 }} />
             <p style={{ color: '#6b7280', fontSize: 12, marginTop: 8 }}>Open full view at /admin-stock if the embed is blocked by CSP.</p>
+          </div>
+        );
+      case 'admin-orders':
+        return (
+          <div style={cardStyle}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' }}>Admin • All Orders</h3>
+            <iframe title="AdminAllOrders" src="/admin-orders" style={{ width: '100%', height: '70vh', border: 'none', borderRadius: 8 }} />
+            <p style={{ color: '#6b7280', fontSize: 12, marginTop: 8 }}>Open full view at /admin-orders if the embed is blocked by CSP.</p>
           </div>
         );
       default:

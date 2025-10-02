@@ -14,6 +14,7 @@ import DeliveryDashboard from "./pages/DeliveryDashboard.jsx";
 import AdminUserManagement from "./pages/AdminUserManagement.jsx";
 import AdminProductManagement from "./pages/AdminProductManagement.jsx";
 import AdminStockManagement from "./pages/AdminStockManagement.jsx";
+import AdminAllOrders from "./pages/AdminAllOrders.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 
 // Shopping flow pages
@@ -81,6 +82,7 @@ function App() {
         <Route path="/admin-users" element={<AdminUserManagement />} />
         <Route path="/admin-products" element={<AdminProductManagement />} />
         <Route path="/admin-stock" element={<AdminStockManagement />} />
+        <Route path="/admin-orders" element={<AdminAllOrders />} />
       </Routes>
     </Router>
   );
