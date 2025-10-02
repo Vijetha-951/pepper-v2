@@ -1160,7 +1160,14 @@ export default function Dashboard() {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => {
+                  // Navigate to dedicated Orders page for "My Orders"
+                  if (item.id === 'orders') {
+                    navigate('/orders');
+                  } else {
+                    setActiveTab(item.id);
+                  }
+                }}
                 style={{
                   width: '100%',
                   display: 'flex',
