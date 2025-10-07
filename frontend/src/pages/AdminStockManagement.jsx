@@ -68,8 +68,11 @@ export default function AdminStockManagement() {
 
   useEffect(() => {
     fetchStockData();
+  }, [filters.search, filters.status, filters.type, filters.sortBy, filters.sortOrder, filters.page, filters.limit]);
+
+  useEffect(() => {
     fetchLowStockAlerts();
-  }, [filters]);
+  }, [filters.status]); // Only refetch alerts when status filter changes
 
   const fetchStockData = async () => {
     setLoading(true);
@@ -148,9 +151,8 @@ export default function AdminStockManagement() {
         ...cardStyle,
         background: 'linear-gradient(135deg, #10b981, #059669)',
         color: 'white',
-        textAlign: 'center',
-        cursor: 'pointer'
-      }} onClick={() => setFilters(prev => ({ ...prev, status: 'in stock', page: 1 }))}>
+        textAlign: 'center'
+      }}>
         <Package2 size={32} style={{ marginBottom: '0.5rem' }} />
         <h3 style={{ fontSize: '2rem', fontWeight: 'bold', margin: '0.5rem 0' }}>
           {stockData.summary.inStock}
@@ -162,9 +164,8 @@ export default function AdminStockManagement() {
         ...cardStyle,
         background: 'linear-gradient(135deg, #f59e0b, #d97706)',
         color: 'white',
-        textAlign: 'center',
-        cursor: 'pointer'
-      }} onClick={() => setFilters(prev => ({ ...prev, status: 'low stock', page: 1 }))}>
+        textAlign: 'center'
+      }}>
         <AlertTriangle size={32} style={{ marginBottom: '0.5rem' }} />
         <h3 style={{ fontSize: '2rem', fontWeight: 'bold', margin: '0.5rem 0' }}>
           {stockData.summary.lowStock}
@@ -176,9 +177,8 @@ export default function AdminStockManagement() {
         ...cardStyle,
         background: 'linear-gradient(135deg, #ef4444, #dc2626)',
         color: 'white',
-        textAlign: 'center',
-        cursor: 'pointer'
-      }} onClick={() => setFilters(prev => ({ ...prev, status: 'out of stock', page: 1 }))}>
+        textAlign: 'center'
+      }}>
         <AlertTriangle size={32} style={{ marginBottom: '0.5rem' }} />
         <h3 style={{ fontSize: '2rem', fontWeight: 'bold', margin: '0.5rem 0' }}>
           {stockData.summary.outOfStock}

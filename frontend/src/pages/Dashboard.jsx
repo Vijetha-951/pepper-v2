@@ -1185,7 +1185,23 @@ export default function Dashboard() {
           <div style={cardStyle}>
             <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' }}>Admin • Stock Management</h3>
             <iframe title="AdminStockManagement" src="/admin-stock" style={{ width: '100%', height: '70vh', border: 'none', borderRadius: 8 }} />
-            <p style={{ color: '#6b7280', fontSize: 12, marginTop: 8 }}>Open full view at /admin-stock if the embed is blocked by CSP.</p>
+            <p style={{ color: '#6b7280', fontSize: 12, marginTop: 8 }}>
+              If the embed is blocked by CSP, {' '}
+              <a 
+                href="/admin-stock" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ 
+                  color: '#10b981', 
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                open full view here
+              </a>
+              .
+            </p>
           </div>
         );
       case 'admin-orders':
@@ -1294,6 +1310,9 @@ export default function Dashboard() {
                   // Navigate to dedicated Orders page for "My Orders"
                   if (item.id === 'orders') {
                     navigate('/orders');
+                  } else if (item.id === 'admin-stock') {
+                    // Navigate to full Stock Management page
+                    navigate('/admin-stock');
                   } else {
                     setActiveTab(item.id);
                   }
