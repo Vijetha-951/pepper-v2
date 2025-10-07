@@ -52,12 +52,7 @@ function App() {
             <Checkout />
           </>
         } />
-        <Route path="/orders" element={
-          <>
-            <Navbar />
-            <Orders />
-          </>
-        } />
+        <Route path="/orders" element={<Orders />} />
         <Route path="/payment-success" element={
           <>
             <Navbar />

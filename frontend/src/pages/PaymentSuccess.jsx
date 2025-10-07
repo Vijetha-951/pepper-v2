@@ -257,7 +257,7 @@ const PaymentSuccess = () => {
             View All Orders
           </button>
           <button 
-            onClick={() => navigate('/add-products')} 
+            onClick={() => navigate('/user/dashboard', { state: { activeTab: 'products' } })} 
             className="btn-primary"
           >
             Continue Shopping

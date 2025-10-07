@@ -62,7 +62,7 @@ router.post('/products', requireAuth, requireAdmin, asyncHandler(async (req, res
 // GET /api/admin/stock - Fetch all products with enhanced stock information
 router.get('/admin/stock', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
   try {
-    const { status, type, search, sortBy, sortOrder } = req.query;
+    const { status, type, search, sortBy, sortOrder, page = 1, limit = 10 } = req.query;
     
     let filter = {};
     
@@ -164,9 +164,10 @@ router.get('/admin/stock', requireAuth, requireAdmin, asyncHandler(async (req, r
       });
     }
 
-    // Calculate summary statistics
+    // Calculate summary statistics (before pagination)
+    const totalItems = stockData.length;
     const summary = {
-      total: stockData.length,
+      total: totalItems,
       inStock: stockData.filter(p => p.status === 'In Stock').length,
       lowStock: stockData.filter(p => p.status === 'Low Stock').length,
       outOfStock: stockData.filter(p => p.status === 'Out of Stock').length,
@@ -174,10 +175,28 @@ router.get('/admin/stock', requireAuth, requireAdmin, asyncHandler(async (req, r
       totalInventoryItems: stockData.reduce((sum, p) => sum + p.available_stock, 0)
     };
 
+    // Apply pagination
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const startIndex = (pageNum - 1) * limitNum;
+    const endIndex = startIndex + limitNum;
+    const paginatedProducts = stockData.slice(startIndex, endIndex);
+
+    // Calculate pagination info
+    const pagination = {
+      currentPage: pageNum,
+      totalPages: Math.ceil(totalItems / limitNum),
+      totalItems: totalItems,
+      itemsPerPage: limitNum,
+      hasNextPage: endIndex < totalItems,
+      hasPrevPage: pageNum > 1
+    };
+
     res.json({ 
       success: true, 
-      products: stockData,
-      summary 
+      products: paginatedProducts,
+      summary,
+      pagination
     });
   } catch (error) {
     res.status(500).json({ 

@@ -8,6 +8,7 @@ const AddressSchema = new mongoose.Schema(
     district: String,
     state: String,
     pincode: String,
+    phone: String,
   },
   { _id: false }
 );

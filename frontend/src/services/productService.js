@@ -123,14 +123,16 @@ class ProductService {
   // Stock Management Functions
   
   // Get stock overview with enhanced information
-  async getStockOverview({ status = '', type = '', search = '', sortBy = '', sortOrder = 'asc' } = {}) {
+  async getStockOverview({ status = '', type = '', search = '', sortBy = '', sortOrder = 'asc', page = 1, limit = 10 } = {}) {
     try {
       const params = new URLSearchParams({
         ...(status && { status }),
         ...(type && { type }),
         ...(search && { search }),
         ...(sortBy && { sortBy }),
-        ...(sortOrder && { sortOrder })
+        ...(sortOrder && { sortOrder }),
+        page: page.toString(),
+        limit: limit.toString()
       });
 
       const response = await apiFetch(`/api/admin/stock?${params}`, {

@@ -28,12 +28,14 @@ router.put('/me', requireCustomer, asyncHandler(async (req, res) => {
     place: address.line1 ?? place,
     district: address.district ?? district,
     pincode: address.pincode ?? pincode,
+    phone: address.phone ?? phone,
     address: {
       line1: address.line1 || '',
       line2: address.line2 || '',
       district: address.district || '',
       state: address.state || '',
       pincode: address.pincode || '',
+      phone: address.phone || '',
     }
   } : {};
 
@@ -112,10 +114,11 @@ router.post('/addresses', requireCustomer, asyncHandler(async (req, res) => {
 
   // If it is the first address, set as primary and fill legacy fields
   if (wasEmpty) {
-    me.address = { line1, line2, district, state, pincode: normalizedPincode };
+    me.address = { line1, line2, district, state, pincode: normalizedPincode, phone: normalizedPhone };
     me.place = line1;
     me.district = district;
     me.pincode = normalizedPincode;
+    me.phone = normalizedPhone;
   }
 
   await me.save();
@@ -175,10 +178,12 @@ router.post('/addresses/:id/select', requireCustomer, asyncHandler(async (req, r
     district: addr.district || '',
     state: addr.state || '',
     pincode: addr.pincode || '',
+    phone: addr.phone || '',
   };
   me.place = addr.line1 || '';
   me.district = addr.district || '';
   me.pincode = addr.pincode || '';
+  me.phone = addr.phone || '';
 
   await me.save();
   res.json({ primary: me.address, legacy: { place: me.place, district: me.district, pincode: me.pincode } });

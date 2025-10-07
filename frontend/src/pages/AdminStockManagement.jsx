@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Package2, TrendingUp, AlertTriangle, RotateCcw, Eye, Plus, Filter, RefreshCw, Loader2, BarChart3 } from 'lucide-react';
+import { Search, Package2, TrendingUp, AlertTriangle, RotateCcw, Eye, Plus, Filter, RefreshCw, Loader2, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
 import productService from '../services/productService';
 
 // CSS for animations
@@ -41,6 +41,12 @@ export default function AdminStockManagement() {
       outOfStock: 0,
       totalValue: 0,
       totalInventoryItems: 0
+    },
+    pagination: {
+      currentPage: 1,
+      totalPages: 1,
+      totalItems: 0,
+      itemsPerPage: 10
     }
   });
   
@@ -49,7 +55,9 @@ export default function AdminStockManagement() {
     status: '', // '', 'in stock', 'low stock', 'out of stock'
     type: '', // '', 'Bush', 'Climber'
     sortBy: 'name', // 'name', 'available_stock', 'total_stock', 'price'
-    sortOrder: 'asc' // 'asc', 'desc'
+    sortOrder: 'asc', // 'asc', 'desc'
+    page: 1,
+    limit: 10
   });
   
   const [loading, setLoading] = useState(false);
@@ -142,7 +150,7 @@ export default function AdminStockManagement() {
         color: 'white',
         textAlign: 'center',
         cursor: 'pointer'
-      }} onClick={() => setFilters(prev => ({ ...prev, status: 'in stock' }))}>
+      }} onClick={() => setFilters(prev => ({ ...prev, status: 'in stock', page: 1 }))}>
         <Package2 size={32} style={{ marginBottom: '0.5rem' }} />
         <h3 style={{ fontSize: '2rem', fontWeight: 'bold', margin: '0.5rem 0' }}>
           {stockData.summary.inStock}
@@ -156,7 +164,7 @@ export default function AdminStockManagement() {
         color: 'white',
         textAlign: 'center',
         cursor: 'pointer'
-      }} onClick={() => setFilters(prev => ({ ...prev, status: 'low stock' }))}>
+      }} onClick={() => setFilters(prev => ({ ...prev, status: 'low stock', page: 1 }))}>
         <AlertTriangle size={32} style={{ marginBottom: '0.5rem' }} />
         <h3 style={{ fontSize: '2rem', fontWeight: 'bold', margin: '0.5rem 0' }}>
           {stockData.summary.lowStock}
@@ -170,7 +178,7 @@ export default function AdminStockManagement() {
         color: 'white',
         textAlign: 'center',
         cursor: 'pointer'
-      }} onClick={() => setFilters(prev => ({ ...prev, status: 'out of stock' }))}>
+      }} onClick={() => setFilters(prev => ({ ...prev, status: 'out of stock', page: 1 }))}>
         <AlertTriangle size={32} style={{ marginBottom: '0.5rem' }} />
         <h3 style={{ fontSize: '2rem', fontWeight: 'bold', margin: '0.5rem 0' }}>
           {stockData.summary.outOfStock}
@@ -207,7 +215,7 @@ export default function AdminStockManagement() {
           <Filter size={20} /> Filters & Search
         </h3>
         <button
-          onClick={() => setFilters({ search: '', status: '', type: '', sortBy: 'name', sortOrder: 'asc' })}
+          onClick={() => setFilters({ search: '', status: '', type: '', sortBy: 'name', sortOrder: 'asc', page: 1, limit: 10 })}
           style={{
             padding: '0.5rem 1rem',
             background: '#f3f4f6',
@@ -236,7 +244,7 @@ export default function AdminStockManagement() {
             type="text"
             placeholder="Search products..."
             value={filters.search}
-            onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+            onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }))}
             style={{
               width: '100%',
               padding: '0.75rem 0.75rem 0.75rem 2.5rem',
@@ -249,7 +257,7 @@ export default function AdminStockManagement() {
 
         <select
           value={filters.status}
-          onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+          onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value, page: 1 }))}
           style={{
             padding: '0.75rem',
             border: '1px solid #d1d5db',
@@ -265,7 +273,7 @@ export default function AdminStockManagement() {
 
         <select
           value={filters.type}
-          onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+          onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value, page: 1 }))}
           style={{
             padding: '0.75rem',
             border: '1px solid #d1d5db',
@@ -282,7 +290,7 @@ export default function AdminStockManagement() {
           value={`${filters.sortBy}-${filters.sortOrder}`}
           onChange={(e) => {
             const [sortBy, sortOrder] = e.target.value.split('-');
-            setFilters(prev => ({ ...prev, sortBy, sortOrder }));
+            setFilters(prev => ({ ...prev, sortBy, sortOrder, page: 1 }));
           }}
           style={{
             padding: '0.75rem',
@@ -535,15 +543,151 @@ export default function AdminStockManagement() {
         paddingTop: '1rem',
         borderTop: '1px solid #e5e7eb',
         fontSize: '0.875rem',
-        color: '#6b7280'
+        color: '#6b7280',
+        flexWrap: 'wrap',
+        gap: '1rem'
       }}>
         <span>
-          Showing {stockData.products.length} of {stockData.summary.total} products
+          Showing {((stockData.pagination?.currentPage || 1) - 1) * (stockData.pagination?.itemsPerPage || 10) + 1} - {Math.min((stockData.pagination?.currentPage || 1) * (stockData.pagination?.itemsPerPage || 10), stockData.pagination?.totalItems || stockData.summary.total)} of {stockData.pagination?.totalItems || stockData.summary.total} products
         </span>
         <span>
           Total inventory value: ₹{stockData.summary.totalValue?.toLocaleString() || 0}
         </span>
       </div>
+
+      {/* Pagination Controls */}
+      {stockData.pagination && stockData.pagination.totalPages > 1 && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.5rem',
+          marginTop: '1.5rem',
+          paddingTop: '1rem',
+          borderTop: '1px solid #e5e7eb'
+        }}>
+          <button
+            onClick={() => setFilters(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+            disabled={filters.page === 1 || loading}
+            style={{
+              padding: '0.5rem 0.75rem',
+              background: filters.page === 1 ? '#f9fafb' : 'white',
+              color: filters.page === 1 ? '#9ca3af' : '#374151',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              cursor: filters.page === 1 ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem',
+              fontSize: '0.875rem',
+              fontWeight: '500'
+            }}
+          >
+            <ChevronLeft size={16} />
+            Previous
+          </button>
+
+          <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+            {(() => {
+              const currentPage = stockData.pagination.currentPage;
+              const totalPages = stockData.pagination.totalPages;
+              const pages = [];
+              
+              // Always show first page
+              if (totalPages > 0) {
+                pages.push(1);
+              }
+              
+              // Show pages around current page
+              for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+                if (!pages.includes(i)) {
+                  pages.push(i);
+                }
+              }
+              
+              // Always show last page
+              if (totalPages > 1 && !pages.includes(totalPages)) {
+                pages.push(totalPages);
+              }
+              
+              // Add ellipsis
+              const pageButtons = [];
+              for (let i = 0; i < pages.length; i++) {
+                if (i > 0 && pages[i] - pages[i - 1] > 1) {
+                  pageButtons.push(
+                    <span key={`ellipsis-${i}`} style={{ padding: '0.5rem', color: '#9ca3af' }}>
+                      ...
+                    </span>
+                  );
+                }
+                pageButtons.push(
+                  <button
+                    key={pages[i]}
+                    onClick={() => setFilters(prev => ({ ...prev, page: pages[i] }))}
+                    disabled={loading}
+                    style={{
+                      padding: '0.5rem 0.75rem',
+                      background: currentPage === pages[i] ? '#10b981' : 'white',
+                      color: currentPage === pages[i] ? 'white' : '#374151',
+                      border: '1px solid',
+                      borderColor: currentPage === pages[i] ? '#10b981' : '#d1d5db',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: '500',
+                      minWidth: '40px'
+                    }}
+                  >
+                    {pages[i]}
+                  </button>
+                );
+              }
+              
+              return pageButtons;
+            })()}
+          </div>
+
+          <button
+            onClick={() => setFilters(prev => ({ ...prev, page: Math.min(stockData.pagination.totalPages, prev.page + 1) }))}
+            disabled={filters.page >= stockData.pagination.totalPages || loading}
+            style={{
+              padding: '0.5rem 0.75rem',
+              background: filters.page >= stockData.pagination.totalPages ? '#f9fafb' : 'white',
+              color: filters.page >= stockData.pagination.totalPages ? '#9ca3af' : '#374151',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              cursor: filters.page >= stockData.pagination.totalPages ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem',
+              fontSize: '0.875rem',
+              fontWeight: '500'
+            }}
+          >
+            Next
+            <ChevronRight size={16} />
+          </button>
+
+          <select
+            value={filters.limit}
+            onChange={(e) => setFilters(prev => ({ ...prev, limit: parseInt(e.target.value), page: 1 }))}
+            style={{
+              padding: '0.5rem 0.75rem',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              fontSize: '0.875rem',
+              marginLeft: '1rem',
+              cursor: 'pointer'
+            }}
+          >
+            <option value={5}>5 per page</option>
+            <option value={10}>10 per page</option>
+            <option value={20}>20 per page</option>
+            <option value={50}>50 per page</option>
+            <option value={100}>100 per page</option>
+          </select>
+        </div>
+      )}
     </div>
   );
 

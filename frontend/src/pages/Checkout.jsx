@@ -126,7 +126,8 @@ const Checkout = () => {
           line2: shippingAddress.line2 || '',
           district: shippingAddress.district || '',
           state: shippingAddress.state || '',
-          pincode: shippingAddress.pincode || ''
+          pincode: shippingAddress.pincode || '',
+          phone: shippingAddress.phone || ''
         },
         place: shippingAddress.line1 || '',
         district: shippingAddress.district || '',
