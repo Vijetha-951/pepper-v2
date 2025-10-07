@@ -219,7 +219,10 @@ router.post('/verify', requireAuth, asyncHandler(async (req, res) => {
         await Product.findByIdAndUpdate(
           item.product._id,
           {
-            $inc: { available_stock: -item.quantity }
+            $inc: { 
+              available_stock: -item.quantity,
+              stock: -item.quantity  // Keep legacy stock field in sync
+            }
           },
           { session }
         );

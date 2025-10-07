@@ -15,6 +15,9 @@ export default function Dashboard() {
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [cartPrompt, setCartPrompt] = useState({ productId: null, visible: false });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showHeaderSearch, setShowHeaderSearch] = useState(false);
   const [stats, setStats] = useState({
     totalOrders: 15,
     pendingDeliveries: 3,
@@ -62,6 +65,27 @@ export default function Dashboard() {
       }
     };
   }, []);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showHeaderSearch || showNotifications) {
+        const target = event.target;
+        const isClickInsideDropdown = target.closest('[data-dropdown]');
+        const isClickOnButton = target.closest('[data-dropdown-button]');
+        
+        if (!isClickInsideDropdown && !isClickOnButton) {
+          setShowHeaderSearch(false);
+          setShowNotifications(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showHeaderSearch, showNotifications]);
 
   const fetchProducts = async () => {
     setProductsLoading(true);
@@ -387,6 +411,13 @@ export default function Dashboard() {
           </div>
         );
       case 'products':
+        // Filter products based on search query
+        const filteredProducts = products.filter(product => 
+          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.type?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
         return (
           <div style={cardStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -433,6 +464,63 @@ export default function Dashboard() {
                   Refresh
                 </button>
               </div>
+            </div>
+
+            {/* Search Bar */}
+            <div style={{ 
+              position: 'relative', 
+              marginBottom: '1.5rem' 
+            }}>
+              <Search size={18} style={{ 
+                position: 'absolute', 
+                left: '12px', 
+                top: '50%', 
+                transform: 'translateY(-50%)', 
+                color: '#6b7280',
+                pointerEvents: 'none'
+              }} />
+              <input
+                type="text"
+                placeholder="Search products by name, type, or description..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 0.75rem 0.75rem 2.5rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  outline: 'none',
+                  transition: 'all 0.3s ease'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#10b981';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#d1d5db';
+                  e.target.style.boxShadow = 'none';
+                }}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: '#6b7280',
+                    cursor: 'pointer',
+                    fontSize: '1.25rem',
+                    padding: '0.25rem'
+                  }}
+                >
+                  ×
+                </button>
+              )}
             </div>
 
             {/* Success/Error Messages */}
@@ -521,13 +609,45 @@ export default function Dashboard() {
                   Refresh Products
                 </button>
               </div>
+            ) : filteredProducts.length === 0 ? (
+              <div style={{ 
+                padding: '3rem', 
+                backgroundColor: '#f9fafb', 
+                borderRadius: '8px', 
+                textAlign: 'center',
+                border: '2px dashed #d1d5db'
+              }}>
+                <Search size={48} color="#9ca3af" style={{ marginBottom: '1rem' }} />
+                <h4 style={{ color: '#374151', marginBottom: '0.5rem' }}>No Products Found</h4>
+                <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
+                  No products match your search "{searchQuery}". Try a different search term.
+                </p>
+                <button
+                  onClick={() => setSearchQuery('')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  Clear Search
+                </button>
+              </div>
             ) : (
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
                 gap: '1.5rem'
               }}>
-                {products.map((product) => (
+                {filteredProducts.map((product) => (
                   <div 
                     key={product._id} 
                     style={{
@@ -1209,10 +1329,8 @@ export default function Dashboard() {
               </button>
             );
           })}
-        </nav>
 
-        {/* Logout Button */}
-        <div style={{ marginTop: 'auto' }}>
+          {/* Logout Button */}
           <button
             onClick={handleLogout}
             style={{
@@ -1220,6 +1338,7 @@ export default function Dashboard() {
               display: 'flex',
               alignItems: 'center',
               padding: '0.75rem 1rem',
+              marginBottom: '0.5rem',
               background: 'rgba(239, 68, 68, 0.2)',
               color: 'white',
               border: 'none',
@@ -1244,7 +1363,7 @@ export default function Dashboard() {
             <LogOut size={18} style={{ marginRight: '0.75rem' }} />
             Logout
           </button>
-        </div>
+        </nav>
       </div>
 
       {/* Main Content */}
@@ -1271,28 +1390,62 @@ export default function Dashboard() {
             </p>
           </div>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button style={{
-              padding: '0.75rem',
-              background: 'white',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}>
-              <Search size={20} color="#6b7280" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', position: 'relative' }}>
+            <button 
+              data-dropdown-button
+              onClick={() => {
+                setShowHeaderSearch(!showHeaderSearch);
+                setShowNotifications(false);
+              }}
+              style={{
+                padding: '0.75rem',
+                background: showHeaderSearch ? '#10b981' : 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!showHeaderSearch) {
+                  e.target.style.background = '#f9fafb';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!showHeaderSearch) {
+                  e.target.style.background = 'white';
+                }
+              }}
+            >
+              <Search size={20} color={showHeaderSearch ? 'white' : '#6b7280'} />
             </button>
             
-            <button style={{
-              position: 'relative',
-              padding: '0.75rem',
-              background: 'white',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}>
-              <Bell size={20} color="#6b7280" />
+            <button 
+              data-dropdown-button
+              onClick={() => {
+                setShowNotifications(!showNotifications);
+                setShowHeaderSearch(false);
+              }}
+              style={{
+                position: 'relative',
+                padding: '0.75rem',
+                background: showNotifications ? '#10b981' : 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!showNotifications) {
+                  e.target.style.background = '#f9fafb';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!showNotifications) {
+                  e.target.style.background = 'white';
+                }
+              }}
+            >
+              <Bell size={20} color={showNotifications ? 'white' : '#6b7280'} />
               {stats.newNotifications > 0 && (
                 <div style={{
                   position: 'absolute',
@@ -1306,6 +1459,200 @@ export default function Dashboard() {
                 }}></div>
               )}
             </button>
+
+            {/* Header Search Dropdown */}
+            {showHeaderSearch && (
+              <div data-dropdown style={{
+                position: 'absolute',
+                top: '100%',
+                right: '0',
+                marginTop: '0.5rem',
+                width: '320px',
+                background: 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
+                padding: '1rem',
+                zIndex: 1000
+              }}>
+                <div style={{ position: 'relative' }}>
+                  <Search size={18} style={{ 
+                    position: 'absolute', 
+                    left: '12px', 
+                    top: '50%', 
+                    transform: 'translateY(-50%)', 
+                    color: '#6b7280',
+                    pointerEvents: 'none'
+                  }} />
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    autoFocus
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 0.75rem 0.75rem 2.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#10b981';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+                {searchQuery && (
+                  <button
+                    onClick={() => {
+                      setActiveTab('products');
+                      setShowHeaderSearch(false);
+                    }}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.5rem',
+                      padding: '0.5rem',
+                      background: '#10b981',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    Search in Products
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Notifications Dropdown */}
+            {showNotifications && (
+              <div data-dropdown style={{
+                position: 'absolute',
+                top: '100%',
+                right: '0',
+                marginTop: '0.5rem',
+                width: '360px',
+                background: 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
+                padding: '1rem',
+                zIndex: 1000,
+                maxHeight: '400px',
+                overflowY: 'auto'
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  marginBottom: '1rem',
+                  paddingBottom: '0.75rem',
+                  borderBottom: '1px solid #e5e7eb'
+                }}>
+                  <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '600', color: '#1f2937' }}>
+                    Notifications
+                  </h4>
+                  {stats.newNotifications > 0 && (
+                    <span style={{
+                      padding: '0.25rem 0.5rem',
+                      background: '#ef4444',
+                      color: 'white',
+                      borderRadius: '12px',
+                      fontSize: '0.75rem',
+                      fontWeight: '600'
+                    }}>
+                      {stats.newNotifications} new
+                    </span>
+                  )}
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{
+                    padding: '0.75rem',
+                    background: '#f0fdf4',
+                    borderRadius: '8px',
+                    border: '1px solid #bbf7d0'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'start', gap: '0.5rem' }}>
+                      <Package size={16} color="#10b981" style={{ marginTop: '2px', flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: '500', color: '#1f2937' }}>
+                          Order Delivered
+                        </p>
+                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#6b7280' }}>
+                          Your order #12345 has been delivered successfully
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    padding: '0.75rem',
+                    background: '#fef3c7',
+                    borderRadius: '8px',
+                    border: '1px solid #fde68a'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'start', gap: '0.5rem' }}>
+                      <Truck size={16} color="#f59e0b" style={{ marginTop: '2px', flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: '500', color: '#1f2937' }}>
+                          Order Shipped
+                        </p>
+                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#6b7280' }}>
+                          Your order #12346 is on the way
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    padding: '0.75rem',
+                    background: '#ede9fe',
+                    borderRadius: '8px',
+                    border: '1px solid #c4b5fd'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'start', gap: '0.5rem' }}>
+                      <Bell size={16} color="#8b5cf6" style={{ marginTop: '2px', flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: '500', color: '#1f2937' }}>
+                          New Products Available
+                        </p>
+                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#6b7280' }}>
+                          Check out our latest pepper varieties
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setShowNotifications(false)}
+                  style={{
+                    width: '100%',
+                    marginTop: '1rem',
+                    padding: '0.5rem',
+                    background: '#f9fafb',
+                    color: '#6b7280',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            )}
           </div>
         </header>
 

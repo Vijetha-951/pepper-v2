@@ -12,7 +12,8 @@ router.get(
     const filter = {};
     if (q) filter.name = { $regex: q, $options: 'i' };
     if (type) filter.type = type;
-    if (available === 'true') filter.stock = { $gt: 0 };
+    // Filter by available_stock instead of stock to hide out-of-stock products
+    if (available === 'true') filter.available_stock = { $gt: 0 };
     if (minPrice || maxPrice) filter.price = {
       ...(minPrice ? { $gte: Number(minPrice) } : {}),
       ...(maxPrice ? { $lte: Number(maxPrice) } : {}),
