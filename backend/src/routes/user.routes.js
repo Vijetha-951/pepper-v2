@@ -279,4 +279,43 @@ router.get('/orders/:id', requireCustomer, asyncHandler(async (req, res) => {
   res.json(o);
 }));
 
+// Cancel order (user can cancel their own order)
+router.delete('/orders/:id', requireCustomer, asyncHandler(async (req, res) => {
+  const me = await User.findOne({ email: req.user.email });
+  
+  // Find the order
+  const order = await Order.findOne({ _id: req.params.id, user: me._id });
+
+  if (!order) {
+    return res.status(404).json({ message: 'Order not found' });
+  }
+
+  // Check if order can be cancelled (only PENDING and APPROVED orders can be cancelled)
+  if (!['PENDING', 'APPROVED'].includes(order.status)) {
+    return res.status(400).json({ 
+      message: `Cannot cancel order with status: ${order.status}. Only PENDING or APPROVED orders can be cancelled.` 
+    });
+  }
+
+  // Restore stock for each item in the order
+  for (const item of order.items) {
+    const product = await Product.findById(item.product);
+    if (product) {
+      // Restore the available stock
+      product.available_stock = (product.available_stock || 0) + item.quantity;
+      product.stock = product.available_stock; // Keep legacy field in sync
+      await product.save();
+    }
+  }
+
+  // Update order status to CANCELLED
+  order.status = 'CANCELLED';
+  await order.save();
+
+  res.status(200).json({
+    message: 'Order cancelled successfully. Stock has been restored.',
+    order
+  });
+}));
+
 export default router;

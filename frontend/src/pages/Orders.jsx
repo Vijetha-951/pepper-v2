@@ -116,14 +116,31 @@ const Orders = () => {
     }).format(amount);
   };
 
-  const handleViewDetails = (orderId) => {
-    // Navigate to order details page or show modal
-    console.log('View order:', orderId);
-    // You can implement a modal or navigate to a detail page
+  const handleViewDetails = async (orderId) => {
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/user/orders/${orderId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const orderData = await response.json();
+        // Navigate to payment success page with order data
+        navigate('/payment-success', { state: { order: orderData, fromOrders: true } });
+      } else {
+        alert('Failed to fetch order details');
+      }
+    } catch (error) {
+      console.error('Error fetching order details:', error);
+      alert('Failed to load order details');
+    }
   };
 
   const handleDeleteOrder = async (orderId) => {
-    if (window.confirm('Are you sure you want to cancel this order?')) {
+    if (window.confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
       try {
         const token = await user.getIdToken();
         const response = await fetch(`/api/user/orders/${orderId}`, {
@@ -134,14 +151,17 @@ const Orders = () => {
           }
         });
 
+        const data = await response.json();
+
         if (response.ok) {
+          alert(data.message || 'Order cancelled successfully!');
           fetchOrders(); // Refresh orders
         } else {
-          alert('Failed to cancel order');
+          alert(data.message || 'Failed to cancel order');
         }
       } catch (error) {
         console.error('Error canceling order:', error);
-        alert('Failed to cancel order');
+        alert('Failed to cancel order. Please try again.');
       }
     }
   };
@@ -382,13 +402,14 @@ const Orders = () => {
                           <Eye size={16} />
                           <span>View Details / Invoice</span>
                         </button>
-                        {order.status === 'PENDING' && (
+                        {(order.status === 'PENDING' || order.status === 'APPROVED') && (
                           <button
                             className="action-btn delete-btn"
                             onClick={() => handleDeleteOrder(order._id)}
                             title="Cancel Order"
                           >
                             <Trash2 size={16} />
+                            <span>Cancel</span>
                           </button>
                         )}
                       </div>

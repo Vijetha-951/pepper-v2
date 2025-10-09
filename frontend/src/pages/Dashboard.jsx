@@ -1307,12 +1307,17 @@ export default function Dashboard() {
               <button
                 key={item.id}
                 onClick={() => {
-                  // Navigate to dedicated Orders page for "My Orders"
+                  // Navigate to dedicated pages
                   if (item.id === 'orders') {
                     navigate('/orders');
                   } else if (item.id === 'admin-stock') {
-                    // Navigate to full Stock Management page
                     navigate('/admin-stock');
+                  } else if (item.id === 'admin-users') {
+                    navigate('/admin-users');
+                  } else if (item.id === 'admin-products') {
+                    navigate('/admin-products');
+                  } else if (item.id === 'admin-orders') {
+                    navigate('/admin-orders');
                   } else {
                     setActiveTab(item.id);
                   }

@@ -254,7 +254,7 @@ const PaymentSuccess = () => {
             onClick={() => navigate('/orders')} 
             className="btn-secondary"
           >
-            View All Orders
+            {location.state?.fromOrders ? 'Back to Orders' : 'View All Orders'}
           </button>
           <button 
             onClick={() => navigate('/user/dashboard', { state: { activeTab: 'products' } })} 

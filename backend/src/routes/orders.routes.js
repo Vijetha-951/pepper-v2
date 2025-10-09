@@ -2,6 +2,7 @@ import express from 'express';
 import asyncHandler from 'express-async-handler';
 import Order from '../models/Order.js';
 import User from '../models/User.js';
+import Product from '../models/Product.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -26,9 +27,15 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
 // Get specific order
 router.get('/:order_id', requireAuth, asyncHandler(async (req, res) => {
   const { order_id } = req.params;
-  const userId = req.user.uid;
+  const firebaseUid = req.user.uid;
 
-  const order = await Order.findOne({ _id: order_id, user: userId })
+  // Get user document by Firebase UID to get MongoDB _id
+  const user = await User.findOne({ firebaseUid });
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  const order = await Order.findOne({ _id: order_id, user: user._id })
     .populate('items.product', 'name image price')
     .populate('user', 'firstName lastName email phone');
 
@@ -36,7 +43,7 @@ router.get('/:order_id', requireAuth, asyncHandler(async (req, res) => {
     return res.status(404).json({ message: 'Order not found' });
   }
 
-  res.status(200).json({ order });
+  res.status(200).json(order);
 }));
 
 // Get all orders (admin only)
@@ -96,6 +103,52 @@ router.put('/:order_id/status', requireAuth, asyncHandler(async (req, res) => {
 
   res.status(200).json({
     message: 'Order status updated successfully',
+    order
+  });
+}));
+
+// Cancel order (user can cancel their own order)
+router.delete('/:order_id', requireAuth, asyncHandler(async (req, res) => {
+  const { order_id } = req.params;
+  const firebaseUid = req.user.uid;
+
+  // Get user document by Firebase UID to get MongoDB _id
+  const user = await User.findOne({ firebaseUid });
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  // Find the order
+  const order = await Order.findOne({ _id: order_id, user: user._id });
+
+  if (!order) {
+    return res.status(404).json({ message: 'Order not found' });
+  }
+
+  // Check if order can be cancelled (only PENDING and APPROVED orders can be cancelled)
+  if (!['PENDING', 'APPROVED'].includes(order.status)) {
+    return res.status(400).json({ 
+      message: `Cannot cancel order with status: ${order.status}. Only PENDING or APPROVED orders can be cancelled.` 
+    });
+  }
+
+  // Restore stock for each item in the order
+  for (const item of order.items) {
+    const product = await Product.findById(item.product);
+    if (product) {
+      // Restore the available stock
+      product.available_stock = (product.available_stock || 0) + item.quantity;
+      product.stock = product.available_stock; // Keep legacy field in sync
+      await product.save();
+    }
+  }
+
+  // Update order status to CANCELLED
+  order.status = 'CANCELLED';
+  await order.save();
+
+  res.status(200).json({
+    message: 'Order cancelled successfully. Stock has been restored.',
     order
   });
 }));
