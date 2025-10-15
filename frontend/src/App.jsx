@@ -15,6 +15,8 @@ import AdminUserManagement from "./pages/AdminUserManagement.jsx";
 import AdminProductManagement from "./pages/AdminProductManagement.jsx";
 import AdminStockManagement from "./pages/AdminStockManagement.jsx";
 import AdminAllOrders from "./pages/AdminAllOrders.jsx";
+import AdminDeliveryStatus from "./pages/AdminDeliveryStatus.jsx";
+import DeliveryBoyStatus from "./pages/DeliveryBoyStatus.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 
 // Shopping flow pages
@@ -72,12 +74,14 @@ function App() {
         {/* Direct dashboard routes for explicit backend redirects */}
         <Route path="/user/dashboard" element={<Dashboard />} />
         <Route path="/deliveryboy/dashboard" element={<DeliveryDashboard />} />
+        <Route path="/deliveryboy/status" element={<DeliveryBoyStatus />} />
         {/* Admin management routes (require auth checks inside components) */}
         <Route path="/admin/dashboard" element={<AdminUserManagement />} />
         <Route path="/admin-users" element={<AdminUserManagement />} />
         <Route path="/admin-products" element={<AdminProductManagement />} />
         <Route path="/admin-stock" element={<AdminStockManagement />} />
         <Route path="/admin-orders" element={<AdminAllOrders />} />
+        <Route path="/admin-delivery-status" element={<AdminDeliveryStatus />} />
       </Routes>
     </Router>
   );

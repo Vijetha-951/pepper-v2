@@ -57,4 +57,38 @@ router.patch('/orders/:id/delivered', requireDeliveryBoy, asyncHandler(async (re
   res.json(o);
 }));
 
+// Update delivery boy status
+router.patch('/status', requireDeliveryBoy, asyncHandler(async (req, res) => {
+  const { status } = req.body;
+  
+  // Validate status
+  const validStatuses = ['OFFLINE', 'OPEN_FOR_DELIVERY', 'OUT_FOR_DELIVERY'];
+  if (!status || !validStatuses.includes(status)) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Valid status required (OFFLINE, OPEN_FOR_DELIVERY, OUT_FOR_DELIVERY)' 
+    });
+  }
+  
+  const me = await User.findOneAndUpdate(
+    { email: req.user.email },
+    { 
+      deliveryStatus: status,
+      lastStatusUpdate: new Date()
+    },
+    { new: true }
+  ).select('-__v');
+  
+  res.json({ success: true, user: me });
+}));
+
+// Get current delivery boy status
+router.get('/status', requireDeliveryBoy, asyncHandler(async (req, res) => {
+  const me = await User.findOne({ email: req.user.email }).select('deliveryStatus lastStatusUpdate');
+  res.json({ 
+    deliveryStatus: me.deliveryStatus || 'OFFLINE',
+    lastStatusUpdate: me.lastStatusUpdate 
+  });
+}));
+
 export default router;

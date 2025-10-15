@@ -258,7 +258,8 @@ export default function Dashboard() {
       { id: 'admin-users', label: 'User Management', icon: User },
       { id: 'admin-products', label: 'Product Management', icon: Package },
       { id: 'admin-stock', label: 'Stock Management', icon: Package2 },
-      { id: 'admin-orders', label: 'All Orders', icon: ShoppingCart }
+      { id: 'admin-orders', label: 'All Orders', icon: ShoppingCart },
+      { id: 'admin-delivery-status', label: 'Delivery Status', icon: Truck }
     ] : []),
     { id: 'profile', label: 'Profile', icon: User }
   ];
@@ -1318,6 +1319,8 @@ export default function Dashboard() {
                     navigate('/admin-products');
                   } else if (item.id === 'admin-orders') {
                     navigate('/admin-orders');
+                  } else if (item.id === 'admin-delivery-status') {
+                    navigate('/admin-delivery-status');
                   } else {
                     setActiveTab(item.id);
                   }

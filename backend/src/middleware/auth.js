@@ -75,6 +75,15 @@ export async function requireAuth(req, res, next) {
       const firestoreRole = await getRoleFromFirestore({ uid: decodedToken.uid, email });
       const mongoRole = firestoreRole ? null : await getRoleFromMongo({ uid: decodedToken.uid, email });
       const resolved = firestoreRole || mongoRole;
+      
+      // 🔍 DEBUG: Log role resolution for troubleshooting
+      console.log(`🔍 Role Resolution for ${email}:`, {
+        uid: decodedToken.uid,
+        firestoreRole,
+        mongoRole,
+        resolved
+      });
+      
       if (resolved && resolved !== 'admin') {
         role = resolved;
       } else if (resolved === 'admin') {

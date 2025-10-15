@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Truck, Package, MapPin, CheckCircle, Clock, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import authService from "../services/authService";
 
 export default function DeliveryDashboard() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('deliveries');
   const [stats, setStats] = useState({
@@ -75,6 +77,10 @@ export default function DeliveryDashboard() {
     { id: 'routes', label: 'Routes', icon: MapPin },
     { id: 'history', label: 'History', icon: CheckCircle }
   ];
+
+  const handleStatusClick = () => {
+    navigate('/deliveryboy/status');
+  };
 
   const renderDeliveries = () => (
     <div>
@@ -165,6 +171,32 @@ export default function DeliveryDashboard() {
               <item.icon size={18} /> {item.label}
             </button>
           ))}
+          
+          {/* Update Status Button */}
+          <button
+            onClick={handleStatusClick}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              padding: '0.75rem 1rem',
+              borderRadius: '10px',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              background: 'rgba(255, 255, 255, 0.1)',
+              color: 'white',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              marginTop: '0.5rem'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+            }}
+          >
+            <Package size={18} /> Update Status
+          </button>
         </div>
 
         <div style={{ marginTop: 'auto', zIndex: 10 }}>

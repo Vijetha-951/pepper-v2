@@ -357,4 +357,17 @@ router.get('/reports/summary', asyncHandler(async (_req, res) => {
   res.json({ totalOrders, pending, delivered });
 }));
 
+// Get all delivery boys with their current status
+router.get('/delivery-boys/status', asyncHandler(async (req, res) => {
+  const deliveryBoys = await User.find({ role: 'deliveryboy' })
+    .select('firstName lastName email phone deliveryStatus lastStatusUpdate assignedAreas isActive')
+    .sort({ lastStatusUpdate: -1 });
+  
+  res.json({ 
+    success: true, 
+    deliveryBoys,
+    total: deliveryBoys.length 
+  });
+}));
+
 export default router;

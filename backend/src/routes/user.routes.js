@@ -5,6 +5,7 @@ import Order from '../models/Order.js';
 import User from '../models/User.js';
 import { requireAuth } from '../middleware/auth.js';
 import { sendOrderConfirmationEmail } from '../services/emailService.js';
+import { processOrderRefund } from '../services/refundService.js';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -308,13 +309,48 @@ router.delete('/orders/:id', requireCustomer, asyncHandler(async (req, res) => {
     }
   }
 
+  // Process refund if payment was made online
+  let refundResult = null;
+  let refundMessage = '';
+  
+  if (order.payment.method === 'ONLINE' && order.payment.status === 'PAID') {
+    try {
+      console.log('🔄 Initiating refund for order:', order._id);
+      refundResult = await processOrderRefund(order);
+      
+      if (refundResult.success) {
+        // Update order with refund details
+        order.payment.status = 'REFUNDED';
+        order.payment.refundId = refundResult.refundId;
+        order.payment.refundAmount = refundResult.amount;
+        order.payment.refundStatus = 'PROCESSED';
+        order.payment.refundInitiatedAt = new Date();
+        
+        refundMessage = ` ${refundResult.message}`;
+        console.log('✅ Refund processed successfully:', refundResult.refundId);
+      } else {
+        // Refund failed but we still cancel the order
+        console.warn('⚠️ Refund failed:', refundResult.error);
+        order.payment.refundStatus = 'FAILED';
+        refundMessage = ' Note: Automatic refund failed. Please contact support for manual refund processing.';
+      }
+    } catch (error) {
+      console.error('❌ Refund error:', error);
+      order.payment.refundStatus = 'FAILED';
+      refundMessage = ' Note: Automatic refund failed. Please contact support for manual refund processing.';
+    }
+  } else if (order.payment.method === 'COD') {
+    refundMessage = ' No refund needed for Cash on Delivery orders.';
+  }
+
   // Update order status to CANCELLED
   order.status = 'CANCELLED';
   await order.save();
 
   res.status(200).json({
-    message: 'Order cancelled successfully. Stock has been restored.',
-    order
+    message: `Order cancelled successfully. Stock has been restored.${refundMessage}`,
+    order,
+    refund: refundResult
   });
 }));
 

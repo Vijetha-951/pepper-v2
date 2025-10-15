@@ -62,6 +62,12 @@ const userSchema = new mongoose.Schema(
       pincodes: [String],
       districts: [String],
     },
+    deliveryStatus: { // for delivery boys
+      type: String,
+      enum: ['OFFLINE', 'OPEN_FOR_DELIVERY', 'OUT_FOR_DELIVERY'],
+      default: 'OFFLINE'
+    },
+    lastStatusUpdate: { type: Date }, // timestamp of last status change
   },
   { timestamps: true }
 );

@@ -153,4 +153,49 @@ router.delete('/:order_id', requireAuth, asyncHandler(async (req, res) => {
   });
 }));
 
+// Get all refunded orders (admin only)
+router.get('/admin/refunds', requireAuth, asyncHandler(async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Access denied. Admin only.' });
+  }
+
+  const { status, page = 1, limit = 20 } = req.query;
+  const filter = {
+    'payment.refundId': { $exists: true }
+  };
+  
+  if (status) {
+    filter['payment.refundStatus'] = status.toUpperCase();
+  }
+
+  const orders = await Order.find(filter)
+    .populate('items.product', 'name image')
+    .populate('user', 'firstName lastName email phone')
+    .sort({ 'payment.refundInitiatedAt': -1 })
+    .limit(limit * 1)
+    .skip((page - 1) * limit);
+
+  const totalOrders = await Order.countDocuments(filter);
+
+  // Calculate summary
+  const summary = await Order.aggregate([
+    { $match: { 'payment.refundId': { $exists: true } } },
+    {
+      $group: {
+        _id: '$payment.refundStatus',
+        count: { $sum: 1 },
+        totalAmount: { $sum: '$payment.refundAmount' }
+      }
+    }
+  ]);
+
+  res.status(200).json({
+    orders,
+    totalPages: Math.ceil(totalOrders / limit),
+    currentPage: page,
+    totalOrders,
+    summary
+  });
+}));
+
 export default router;

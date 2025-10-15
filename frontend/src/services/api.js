@@ -9,7 +9,13 @@ async function getFirebaseIdTokenWithWait(timeoutMs = 2000) {
   // If we already have a signed-in user, get a fresh token
   const current = firebaseAuthService.getCurrentUser?.() || auth.currentUser;
   if (current && typeof current.getIdToken === 'function') {
-    try { return await current.getIdToken(true); } catch { /* ignore */ }
+    try { 
+      // Use cached token instead of forcing refresh to avoid ERR_CONNECTION_CLOSED
+      return await current.getIdToken(false); 
+    } catch (error) { 
+      console.warn('Failed to get Firebase token:', error.message);
+      return null;
+    }
   }
 
   // Otherwise, wait briefly for auth to initialize
@@ -24,8 +30,14 @@ async function getFirebaseIdTokenWithWait(timeoutMs = 2000) {
       settled = true;
       clearTimeout(timer);
       unsub();
-      try { resolve(user ? await user.getIdToken(true) : null); }
-      catch { resolve(null); }
+      try { 
+        // Use cached token instead of forcing refresh
+        resolve(user ? await user.getIdToken(false) : null); 
+      }
+      catch (error) { 
+        console.warn('Failed to get Firebase token on auth state change:', error.message);
+        resolve(null); 
+      }
     });
   });
 }
@@ -59,5 +71,7 @@ export async function apiFetch(input, init = {}) {
     headers,
   };
 
+  // Ensure relative URLs starting with /api are handled by the proxy
+  // The proxy in package.json will forward these to http://localhost:5000
   return fetch(input, finalInit);
 }

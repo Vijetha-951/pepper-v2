@@ -16,6 +16,9 @@ const Orders = () => {
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [currentPage, setCurrentPage] = useState(1);
   const [ordersPerPage, setOrdersPerPage] = useState(10);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -140,29 +143,53 @@ const Orders = () => {
   };
 
   const handleDeleteOrder = async (orderId) => {
-    if (window.confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
-      try {
-        const token = await user.getIdToken();
-        const response = await fetch(`/api/user/orders/${orderId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+    setOrderToCancel(orderId);
+    setShowCancelModal(true);
+  };
 
-        const data = await response.json();
-
-        if (response.ok) {
-          alert(data.message || 'Order cancelled successfully!');
-          fetchOrders(); // Refresh orders
-        } else {
-          alert(data.message || 'Failed to cancel order');
+  const confirmCancelOrder = async () => {
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/user/orders/${orderToCancel}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      } catch (error) {
-        console.error('Error canceling order:', error);
-        alert('Failed to cancel order. Please try again.');
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccessMessage(data.message || 'Order cancelled successfully!');
+        setShowCancelModal(false);
+        setOrderToCancel(null);
+        fetchOrders(); // Refresh orders
+        
+        // Auto-hide success message after 5 seconds
+        setTimeout(() => {
+          setSuccessMessage('');
+        }, 5000);
+      } else {
+        setError(data.message || 'Failed to cancel order');
+        setShowCancelModal(false);
+        setOrderToCancel(null);
+        
+        // Auto-hide error message after 5 seconds
+        setTimeout(() => {
+          setError('');
+        }, 5000);
       }
+    } catch (error) {
+      console.error('Error canceling order:', error);
+      setError('Failed to cancel order. Please try again.');
+      setShowCancelModal(false);
+      setOrderToCancel(null);
+      
+      // Auto-hide error message after 5 seconds
+      setTimeout(() => {
+        setError('');
+      }, 5000);
     }
   };
 
@@ -295,6 +322,13 @@ const Orders = () => {
           </div>
         </div>
 
+        {/* Success Message */}
+        {successMessage && (
+          <div className="success-message">
+            <p>✓ {successMessage}</p>
+          </div>
+        )}
+
         {/* Error Message */}
         {error && (
           <div className="error-message">
@@ -360,6 +394,9 @@ const Orders = () => {
                         {order.payment?.transactionId && (
                           <div className="payment-id">Pay ID: {order.payment.transactionId.slice(-10)}</div>
                         )}
+                        {order.payment?.refundId && (
+                          <div className="refund-id">Refund ID: {order.payment.refundId.slice(-10)}</div>
+                        )}
                       </div>
                     </td>
                     <td className="order-date">
@@ -391,6 +428,11 @@ const Orders = () => {
                       <span className={getStatusBadgeClass(order.status)}>
                         {order.status === 'OUT_FOR_DELIVERY' ? 'Processing' : order.status}
                       </span>
+                      {order.status === 'CANCELLED' && order.payment?.status === 'REFUNDED' && (
+                        <div className="refund-status-badge">
+                          ✓ Refunded
+                        </div>
+                      )}
                     </td>
                     <td className="action-cell">
                       <div className="action-buttons">
@@ -484,6 +526,38 @@ const Orders = () => {
           <p>Need help? Contact us: support@peppernursery.com | 1-800-PLANT-GO</p>
         </div>
       </div>
+
+      {/* Cancel Order Confirmation Modal */}
+      {showCancelModal && (
+        <div className="modal-overlay" onClick={() => setShowCancelModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Cancel Order</h2>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure you want to cancel this order?</p>
+              <p className="modal-warning">⚠️ This action cannot be undone. The stock will be restored automatically.</p>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="modal-btn cancel-btn" 
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setOrderToCancel(null);
+                }}
+              >
+                No, Keep Order
+              </button>
+              <button 
+                className="modal-btn confirm-btn" 
+                onClick={confirmCancelOrder}
+              >
+                Yes, Cancel Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -26,7 +26,7 @@ export default function RoleBasedDashboard() {
 
     loadUserWithRefresh();
 
-    // Set up periodic role checking every 30 seconds
+    // Set up periodic role checking every 5 minutes (reduced frequency to avoid token refresh errors)
     const roleCheckInterval = setInterval(async () => {
       try {
         const roleChanged = await authService.checkForRoleChange();
@@ -38,9 +38,10 @@ export default function RoleBasedDashboard() {
         const currentUser = authService.getCurrentUser();
         setUser(currentUser);
       } catch (error) {
-        console.warn('Role check failed:', error);
+        console.warn('Role check failed (non-critical):', error);
+        // Don't throw error, just log it - this is a background check
       }
-    }, 30000); // Check every 30 seconds
+    }, 300000); // Check every 5 minutes (300000ms) instead of 30 seconds
 
     // Cleanup interval on component unmount
     return () => clearInterval(roleCheckInterval);
