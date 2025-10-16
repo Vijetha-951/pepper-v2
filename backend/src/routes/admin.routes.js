@@ -370,4 +370,24 @@ router.get('/delivery-boys/status', asyncHandler(async (req, res) => {
   });
 }));
 
+// Get delivery boys with OPEN_FOR_DELIVERY status
+router.get('/delivery-boys/available', asyncHandler(async (req, res) => {
+  // Find delivery boys who are available for delivery
+  // Include both approved (isActive: true) and pending (isActive: null) delivery boys
+  // as long as they have explicitly set their status to OPEN_FOR_DELIVERY
+  const availableDeliveryBoys = await User.find({ 
+    role: 'deliveryboy',
+    deliveryStatus: 'OPEN_FOR_DELIVERY',
+    isActive: { $ne: false } // Include true and null, but exclude false (rejected)
+  })
+    .select('_id firstName lastName email phone deliveryStatus assignedAreas')
+    .sort({ firstName: 1 });
+  
+  res.json({ 
+    success: true, 
+    deliveryBoys: availableDeliveryBoys,
+    total: availableDeliveryBoys.length 
+  });
+}));
+
 export default router;

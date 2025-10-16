@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Eye, Package, DollarSign, Clock, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Eye, Package, DollarSign, Clock, RefreshCw, ChevronLeft, ChevronRight, Truck, X } from 'lucide-react';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import './AdminAllOrders.css';
@@ -22,6 +22,14 @@ const AdminAllOrders = () => {
     monthRevenue: 0,
     pendingOrders: 0,
     pendingAmount: 0
+  });
+  const [assignmentModal, setAssignmentModal] = useState({
+    isOpen: false,
+    orderId: null,
+    availableDeliveryBoys: [],
+    loadingBoys: false,
+    selectedBoyId: null,
+    assigning: false
   });
   const navigate = useNavigate();
 
@@ -238,6 +246,107 @@ const AdminAllOrders = () => {
     }
   };
 
+  const openAssignmentModal = async (orderId) => {
+    try {
+      if (!user) {
+        alert('Not authenticated');
+        return;
+      }
+      
+      setAssignmentModal(prev => ({
+        ...prev,
+        isOpen: true,
+        orderId,
+        loadingBoys: true,
+        selectedBoyId: null
+      }));
+
+      // Fetch available delivery boys
+      const token = await user.getIdToken();
+      const response = await fetch('/api/admin/delivery-boys/available', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAssignmentModal(prev => ({
+          ...prev,
+          availableDeliveryBoys: data.deliveryBoys || [],
+          loadingBoys: false
+        }));
+      } else {
+        alert('Failed to fetch available delivery boys');
+        setAssignmentModal(prev => ({
+          ...prev,
+          loadingBoys: false,
+          isOpen: false
+        }));
+      }
+    } catch (error) {
+      console.error('Error opening assignment modal:', error);
+      alert('Failed to open assignment modal');
+      setAssignmentModal(prev => ({
+        ...prev,
+        loadingBoys: false,
+        isOpen: false
+      }));
+    }
+  };
+
+  const closeAssignmentModal = () => {
+    setAssignmentModal({
+      isOpen: false,
+      orderId: null,
+      availableDeliveryBoys: [],
+      loadingBoys: false,
+      selectedBoyId: null,
+      assigning: false
+    });
+  };
+
+  const handleAssignOrder = async () => {
+    try {
+      if (!user || !assignmentModal.orderId || !assignmentModal.selectedBoyId) {
+        alert('Please select a delivery boy');
+        return;
+      }
+
+      setAssignmentModal(prev => ({
+        ...prev,
+        assigning: true
+      }));
+
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/admin/orders/${assignmentModal.orderId}/assign`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ deliveryBoyId: assignmentModal.selectedBoyId })
+      });
+
+      if (response.ok) {
+        fetchOrders(); // Refresh orders
+        closeAssignmentModal();
+        alert('Order successfully assigned to delivery boy!');
+      } else {
+        alert('Failed to assign order');
+      }
+    } catch (error) {
+      console.error('Error assigning order:', error);
+      alert('Failed to assign order');
+    } finally {
+      setAssignmentModal(prev => ({
+        ...prev,
+        assigning: false
+      }));
+    }
+  };
+
   // Pagination
   const indexOfLastOrder = currentPage * ordersPerPage;
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
@@ -435,13 +544,26 @@ const AdminAllOrders = () => {
                     </span>
                   </td>
                   <td>
-                    <button 
-                      className="view-details-btn"
-                      onClick={() => handleViewDetails(order._id)}
-                    >
-                      <Eye size={16} />
-                      View Details
-                    </button>
+                    <div className="action-buttons">
+                      <button 
+                        className="view-details-btn"
+                        onClick={() => handleViewDetails(order._id)}
+                        title="View order details"
+                      >
+                        <Eye size={16} />
+                        View
+                      </button>
+                      {['PENDING', 'APPROVED'].includes(order.status) && !order.deliveryBoy && (
+                        <button 
+                          className="assign-btn"
+                          onClick={() => openAssignmentModal(order._id)}
+                          title="Assign delivery boy"
+                        >
+                          <Truck size={16} />
+                          Assign
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
@@ -482,6 +604,72 @@ const AdminAllOrders = () => {
             Next
             <ChevronRight size={18} />
           </button>
+        </div>
+      )}
+
+      {/* Assignment Modal */}
+      {assignmentModal.isOpen && (
+        <div className="modal-overlay" onClick={closeAssignmentModal}>
+          <div className="modal-content assignment-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Assign Order to Delivery Boy</h2>
+              <button 
+                className="modal-close-btn"
+                onClick={closeAssignmentModal}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              {assignmentModal.loadingBoys ? (
+                <div className="loading-message">
+                  <div className="spinner-small"></div>
+                  <p>Loading available delivery boys...</p>
+                </div>
+              ) : assignmentModal.availableDeliveryBoys.length === 0 ? (
+                <div className="no-delivery-boys">
+                  <p>No delivery boys available with "Open for Delivery" status.</p>
+                </div>
+              ) : (
+                <div className="delivery-boys-list">
+                  <label>Select Delivery Boy:</label>
+                  <select 
+                    value={assignmentModal.selectedBoyId || ''} 
+                    onChange={(e) => setAssignmentModal(prev => ({
+                      ...prev,
+                      selectedBoyId: e.target.value
+                    }))}
+                    className="delivery-boy-select"
+                  >
+                    <option value="">-- Select a Delivery Boy --</option>
+                    {assignmentModal.availableDeliveryBoys.map((boy) => (
+                      <option key={boy._id} value={boy._id}>
+                        {boy.firstName} {boy.lastName} ({boy.phone})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                className="cancel-btn"
+                onClick={closeAssignmentModal}
+                disabled={assignmentModal.assigning}
+              >
+                Cancel
+              </button>
+              <button 
+                className="assign-confirm-btn"
+                onClick={handleAssignOrder}
+                disabled={!assignmentModal.selectedBoyId || assignmentModal.assigning || assignmentModal.loadingBoys}
+              >
+                {assignmentModal.assigning ? 'Assigning...' : 'Assign Order'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
