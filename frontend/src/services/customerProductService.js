@@ -5,6 +5,7 @@ import { auth } from '../config/firebase';
 
 const BASE_URL = '/api/products';
 const CART_URL = '/api/cart';
+const ORDERS_URL = '/api/orders';
 
 class CustomerProductService {
   // Get auth token for authenticated requests
@@ -203,6 +204,40 @@ class CustomerProductService {
       return await response.json();
     } catch (error) {
       console.error('Error removing from cart:', error);
+      throw error;
+    }
+  }
+
+  // Get dashboard stats for overview page
+  async getDashboardStats() {
+    try {
+      const token = await this.getAuthToken();
+      if (!token) {
+        throw new Error('User not authenticated');
+      }
+
+      const response = await fetch(`${ORDERS_URL}/stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Dashboard stats error response:', errorText);
+        throw new Error(`Failed to fetch dashboard stats: ${response.status} ${response.statusText}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text();
+        console.error('Non-JSON response:', responseText);
+        throw new Error('Server returned non-JSON response');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
       throw error;
     }
   }

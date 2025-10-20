@@ -12,6 +12,7 @@ export default function DeliveryDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [acceptingOrder, setAcceptingOrder] = useState(null);
+  const [startingDelivery, setStartingDelivery] = useState(null);
   const [stats, setStats] = useState({
     assigned: 0,
     accepted: 0,
@@ -72,6 +73,31 @@ export default function DeliveryDashboard() {
       alert('Failed to accept order: ' + err.message);
     } finally {
       setAcceptingOrder(null);
+    }
+  };
+
+  // Start delivery for an order
+  const handleStartDelivery = async (orderId) => {
+    try {
+      setStartingDelivery(orderId);
+      const response = await apiFetch(`/api/delivery/orders/${orderId}/out-for-delivery`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to start delivery');
+      }
+
+      // Refresh orders list
+      fetchAssignedOrders();
+    } catch (err) {
+      console.error('Error starting delivery:', err);
+      alert('Failed to start delivery: ' + err.message);
+    } finally {
+      setStartingDelivery(null);
     }
   };
 
@@ -314,22 +340,45 @@ export default function DeliveryDashboard() {
                       )}
                       {order.deliveryStatus === 'ACCEPTED' && (
                         <button
+                          onClick={() => handleStartDelivery(order._id)}
+                          disabled={startingDelivery === order._id}
                           style={{
                             padding: '0.5rem 1rem',
                             borderRadius: '8px',
                             border: 'none',
                             background: '#3b82f6',
                             color: 'white',
-                            cursor: 'pointer',
+                            cursor: startingDelivery === order._id ? 'not-allowed' : 'pointer',
                             fontWeight: 'bold',
                             fontSize: '0.875rem',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.5rem'
+                            gap: '0.5rem',
+                            opacity: startingDelivery === order._id ? 0.6 : 1,
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (startingDelivery !== order._id) {
+                              e.target.style.background = '#2563eb';
+                              e.target.style.transform = 'scale(1.05)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.background = '#3b82f6';
+                            e.target.style.transform = 'scale(1)';
                           }}
                         >
-                          <Truck size={16} />
-                          Start Delivery
+                          {startingDelivery === order._id ? (
+                            <>
+                              <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                              Starting...
+                            </>
+                          ) : (
+                            <>
+                              <Truck size={16} />
+                              Start Delivery
+                            </>
+                          )}
                         </button>
                       )}
                     </div>

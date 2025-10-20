@@ -7,6 +7,49 @@ import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Get dashboard stats for user
+router.get('/stats', requireAuth, asyncHandler(async (req, res) => {
+  const firebaseUid = req.user.uid;
+  
+  // Get user document by Firebase UID to get MongoDB _id
+  const user = await User.findOne({ firebaseUid });
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+  
+  // Get total orders for this user
+  const totalOrders = await Order.countDocuments({ user: user._id });
+  
+  // Get pending/in-progress deliveries (orders that are not DELIVERED or CANCELLED)
+  const pendingDeliveries = await Order.countDocuments({ 
+    user: user._id, 
+    status: { $nin: ['DELIVERED', 'CANCELLED'] } 
+  });
+  
+  // Get available products count
+  const totalProducts = await Product.countDocuments({ available_stock: { $gt: 0 } });
+  
+  // Get recent orders for activity feed
+  const recentOrders = await Order.find({ user: user._id })
+    .populate('items.product', 'name')
+    .sort({ createdAt: -1 })
+    .limit(3);
+  
+  res.status(200).json({
+    totalOrders,
+    pendingDeliveries,
+    totalProducts,
+    newNotifications: 0, // Placeholder for future notifications system
+    recentActivity: recentOrders.map(order => ({
+      _id: order._id,
+      type: 'order',
+      status: order.status,
+      items: order.items,
+      createdAt: order.createdAt
+    }))
+  });
+}));
+
 // Get user's orders
 router.get('/', requireAuth, asyncHandler(async (req, res) => {
   const firebaseUid = req.user.uid;

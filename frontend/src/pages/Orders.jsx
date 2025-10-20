@@ -103,6 +103,14 @@ const Orders = () => {
     }
   };
 
+  const getDisplayStatus = (status) => {
+    switch (status) {
+      case 'APPROVED': return 'Processing';
+      case 'OUT_FOR_DELIVERY': return 'Out for Delivery';
+      default: return status;
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -426,7 +434,7 @@ const Orders = () => {
                     </td>
                     <td className="status-cell">
                       <span className={getStatusBadgeClass(order.status)}>
-                        {order.status === 'OUT_FOR_DELIVERY' ? 'Processing' : order.status}
+                        {getDisplayStatus(order.status)}
                       </span>
                       {order.status === 'CANCELLED' && order.payment?.status === 'REFUNDED' && (
                         <div className="refund-status-badge">

@@ -20,11 +20,13 @@ export default function Dashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
   const [stats, setStats] = useState({
-    totalOrders: 15,
-    pendingDeliveries: 3,
-    totalProducts: 47,
-    newNotifications: 5
+    totalOrders: 0,
+    pendingDeliveries: 0,
+    totalProducts: 0,
+    newNotifications: 0
   });
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     const currentUser = authService.getCurrentUser();
@@ -46,6 +48,13 @@ export default function Dashboard() {
   useEffect(() => {
     if (activeTab === 'cart') {
       fetchCart();
+    }
+  }, [activeTab]);
+
+  // Fetch dashboard stats when overview tab is active
+  useEffect(() => {
+    if (activeTab === 'overview') {
+      fetchDashboardStats();
     }
   }, [activeTab]);
 
@@ -110,6 +119,25 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error fetching cart:', error);
       setCart({ items: [], total: 0 });
+    }
+  };
+
+  const fetchDashboardStats = async () => {
+    setStatsLoading(true);
+    try {
+      const data = await customerProductService.getDashboardStats();
+      setStats({
+        totalOrders: data.totalOrders || 0,
+        pendingDeliveries: data.pendingDeliveries || 0,
+        totalProducts: data.totalProducts || 0,
+        newNotifications: data.newNotifications || 0
+      });
+      setRecentActivity(data.recentActivity || []);
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      // Keep existing dummy data if fetch fails
+    } finally {
+      setStatsLoading(false);
     }
   };
 
@@ -349,52 +377,55 @@ export default function Dashboard() {
         <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' }}>
           Recent Activity
         </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            padding: '1rem', 
-            background: '#f0fdf4', 
-            borderRadius: '8px',
-            border: '1px solid #bbf7d0'
-          }}>
-            <Package size={20} color="#10b981" style={{ marginRight: '1rem' }} />
-            <div>
-              <p style={{ fontWeight: '500', color: '#1f2937' }}>New order placed</p>
-              <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>Black Pepper Seedlings - 5 plants</p>
-            </div>
+        {statsLoading ? (
+          <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+            Loading activity...
           </div>
-          
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            padding: '1rem', 
-            background: '#fef3c7', 
-            borderRadius: '8px',
-            border: '1px solid #fde68a'
-          }}>
-            <Truck size={20} color="#f59e0b" style={{ marginRight: '1rem' }} />
-            <div>
-              <p style={{ fontWeight: '500', color: '#1f2937' }}>Order shipped</p>
-              <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>White Pepper Seeds - Track: #WP2025001</p>
-            </div>
+        ) : recentActivity && recentActivity.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {recentActivity.map((activity, index) => {
+              const getStatusColor = (status) => {
+                switch(status) {
+                  case 'PENDING': return { bg: '#f0fdf4', border: '#bbf7d0', icon: '#10b981', text: 'Order Pending' };
+                  case 'APPROVED': return { bg: '#fef3c7', border: '#fde68a', icon: '#f59e0b', text: 'Order Approved' };
+                  case 'OUT_FOR_DELIVERY': return { bg: '#dbeafe', border: '#7dd3fc', icon: '#0ea5e9', text: 'Out for Delivery' };
+                  case 'DELIVERED': return { bg: '#f0fdf4', border: '#bbf7d0', icon: '#10b981', text: 'Delivered' };
+                  case 'CANCELLED': return { bg: '#fee2e2', border: '#fecaca', icon: '#ef4444', text: 'Cancelled' };
+                  default: return { bg: '#f3f4f6', border: '#e5e7eb', icon: '#6b7280', text: 'Order Updated' };
+                }
+              };
+              
+              const colors = getStatusColor(activity.status);
+              const productNames = activity.items
+                ?.map(item => item.product?.name || 'Unknown Product')
+                .join(', ') || 'Unknown Product';
+              const orderDate = new Date(activity.createdAt).toLocaleDateString();
+              
+              return (
+                <div key={activity._id} style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  padding: '1rem', 
+                  background: colors.bg, 
+                  borderRadius: '8px',
+                  border: `1px solid ${colors.border}`
+                }}>
+                  <Package size={20} color={colors.icon} style={{ marginRight: '1rem', flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontWeight: '500', color: '#1f2937', margin: 0 }}>{colors.text}</p>
+                    <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: '0.25rem 0 0 0', wordBreak: 'break-word' }}>
+                      {productNames} - {orderDate}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            padding: '1rem', 
-            background: '#ede9fe', 
-            borderRadius: '8px',
-            border: '1px solid #c4b5fd'
-          }}>
-            <User size={20} color="#8b5cf6" style={{ marginRight: '1rem' }} />
-            <div>
-              <p style={{ fontWeight: '500', color: '#1f2937' }}>Profile updated</p>
-              <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>Delivery address changed</p>
-            </div>
-          </div>
-        </div>
+        ) : (
+          <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>
+            No recent activity. Place your first order!
+          </p>
+        )}
       </div>
     </div>
   );
