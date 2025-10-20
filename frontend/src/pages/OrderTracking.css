@@ -1,6 +1,6 @@
 .order-tracking-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #2d5016 0%, #1a3a0a 100%);
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8f5e9 100%);
   padding: 2rem 1rem;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -40,7 +40,7 @@
   text-align: center;
   font-size: 2rem;
   font-weight: 700;
-  color: white;
+  color: #1f2937;
   margin: 0;
 }
 
@@ -68,14 +68,14 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: white;
+  color: #1f2937;
   font-weight: 600;
   font-size: 1.1rem;
   margin-bottom: 0.5rem;
 }
 
 .sidebar-header svg {
-  color: #84cc16;
+  color: #10b981;
 }
 
 /* Recent Orders List */
@@ -420,6 +420,189 @@
   margin-top: 0.5rem;
 }
 
+/* Delivery & Real-Time Tracking Section */
+.delivery-tracking-section {
+  margin: 2.5rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.tracking-section-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #15803d;
+  margin: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.card-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+}
+
+/* Delivery Boy Card */
+.delivery-boy-card {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  color: white;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.delivery-boy-card-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.delivery-boy-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.delivery-boy-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+.delivery-boy-phone {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  width: fit-content;
+}
+
+.delivery-boy-phone:hover {
+  opacity: 0.8;
+  transform: translateX(2px);
+}
+
+.delivery-boy-phone svg {
+  flex-shrink: 0;
+}
+
+/* Live Status Section */
+.live-status-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.live-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  width: fit-content;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #0ea5e9;
+  border-radius: 50%;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.2);
+  }
+}
+
+/* Assigned Areas Section */
+.assigned-areas-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.assigned-areas-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.assigned-area-item {
+  background: #f0fdf4;
+  color: #15803d;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin: 0;
+  border-left: 3px solid #16a34a;
+}
+
+/* Delivery Boy Section */
+.delivery-boy-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.delivery-boy-section h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+}
+
+.delivery-boy-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  font-size: 0.95rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.info-value {
+  color: #1f2937;
+  font-weight: 600;
+}
+
 /* Payment Info Section */
 .payment-info-section {
   margin-top: 2rem;
@@ -647,7 +830,6 @@
 @media (max-width: 480px) {
   .order-tracking-container {
     padding: 0.5rem;
-    background: #f3f4f6;
   }
 
   .tracking-content {

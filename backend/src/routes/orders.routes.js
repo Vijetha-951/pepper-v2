@@ -62,6 +62,7 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
   
   const orders = await Order.find({ user: user._id })
     .populate('items.product', 'name image')
+    .populate('deliveryBoy', 'firstName lastName phone')
     .sort({ createdAt: -1 });
 
   res.status(200).json(orders);
@@ -80,7 +81,8 @@ router.get('/:order_id', requireAuth, asyncHandler(async (req, res) => {
 
   const order = await Order.findOne({ _id: order_id, user: user._id })
     .populate('items.product', 'name image price')
-    .populate('user', 'firstName lastName email phone');
+    .populate('user', 'firstName lastName email phone')
+    .populate('deliveryBoy', 'firstName lastName phone');
 
   if (!order) {
     return res.status(404).json({ message: 'Order not found' });

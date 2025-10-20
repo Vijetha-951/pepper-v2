@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Truck, Package, CheckCircle, Clock, AlertCircle, User, Phone, Mail, MapPin, DollarSign, RefreshCw } from 'lucide-react';
 import authService from '../services/authService';
 import { apiFetch } from '../services/api';
+import './AdminOrderDetail.css';
 
 export default function AdminOrderDetail() {
   const { id } = useParams();
@@ -46,48 +47,30 @@ export default function AdminOrderDetail() {
 
   if (!user) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <div style={{ width: '3rem', height: '3rem', border: '4px solid #10b981', borderTop: '4px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+      <div className="admin-order-detail-loading">
+        <div className="spinner"></div>
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <div style={{ width: '3rem', height: '3rem', border: '4px solid #10b981', borderTop: '4px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+      <div className="admin-order-detail-loading">
+        <div className="spinner"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', background: '#f9fafb', padding: '2rem' }}>
+      <div className="admin-order-detail-container">
         <button
           onClick={() => navigate('/admin-orders')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            border: '1px solid #e5e7eb',
-            background: 'white',
-            cursor: 'pointer',
-            marginBottom: '1rem',
-            color: '#6b7280'
-          }}
+          className="back-button"
         >
           <ArrowLeft size={16} /> Back to Orders
         </button>
-        <div style={{
-          background: '#fee2e2',
-          border: '1px solid #fecaca',
-          color: '#dc2626',
-          padding: '1rem',
-          borderRadius: '8px',
-          textAlign: 'center'
-        }}>
+        <div className="error-alert">
           {error}
         </div>
       </div>
@@ -96,25 +79,15 @@ export default function AdminOrderDetail() {
 
   if (!order) {
     return (
-      <div style={{ minHeight: '100vh', background: '#f9fafb', padding: '2rem' }}>
+      <div className="admin-order-detail-container">
         <button
           onClick={() => navigate('/admin-orders')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            border: '1px solid #e5e7eb',
-            background: 'white',
-            cursor: 'pointer',
-            marginBottom: '1rem',
-            color: '#6b7280'
-          }}
+          className="back-button"
+          style={{ marginBottom: '1rem' }}
         >
           <ArrowLeft size={16} /> Back to Orders
         </button>
-        <div style={{ textAlign: 'center', color: '#6b7280' }}>Order not found</div>
+        <div className="not-found-alert">Order not found</div>
       </div>
     );
   }
@@ -175,132 +148,34 @@ export default function AdminOrderDetail() {
     });
   };
 
-  const containerStyle = {
-    minHeight: '100vh',
-    background: '#f9fafb',
-    padding: '2rem'
-  };
-
-  const headerStyle = {
-    background: '#4b5563',
-    color: 'white',
-    borderRadius: '12px',
-    padding: '2rem',
-    marginBottom: '2rem',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  };
-
-  const cardStyle = {
-    background: 'white',
-    borderRadius: '12px',
-    padding: '1.5rem',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
-    border: '1px solid #e5e7eb',
-    marginBottom: '1.5rem'
-  };
-
-  const gridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-    gap: '1.5rem',
-    marginBottom: '1.5rem'
-  };
-
-  const sectionTitleStyle = {
-    fontSize: '1.25rem',
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: '1rem'
-  };
-
-  const timelineItemStyle = (isActive, isCompleted) => ({
-    display: 'flex',
-    alignItems: 'center',
-    marginBottom: '1rem',
-    opacity: isActive || isCompleted ? 1 : 0.6
-  });
-
-  const timelineCircleStyle = (color, isActive) => ({
-    width: '3rem',
-    height: '3rem',
-    borderRadius: '50%',
-    background: color + '15',
-    border: `2px solid ${color}`,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: '1rem',
-    flexShrink: 0
-  });
-
-  const timelineTextStyle = (isActive) => ({
-    flex: 1,
-    fontSize: '0.875rem',
-    color: isActive ? '#1f2937' : '#9ca3af'
-  });
-
   return (
-    <div style={containerStyle}>
-      <style>
-        {`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}
-      </style>
-
+    <div className="admin-order-detail-container">
       {/* Header */}
-      <div style={headerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <div className="admin-order-detail-header">
+        <div className="admin-order-detail-header-left">
           <button
             onClick={() => navigate('/admin-orders')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.5rem 1rem',
-              borderRadius: '8px',
-              border: '1px solid rgba(255,255,255,0.3)',
-              background: 'rgba(255,255,255,0.1)',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '0.875rem'
-            }}
+            className="back-button"
           >
             <ArrowLeft size={16} /> Back
           </button>
-          <h1 style={{ fontSize: '1.75rem', margin: 0 }}>Order Detail: {order._id.substring(0, 8).toUpperCase()}</h1>
+          <h1 className="admin-order-detail-header-title">Order Detail: {order._id.substring(0, 8).toUpperCase()}</h1>
         </div>
         <button
           onClick={fetchOrderDetail}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            border: 'none',
-            background: 'rgba(255,255,255,0.2)',
-            color: 'white',
-            cursor: 'pointer',
-            fontSize: '0.875rem'
-          }}
+          className="refresh-button"
         >
           <RefreshCw size={16} /> Refresh
         </button>
       </div>
 
       {/* Main Grid */}
-      <div style={gridStyle}>
+      <div className="admin-order-detail-grid">
         {/* Left Column */}
         <div>
           {/* Order Status Management & Timeline */}
-          <div style={cardStyle}>
-            <h2 style={sectionTitleStyle}>Order Status Management & Timeline</h2>
+          <div className="admin-order-detail-card">
+            <h2 className="card-title">Order Status Management & Timeline</h2>
             
             {orderStatuses.map((status, idx) => {
               const StatusIcon = getStatusIcon(status);
@@ -309,7 +184,7 @@ export default function AdminOrderDetail() {
               const color = getStatusColor(status);
 
               return (
-                <div key={status} style={timelineItemStyle(isActive, isCompleted)}>
+                <div key={status} className="timeline-item" style={{ opacity: isActive || isCompleted ? 1 : 0.6 }}>
                   {idx < orderStatuses.length - 1 && (
                     <div style={{
                       position: 'absolute',
@@ -320,14 +195,17 @@ export default function AdminOrderDetail() {
                       background: isCompleted ? color : '#e5e7eb'
                     }}></div>
                   )}
-                  <div style={timelineCircleStyle(color, isActive)}>
+                  <div className="timeline-circle" style={{
+                    borderColor: color,
+                    backgroundColor: color + '15'
+                  }}>
                     <StatusIcon size={16} color={color} />
                   </div>
-                  <div style={timelineTextStyle(isActive)}>
-                    <div style={{ fontWeight: '600', color: isActive ? color : '#6b7280' }}>
+                  <div className="timeline-text">
+                    <div className="timeline-text-status" style={{ color: isActive ? color : '#6b7280' }}>
                       {status.replace(/_/g, ' ')}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.25rem' }}>
+                    <div className="timeline-text-label">
                       {isActive ? 'Current Status' : isCompleted ? 'Completed' : 'Pending'}
                     </div>
                   </div>
@@ -336,47 +214,45 @@ export default function AdminOrderDetail() {
             })}
 
             {order.status === 'CANCELLED' && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.75rem',
-                background: '#fee2e2',
-                borderRadius: '8px',
-                marginTop: '1rem'
-              }}>
-                <AlertCircle size={16} color='#dc2626' />
-                <span style={{ color: '#dc2626', fontSize: '0.875rem' }}>Order Cancelled</span>
+              <div className="cancelled-alert">
+                <AlertCircle size={16} />
+                <span>Order Cancelled</span>
               </div>
             )}
           </div>
 
           {/* Customer Information */}
-          <div style={cardStyle}>
-            <h2 style={sectionTitleStyle}>Customer Information</h2>
+          <div className="admin-order-detail-card">
+            <h2 className="card-title">Customer Information</h2>
             {order.user && (
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                  <User size={16} color='#6b7280' />
-                  <div>
-                    <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Name</div>
-                    <div style={{ fontWeight: '600', color: '#1f2937' }}>
+                <div className="info-item">
+                  <div className="info-item-icon">
+                    <User size={16} />
+                  </div>
+                  <div className="info-item-content">
+                    <div className="info-label">Name</div>
+                    <div className="info-value">
                       {order.user.firstName} {order.user.lastName}
                     </div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                  <Mail size={16} color='#6b7280' />
-                  <div>
-                    <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Email</div>
-                    <div style={{ fontWeight: '600', color: '#1f2937' }}>{order.user.email}</div>
+                <div className="info-item">
+                  <div className="info-item-icon">
+                    <Mail size={16} />
+                  </div>
+                  <div className="info-item-content">
+                    <div className="info-label">Email</div>
+                    <div className="info-value">{order.user.email}</div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <Phone size={16} color='#6b7280' />
-                  <div>
-                    <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Phone</div>
-                    <div style={{ fontWeight: '600', color: '#1f2937' }}>{order.user.phone || 'N/A'}</div>
+                <div className="info-item">
+                  <div className="info-item-icon">
+                    <Phone size={16} />
+                  </div>
+                  <div className="info-item-content">
+                    <div className="info-label">Phone</div>
+                    <div className="info-value">{order.user.phone || 'N/A'}</div>
                   </div>
                 </div>
               </div>
@@ -387,33 +263,26 @@ export default function AdminOrderDetail() {
         {/* Right Column */}
         <div>
           {/* Delivery & Real-Time Tracking */}
-          <div style={cardStyle}>
-            <h2 style={sectionTitleStyle}>Delivery & Real-Time Tracking</h2>
+          <div className="admin-order-detail-card">
+            <h2 className="card-title">Delivery & Real-Time Tracking</h2>
             
             {order.deliveryBoy ? (
               <>
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <div style={{ fontSize: '0.875rem', color: '#9ca3af', marginBottom: '0.5rem' }}>
-                    ASSIGNED DELIVERY BOY
-                  </div>
-                  <div style={{
-                    padding: '0.75rem',
-                    background: '#f3f4f6',
-                    borderRadius: '8px'
-                  }}>
-                    <div style={{ fontWeight: '600', color: '#1f2937' }}>
+                  <div className="info-label">ASSIGNED DELIVERY BOY</div>
+                  <div className="delivery-boy-badge">
+                    <div className="delivery-boy-name">
                       {order.deliveryBoy.firstName} {order.deliveryBoy.lastName}
                     </div>
-                    <div style={{ fontSize: '0.875rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
-                      <Phone size={14} /> {order.deliveryBoy.phone || 'N/A'}
+                    <div className="delivery-boy-phone">
+                      <Phone size={14} style={{ display: 'inline', marginRight: '0.5rem' }} />
+                      {order.deliveryBoy.phone || 'N/A'}
                     </div>
                   </div>
                 </div>
 
                 <div style={{ marginBottom: '1rem' }}>
-                  <div style={{ fontSize: '0.875rem', color: '#9ca3af', marginBottom: '0.5rem' }}>
-                    LIVE STATUS
-                  </div>
+                  <div className="info-label">LIVE STATUS</div>
                   <div style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -446,9 +315,7 @@ export default function AdminOrderDetail() {
                     borderRadius: '8px',
                     fontSize: '0.875rem'
                   }}>
-                    <div style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: '600', marginBottom: '0.5rem' }}>
-                      ASSIGNED AREAS
-                    </div>
+                    <div className="info-label">ASSIGNED AREAS</div>
                     {order.deliveryBoy.assignedAreas.districts?.length > 0 && (
                       <p style={{ margin: '0.25rem 0', color: '#1f2937' }}>
                         <strong>Districts:</strong> {order.deliveryBoy.assignedAreas.districts.join(', ')}
@@ -463,22 +330,15 @@ export default function AdminOrderDetail() {
                 )}
               </>
             ) : (
-              <div style={{
-                padding: '1rem',
-                background: '#fef3c7',
-                border: '1px solid #fcd34d',
-                borderRadius: '8px',
-                color: '#92400e',
-                fontSize: '0.875rem'
-              }}>
+              <div className="status-pending" style={{ padding: '1rem', borderRadius: '8px' }}>
                 No delivery boy assigned yet
               </div>
             )}
           </div>
 
           {/* Shipping Address */}
-          <div style={cardStyle}>
-            <h2 style={sectionTitleStyle}>Shipping Address</h2>
+          <div className="admin-order-detail-card">
+            <h2 className="card-title">Shipping Address</h2>
             {order.shippingAddress ? (
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <MapPin size={16} color='#6b7280' style={{ marginTop: '0.25rem' }} />
@@ -507,31 +367,25 @@ export default function AdminOrderDetail() {
       </div>
 
       {/* Order Items and Inventory Control */}
-      <div style={cardStyle}>
-        <h2 style={sectionTitleStyle}>Order Items and Inventory Control</h2>
-        <div style={{
-          overflowX: 'auto'
-        }}>
-          <table style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            fontSize: '0.875rem'
-          }}>
+      <div className="admin-order-detail-card">
+        <h2 className="card-title">Order Items and Inventory Control</h2>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="order-items-table">
             <thead>
-              <tr style={{ background: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
-                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', color: '#6b7280' }}>Item Name</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', color: '#6b7280' }}>Qty</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', color: '#6b7280' }}>Price</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', color: '#6b7280' }}>Total</th>
+              <tr>
+                <th>Item Name</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Total</th>
               </tr>
             </thead>
             <tbody>
               {order.items.map((item, idx) => (
-                <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td style={{ padding: '0.75rem', color: '#1f2937' }}>{item.name || 'Product'}</td>
-                  <td style={{ padding: '0.75rem', color: '#1f2937' }}>{item.quantity}</td>
-                  <td style={{ padding: '0.75rem', color: '#1f2937' }}>₹{item.priceAtOrder}</td>
-                  <td style={{ padding: '0.75rem', color: '#1f2937', fontWeight: '600' }}>₹{item.priceAtOrder * item.quantity}</td>
+                <tr key={idx}>
+                  <td>{item.name || 'Product'}</td>
+                  <td>{item.quantity}</td>
+                  <td>₹{item.priceAtOrder}</td>
+                  <td style={{ fontWeight: '600' }}>₹{item.priceAtOrder * item.quantity}</td>
                 </tr>
               ))}
             </tbody>
@@ -540,17 +394,15 @@ export default function AdminOrderDetail() {
       </div>
 
       {/* Financial & Refund Module */}
-      <div style={cardStyle}>
-        <h2 style={sectionTitleStyle}>Financial & Refund Module</h2>
+      <div className="admin-order-detail-card">
+        <h2 className="card-title">Financial & Refund Module</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
           <div style={{
             padding: '1rem',
             background: '#f9fafb',
             borderRadius: '8px'
           }}>
-            <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '0.5rem' }}>
-              PAYMENT METHOD
-            </div>
+            <div className="info-label">PAYMENT METHOD</div>
             <div style={{ fontSize: '1rem', fontWeight: '600', color: '#1f2937' }}>
               {order.payment.method === 'COD' ? 'Cash on Delivery (COD)' : 'Online Payment'}
             </div>
@@ -561,9 +413,7 @@ export default function AdminOrderDetail() {
             background: '#f9fafb',
             borderRadius: '8px'
           }}>
-            <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '0.5rem' }}>
-              PAYMENT STATUS
-            </div>
+            <div className="info-label">PAYMENT STATUS</div>
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -588,9 +438,7 @@ export default function AdminOrderDetail() {
             background: '#f9fafb',
             borderRadius: '8px'
           }}>
-            <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '0.5rem' }}>
-              TOTAL AMOUNT
-            </div>
+            <div className="info-label">TOTAL AMOUNT</div>
             <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937' }}>
               ₹{order.totalAmount}
             </div>
@@ -619,50 +467,46 @@ export default function AdminOrderDetail() {
               </div>
               <div>
                 <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Refund Status</div>
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.25rem 0.5rem',
-                  borderRadius: '4px',
-                  background: getPaymentStatusColor(order.payment.refundStatus) + '15',
-                  color: getPaymentStatusColor(order.payment.refundStatus),
-                  fontWeight: '600'
-                }}>
-                  {order.payment.refundStatus}
-                </div>
+                <div style={{ fontWeight: '600', color: '#1f2937' }}>{order.payment.refundStatus}</div>
               </div>
               <div>
                 <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Initiated At</div>
-                <div style={{ fontWeight: '600', color: '#1f2937' }}>
-                  {formatDate(order.payment.refundInitiatedAt)}
-                </div>
+                <div style={{ fontWeight: '600', color: '#1f2937' }}>{formatDate(order.payment.refundInitiatedAt)}</div>
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Order Timeline Metadata */}
-      <div style={cardStyle}>
-        <h2 style={sectionTitleStyle}>Order Timeline</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', fontSize: '0.875rem' }}>
-          <div>
-            <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Created</div>
-            <div style={{ fontWeight: '600', color: '#1f2937' }}>{formatDate(order.createdAt)}</div>
+      {/* Order Summary */}
+      <div className="admin-order-detail-card">
+        <h2 className="card-title">Order Summary</h2>
+        <div className="totals-section">
+          <div className="total-row">
+            <span>Subtotal:</span>
+            <span>₹{order.totalAmount}</span>
           </div>
-          <div>
-            <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Last Updated</div>
-            <div style={{ fontWeight: '600', color: '#1f2937' }}>{formatDate(order.updatedAt)}</div>
+          <div className="total-row">
+            <span>Tax/Charges:</span>
+            <span>₹0</span>
           </div>
-          {order.notes && (
-            <div style={{ gridColumn: '1 / -1' }}>
-              <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Notes</div>
-              <div style={{ color: '#1f2937', padding: '0.5rem', background: '#f9fafb', borderRadius: '4px' }}>
-                {order.notes}
-              </div>
-            </div>
-          )}
+          <div className="total-row">
+            <span>Discount:</span>
+            <span>₹0</span>
+          </div>
+          <div className="total-row grand-total">
+            <span>Total:</span>
+            <span>₹{order.totalAmount}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Timeline */}
+      <div className="admin-order-detail-card">
+        <h2 className="card-title">Timeline</h2>
+        <div style={{ fontSize: '0.875rem' }}>
+          <p><strong>Order Created:</strong> {formatDate(order.createdAt)}</p>
+          {order.updatedAt && <p><strong>Last Updated:</strong> {formatDate(order.updatedAt)}</p>}
         </div>
       </div>
     </div>

@@ -55,6 +55,8 @@ const OrderTracking = () => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Order data received:', data);
+        console.log('Delivery Boy:', data.deliveryBoy);
         setOrder(data);
       } else {
         setError('Failed to fetch order details');
@@ -241,6 +243,58 @@ const OrderTracking = () => {
               </div>
             </div>
 
+            {/* Delivery & Real-Time Tracking Section */}
+            {order.deliveryBoy && (typeof order.deliveryBoy === 'object') && (
+              <div className="delivery-tracking-section">
+                <h3 className="tracking-section-title">Delivery & Real-Time Tracking</h3>
+                
+                {/* Assigned Delivery Boy Card */}
+                <div className="delivery-boy-card">
+                  <label className="card-label">ASSIGNED DELIVERY BOY</label>
+                  <div className="delivery-boy-card-content">
+                    <div className="delivery-boy-details">
+                      <p className="delivery-boy-name">
+                        {order.deliveryBoy.firstName && order.deliveryBoy.lastName 
+                          ? `${order.deliveryBoy.firstName} ${order.deliveryBoy.lastName}`
+                          : 'Delivery Partner'
+                        }
+                      </p>
+                      {order.deliveryBoy.phone && (
+                        <a href={`tel:${order.deliveryBoy.phone}`} className="delivery-boy-phone">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                          </svg>
+                          {order.deliveryBoy.phone}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Live Status */}
+                <div className="live-status-section">
+                  <label className="card-label">LIVE STATUS</label>
+                  <div className="live-status-badge">
+                    <span className="status-dot"></span>
+                    {order.status === 'APPROVED' ? 'ASSIGNED' : 
+                     order.status === 'OUT_FOR_DELIVERY' ? 'OUT FOR DELIVERY' :
+                     order.status === 'DELIVERED' ? 'DELIVERED' :
+                     order.status}
+                  </div>
+                </div>
+
+                {/* Assigned Areas */}
+                <div className="assigned-areas-section">
+                  <label className="card-label">ASSIGNED AREAS</label>
+                  <div className="assigned-areas-content">
+                    <p className="assigned-area-item">
+                      {order.shippingAddress?.district || 'District'}, {order.shippingAddress?.state || 'State'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {order.status === 'CANCELLED' ? (
               // Cancelled State
               <div className="cancelled-state">
@@ -366,6 +420,36 @@ const OrderTracking = () => {
                 {order.shippingAddress.line2 && <p>{order.shippingAddress.line2}</p>}
                 <p>{order.shippingAddress.district}, {order.shippingAddress.state}</p>
                 <p className="pincode">Pin: {order.shippingAddress.pincode}</p>
+              </div>
+            )}
+
+            {/* Delivery Boy Info */}
+            {order.deliveryBoy && (typeof order.deliveryBoy === 'object') && (
+              <div className="delivery-boy-section">
+                <h4>Delivery Boy Details</h4>
+                <div className="delivery-boy-info">
+                  <div className="info-row">
+                    <span className="info-label">Name:</span>
+                    <span className="info-value">
+                      {order.deliveryBoy.firstName && order.deliveryBoy.lastName 
+                        ? `${order.deliveryBoy.firstName} ${order.deliveryBoy.lastName}`
+                        : 'Not Available'
+                      }
+                    </span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Phone:</span>
+                    <span className="info-value">
+                      {order.deliveryBoy.phone ? (
+                        <a href={`tel:${order.deliveryBoy.phone}`} style={{ color: '#10b981', textDecoration: 'none' }}>
+                          {order.deliveryBoy.phone}
+                        </a>
+                      ) : (
+                        'Not Available'
+                      )}
+                    </span>
+                  </div>
+                </div>
               </div>
             )}
 

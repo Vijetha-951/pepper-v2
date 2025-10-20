@@ -270,12 +270,15 @@ router.post('/orders', requireCustomer, asyncHandler(async (req, res) => {
 
 router.get('/orders', requireCustomer, asyncHandler(async (req, res) => {
   const me = await User.findOne({ email: req.user.email });
-  const orders = await Order.find({ user: me._id }).sort({ createdAt: -1 });
+  const orders = await Order.find({ user: me._id })
+    .populate('deliveryBoy', 'firstName lastName phone email')
+    .sort({ createdAt: -1 });
   res.json(orders);
 }));
 router.get('/orders/:id', requireCustomer, asyncHandler(async (req, res) => {
   const me = await User.findOne({ email: req.user.email });
-  const o = await Order.findOne({ _id: req.params.id, user: me._id });
+  const o = await Order.findOne({ _id: req.params.id, user: me._id })
+    .populate('deliveryBoy', 'firstName lastName phone email');
   if (!o) return res.status(404).json({ message: 'Not found' });
   res.json(o);
 }));
