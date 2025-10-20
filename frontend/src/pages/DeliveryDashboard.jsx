@@ -13,6 +13,7 @@ export default function DeliveryDashboard() {
   const [error, setError] = useState(null);
   const [acceptingOrder, setAcceptingOrder] = useState(null);
   const [startingDelivery, setStartingDelivery] = useState(null);
+  const [markingDelivered, setMarkingDelivered] = useState(null);
   const [stats, setStats] = useState({
     assigned: 0,
     accepted: 0,
@@ -98,6 +99,31 @@ export default function DeliveryDashboard() {
       alert('Failed to start delivery: ' + err.message);
     } finally {
       setStartingDelivery(null);
+    }
+  };
+
+  // Mark order as delivered
+  const handleMarkDelivered = async (orderId) => {
+    try {
+      setMarkingDelivered(orderId);
+      const response = await apiFetch(`/api/delivery/orders/${orderId}/delivered`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to mark order as delivered');
+      }
+
+      // Refresh orders list
+      fetchAssignedOrders();
+    } catch (err) {
+      console.error('Error marking order as delivered:', err);
+      alert('Failed to mark order as delivered: ' + err.message);
+    } finally {
+      setMarkingDelivered(null);
     }
   };
 
@@ -377,6 +403,49 @@ export default function DeliveryDashboard() {
                             <>
                               <Truck size={16} />
                               Start Delivery
+                            </>
+                          )}
+                        </button>
+                      )}
+                      {order.deliveryStatus === 'OUT_FOR_DELIVERY' && (
+                        <button
+                          onClick={() => handleMarkDelivered(order._id)}
+                          disabled={markingDelivered === order._id}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            borderRadius: '8px',
+                            border: 'none',
+                            background: '#22c55e',
+                            color: 'white',
+                            cursor: markingDelivered === order._id ? 'not-allowed' : 'pointer',
+                            fontWeight: 'bold',
+                            fontSize: '0.875rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            opacity: markingDelivered === order._id ? 0.6 : 1,
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (markingDelivered !== order._id) {
+                              e.target.style.background = '#16a34a';
+                              e.target.style.transform = 'scale(1.05)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.background = '#22c55e';
+                            e.target.style.transform = 'scale(1)';
+                          }}
+                        >
+                          {markingDelivered === order._id ? (
+                            <>
+                              <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                              Marking...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle size={16} />
+                              Mark Delivered
                             </>
                           )}
                         </button>

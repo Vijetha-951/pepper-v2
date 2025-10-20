@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
-import { Package, Search, Eye, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Package, Search, Eye, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft } from 'lucide-react';
 import './Orders.css';
 
 const Orders = () => {
@@ -33,6 +33,22 @@ const Orders = () => {
     filterOrders();
     setCurrentPage(1); // Reset to first page when filters change
   }, [orders, searchTerm, statusFilter, dateRange]);
+
+  // Handle browser back button - ensure it goes to dashboard
+  useEffect(() => {
+    // Store the current state in history so browser back goes to dashboard
+    window.history.pushState({ from: 'orders' }, '', window.location.pathname);
+
+    // Listen for back button
+    const handlePopState = (event) => {
+      if (event.state?.from !== 'orders') {
+        navigate('/dashboard');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [navigate]);
 
   const fetchOrders = async () => {
     try {
@@ -127,27 +143,9 @@ const Orders = () => {
     }).format(amount);
   };
 
-  const handleViewDetails = async (orderId) => {
-    try {
-      const token = await user.getIdToken();
-      const response = await fetch(`/api/user/orders/${orderId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const orderData = await response.json();
-        // Navigate to payment success page with order data
-        navigate('/payment-success', { state: { order: orderData, fromOrders: true } });
-      } else {
-        alert('Failed to fetch order details');
-      }
-    } catch (error) {
-      console.error('Error fetching order details:', error);
-      alert('Failed to load order details');
-    }
+  const handleViewDetails = (orderId) => {
+    // Navigate directly to the order tracking page
+    navigate(`/order-tracking/${orderId}`);
   };
 
   const handleDeleteOrder = async (orderId) => {
@@ -279,10 +277,19 @@ const Orders = () => {
       <div className="orders-content">
         {/* Header */}
         <div className="orders-header">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="back-button-orders"
+            title="Back to Dashboard"
+          >
+            <ArrowLeft size={20} />
+            Back
+          </button>
           <div className="logo-section">
             <span className="logo-icon">🌱</span>
             <span className="brand-name">PEPPER NURSERY</span>
           </div>
+          <div className="header-spacer-orders"></div>
         </div>
 
         {/* Title */}

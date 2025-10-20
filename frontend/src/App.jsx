@@ -24,6 +24,7 @@ import Cart from "./pages/Cart.jsx";
 import Checkout from "./pages/Checkout.jsx";
 import Orders from "./pages/Orders.jsx";
 import PaymentSuccess from "./pages/PaymentSuccess.jsx";
+import OrderTracking from "./pages/OrderTracking.jsx";
 
 function App() {
   return (
@@ -55,6 +56,8 @@ function App() {
           </>
         } />
         <Route path="/orders" element={<Orders />} />
+        <Route path="/my-orders" element={<Orders />} />
+        <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
         <Route path="/payment-success" element={
           <>
             <Navbar />
