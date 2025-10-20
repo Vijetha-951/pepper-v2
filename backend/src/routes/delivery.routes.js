@@ -57,6 +57,31 @@ router.patch('/orders/:id/delivered', requireDeliveryBoy, asyncHandler(async (re
   res.json(o);
 }));
 
+// Mark COD payment as accepted (payment collected)
+router.patch('/orders/:id/payment/cod-accepted', requireDeliveryBoy, asyncHandler(async (req, res) => {
+  const me = await User.findOne({ email: req.user.email });
+  const order = await Order.findOne({ _id: req.params.id, deliveryBoy: me._id });
+  
+  if (!order) {
+    return res.status(404).json({ message: 'Order not found' });
+  }
+  
+  if (order.payment.method !== 'COD') {
+    return res.status(400).json({ message: 'This order is not a COD payment' });
+  }
+  
+  if (order.payment.status !== 'PENDING') {
+    return res.status(400).json({ message: 'Payment has already been processed' });
+  }
+  
+  const o = await Order.findOneAndUpdate(
+    { _id: req.params.id, deliveryBoy: me._id },
+    { 'payment.status': 'PAID' },
+    { new: true }
+  );
+  res.json(o);
+}));
+
 // Update delivery boy status
 router.patch('/status', requireDeliveryBoy, asyncHandler(async (req, res) => {
   const { status } = req.body;

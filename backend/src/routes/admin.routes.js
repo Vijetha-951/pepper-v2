@@ -347,6 +347,19 @@ router.patch('/orders/:id/cancel', asyncHandler(async (req, res) => {
   res.json(o);
 }));
 
+// Get individual order details with all related info
+router.get('/orders/:id', asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id)
+    .populate('user', 'firstName lastName email phone')
+    .populate('deliveryBoy', 'firstName lastName phone deliveryStatus assignedAreas');
+  
+  if (!order) {
+    return res.status(404).json({ success: false, message: 'Order not found' });
+  }
+  
+  res.json(order);
+}));
+
 // Simple report
 router.get('/reports/summary', asyncHandler(async (_req, res) => {
   const [totalOrders, pending, delivered] = await Promise.all([

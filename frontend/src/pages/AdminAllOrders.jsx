@@ -213,9 +213,7 @@ const AdminAllOrders = () => {
   };
 
   const handleViewDetails = (orderId) => {
-    // TODO: Implement order details modal or navigation
-    console.log('View order details:', orderId);
-    alert(`View details for order: ${orderId.slice(-8).toUpperCase()}`);
+    navigate(`/admin/orders/${orderId}`);
   };
 
   const handleUpdateStatus = async (orderId, newStatus) => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Truck, Package, MapPin, CheckCircle, Clock, LogOut, Loader, AlertCircle, MapPinIcon } from "lucide-react";
+import { Truck, Package, MapPin, CheckCircle, Clock, LogOut, Loader, AlertCircle, MapPinIcon, DollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import authService from "../services/authService";
 import { apiFetch } from "../services/api";
@@ -14,6 +14,7 @@ export default function DeliveryDashboard() {
   const [acceptingOrder, setAcceptingOrder] = useState(null);
   const [startingDelivery, setStartingDelivery] = useState(null);
   const [markingDelivered, setMarkingDelivered] = useState(null);
+  const [markingCodPayment, setMarkingCodPayment] = useState(null);
   const [stats, setStats] = useState({
     assigned: 0,
     accepted: 0,
@@ -124,6 +125,31 @@ export default function DeliveryDashboard() {
       alert('Failed to mark order as delivered: ' + err.message);
     } finally {
       setMarkingDelivered(null);
+    }
+  };
+
+  // Mark COD payment as accepted
+  const handleMarkCodPaymentAccepted = async (orderId) => {
+    try {
+      setMarkingCodPayment(orderId);
+      const response = await apiFetch(`/api/delivery/orders/${orderId}/payment/cod-accepted`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to mark payment as accepted');
+      }
+
+      // Refresh orders list
+      fetchAssignedOrders();
+    } catch (err) {
+      console.error('Error marking COD payment as accepted:', err);
+      alert('Failed to mark payment as accepted: ' + err.message);
+    } finally {
+      setMarkingCodPayment(null);
     }
   };
 
@@ -446,6 +472,49 @@ export default function DeliveryDashboard() {
                             <>
                               <CheckCircle size={16} />
                               Mark Delivered
+                            </>
+                          )}
+                        </button>
+                      )}
+                      {order.payment?.method === 'COD' && order.payment?.status === 'PENDING' && (order.deliveryStatus === 'OUT_FOR_DELIVERY' || order.deliveryStatus === 'DELIVERED') && (
+                        <button
+                          onClick={() => handleMarkCodPaymentAccepted(order._id)}
+                          disabled={markingCodPayment === order._id}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            borderRadius: '8px',
+                            border: 'none',
+                            background: '#f59e0b',
+                            color: 'white',
+                            cursor: markingCodPayment === order._id ? 'not-allowed' : 'pointer',
+                            fontWeight: 'bold',
+                            fontSize: '0.875rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            opacity: markingCodPayment === order._id ? 0.6 : 1,
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (markingCodPayment !== order._id) {
+                              e.target.style.background = '#d97706';
+                              e.target.style.transform = 'scale(1.05)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.background = '#f59e0b';
+                            e.target.style.transform = 'scale(1)';
+                          }}
+                        >
+                          {markingCodPayment === order._id ? (
+                            <>
+                              <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                              Accepting...
+                            </>
+                          ) : (
+                            <>
+                              <DollarSign size={16} />
+                              Payment Accepted
                             </>
                           )}
                         </button>
