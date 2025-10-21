@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, CheckCircle, XCircle, Truck, Package, AlertCircle, Leaf, Cog } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, CheckCircle, XCircle, Truck, Package, AlertCircle, Cog } from 'lucide-react';
 import './OrderTracking.css';
 
 const OrderTracking = () => {
@@ -10,7 +10,6 @@ const OrderTracking = () => {
   const navigate = useNavigate();
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
-  const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -19,28 +18,8 @@ const OrderTracking = () => {
       navigate('/login');
     } else if (orderId) {
       fetchOrderDetails();
-      fetchRecentOrders();
     }
   }, [user, orderId, navigate]);
-
-  const fetchRecentOrders = async () => {
-    try {
-      const token = await user.getIdToken();
-      const response = await fetch('/api/user/orders?limit=5', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setRecentOrders(data.orders || []);
-      }
-    } catch (err) {
-      console.error('Error fetching recent orders:', err);
-    }
-  };
 
   const fetchOrderDetails = async () => {
     try {
@@ -191,46 +170,6 @@ const OrderTracking = () => {
       </div>
 
       <div className="tracking-content">
-        {/* Sidebar - Recent Orders */}
-        <div className="tracking-sidebar">
-          <div className="sidebar-header">
-            <Leaf size={24} />
-            <h2>Your Recent Orders</h2>
-          </div>
-
-          {/* Recent Orders List */}
-          <div className="recent-orders-list">
-            {recentOrders.map((recentOrder) => (
-              <div
-                key={recentOrder._id}
-                className={`recent-order-item ${recentOrder._id === orderId ? 'active' : ''}`}
-                onClick={() => navigate(`/order-tracking/${recentOrder._id}`)}
-              >
-                <div className="order-item-image">
-                  {recentOrder.items && recentOrder.items[0]?.image ? (
-                    <img src={recentOrder.items[0].image} alt="Product" />
-                  ) : (
-                    <div className="plant-placeholder">
-                      <Leaf size={32} />
-                    </div>
-                  )}
-                </div>
-                <div className="order-item-info">
-                  <p className="order-item-id">Order ID #{recentOrder._id?.slice(-6).toUpperCase()}</p>
-                  <p className="order-item-pid">Plant ID</p>
-                  <p className="order-item-date">
-                    {new Date(recentOrder.createdAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: '2-digit'
-                    })}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Main Content - Tracking Timeline */}
         <div className="tracking-main">
           <div className="tracking-card">

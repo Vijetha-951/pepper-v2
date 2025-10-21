@@ -1,17 +1,17 @@
 .order-tracking-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #e8f5e9 100%);
-  padding: 2rem 1rem;
+  padding: 2rem;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Header */
 .tracking-header {
-  max-width: 1400px;
-  margin: 0 auto 2rem;
+  margin: 0 0 2rem 0;
   display: flex;
   align-items: center;
   gap: 1rem;
+  width: 100%;
 }
 
 .back-button {
@@ -50,11 +50,11 @@
 
 /* Content Layout */
 .tracking-content {
-  max-width: 1400px;
-  margin: 0 auto;
+  margin: 0;
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: 1fr;
   gap: 2rem;
+  width: 100%;
 }
 
 /* Sidebar */
@@ -160,6 +160,7 @@
 /* Main Content */
 .tracking-main {
   flex: 1;
+  width: 100%;
 }
 
 .tracking-card {
@@ -167,6 +168,7 @@
   border-radius: 16px;
   padding: 2.5rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  width: 100%;
 }
 
 /* Title and Order Info */
