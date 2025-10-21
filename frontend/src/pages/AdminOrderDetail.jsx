@@ -65,7 +65,7 @@ export default function AdminOrderDetail() {
     return (
       <div className="admin-order-detail-container">
         <button
-          onClick={() => navigate('/admin-orders')}
+          onClick={() => navigate('/admin/orders')}
           className="back-button"
         >
           <ArrowLeft size={16} /> Back to Orders
@@ -81,7 +81,7 @@ export default function AdminOrderDetail() {
     return (
       <div className="admin-order-detail-container">
         <button
-          onClick={() => navigate('/admin-orders')}
+          onClick={() => navigate('/admin/orders')}
           className="back-button"
           style={{ marginBottom: '1rem' }}
         >
@@ -154,7 +154,7 @@ export default function AdminOrderDetail() {
       <div className="admin-order-detail-header">
         <div className="admin-order-detail-header-left">
           <button
-            onClick={() => navigate('/admin-orders')}
+            onClick={() => navigate('/admin/orders')}
             className="back-button"
           >
             <ArrowLeft size={16} /> Back

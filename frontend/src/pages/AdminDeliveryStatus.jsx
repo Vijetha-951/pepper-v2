@@ -178,7 +178,7 @@ export default function AdminDeliveryStatus() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <button
-              onClick={() => navigate('/admin/dashboard')}
+              onClick={() => navigate(-1)}
               style={{
                 display: 'flex',
                 alignItems: 'center',

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Eye, Package, DollarSign, Clock, RefreshCw, ChevronLeft, ChevronRight, Truck, X } from 'lucide-react';
+import { Search, Eye, Package, DollarSign, Clock, RefreshCw, ChevronLeft, ChevronRight, Truck, X, ArrowLeft } from 'lucide-react';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import './AdminAllOrders.css';
@@ -371,9 +371,28 @@ const AdminAllOrders = () => {
       {/* Header */}
       <header className="admin-orders-header">
         <div className="header-content">
-          <div className="brand">
-            <span className="brand-icon">🌱</span>
-            <span className="brand-name">PEPPER NURSERY</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <button
+              onClick={() => navigate('/dashboard')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb',
+                background: 'white',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                color: '#6b7280'
+              }}
+            >
+              <ArrowLeft size={16} /> Back
+            </button>
+            <div className="brand">
+              <span className="brand-icon">🌱</span>
+              <span className="brand-name">PEPPER NURSERY</span>
+            </div>
           </div>
           <h1 className="page-title">Admin Dashboard: All Orders</h1>
         </div>
