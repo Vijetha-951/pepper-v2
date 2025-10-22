@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { User, Package, ShoppingCart, Truck, LogOut, Bell, Search, Plus, Package2, AlertCircle, CheckCircle } from "lucide-react";
+import { User, Package, ShoppingCart, Truck, LogOut, Bell, Search, Plus, Package2, AlertCircle, CheckCircle, Sparkles } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import authService from "../services/authService";
 import customerProductService from "../services/customerProductService";
+import RecommendedProducts from "../components/RecommendedProducts";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -55,6 +56,13 @@ export default function Dashboard() {
   useEffect(() => {
     if (activeTab === 'overview') {
       fetchDashboardStats();
+    }
+  }, [activeTab]);
+
+  // Fetch recommendations when recommendations tab is active
+  useEffect(() => {
+    if (activeTab === 'recommendations') {
+      // Component will handle fetching
     }
   }, [activeTab]);
 
@@ -279,6 +287,7 @@ export default function Dashboard() {
     ...(user.role !== 'admin' ? [
       { id: 'orders', label: 'My Orders', icon: ShoppingCart },
       { id: 'products', label: 'Products', icon: Package },
+      { id: 'recommendations', label: 'Recommendations', icon: Sparkles },
       { id: 'cart', label: 'My Cart', icon: ShoppingCart },
     ] : []),
     ...(user.role === 'deliveryboy' ? [{ id: 'deliveries', label: 'Deliveries', icon: Truck }] : []),
@@ -696,6 +705,8 @@ export default function Dashboard() {
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = 'translateY(-4px)';
                       e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
+                      // Track browsing on hover
+                      customerProductService.trackProductBrowsing(product._id).catch(() => {});
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = 'translateY(0)';
@@ -1098,6 +1109,18 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+        );
+      case 'recommendations':
+        return (
+          <RecommendedProducts 
+            onAddToCart={(productId, productName) => {
+              addToCart(productId, productName);
+            }}
+            onProductClick={(product) => {
+              // Could optionally navigate to product details here
+              console.log('Product clicked:', product);
+            }}
+          />
         );
       case 'deliveries':
         return (

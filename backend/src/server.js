@@ -12,6 +12,7 @@ import stockRouter from './routes/stockManagement.routes.js';
 import cartRouter from './routes/cart.routes.js';
 import ordersRouter from './routes/orders.routes.js';
 import paymentRouter from './routes/payment.routes.js';
+import recommendationsRouter from './routes/recommendations.routes.js';
 
 // Debug environment variables
 console.log('Environment variables loaded:');
@@ -41,6 +42,7 @@ app.use('/api/delivery', deliveryRouter);
 app.use('/api/cart', cartRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/payment', paymentRouter);
+app.use('/api/recommendations', recommendationsRouter);
 app.use('/api', stockRouter);
 
 // ====== Start server after DB connect ======

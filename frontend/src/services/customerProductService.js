@@ -6,6 +6,7 @@ import { auth } from '../config/firebase';
 const BASE_URL = '/api/products';
 const CART_URL = '/api/cart';
 const ORDERS_URL = '/api/orders';
+const RECOMMENDATIONS_URL = '/api/recommendations';
 
 class CustomerProductService {
   // Get auth token for authenticated requests
@@ -238,6 +239,99 @@ class CustomerProductService {
       return await response.json();
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
+      throw error;
+    }
+  }
+
+  // Get personalized product recommendations based on KNN algorithm
+  async getRecommendations(k = 5, limit = 5) {
+    try {
+      const token = await this.getAuthToken();
+      if (!token) {
+        throw new Error('User not authenticated');
+      }
+
+      const params = new URLSearchParams();
+      params.append('k', k);
+      params.append('limit', limit);
+
+      const response = await fetch(`${RECOMMENDATIONS_URL}/products?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Recommendations error response:', errorText);
+        throw new Error(`Failed to fetch recommendations: ${response.status} ${response.statusText}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text();
+        console.error('Non-JSON response:', responseText);
+        throw new Error('Server returned non-JSON response');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+      throw error;
+    }
+  }
+
+  // Track product browsing activity
+  async trackProductBrowsing(productId) {
+    try {
+      const token = await this.getAuthToken();
+      if (!token) {
+        // Don't throw error for non-authenticated browsing tracking
+        return null;
+      }
+
+      const response = await fetch(`${RECOMMENDATIONS_URL}/track`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ productId })
+      });
+
+      if (!response.ok) {
+        console.error('Error tracking browsing');
+        return null;
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error tracking product browsing:', error);
+      return null;
+    }
+  }
+
+  // Get recommendation insights
+  async getRecommendationInsights() {
+    try {
+      const token = await this.getAuthToken();
+      if (!token) {
+        throw new Error('User not authenticated');
+      }
+
+      const response = await fetch(`${RECOMMENDATIONS_URL}/insights`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch recommendation insights');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching recommendation insights:', error);
       throw error;
     }
   }
