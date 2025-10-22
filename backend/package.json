@@ -10,7 +10,9 @@
     "test": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest",
     "test:watch": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest --watch",
     "seed": "node scripts/seed.js",
-    "sync-users": "node scripts/syncFirestoreUsersToMongo.js"
+    "sync-users": "node scripts/syncFirestoreUsersToMongo.js",
+    "check-data": "node scripts/checkDashboardData.js",
+    "test-stats": "node scripts/testStatsEndpoints.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

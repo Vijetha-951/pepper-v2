@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
-import { Package, Search, Eye, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft } from 'lucide-react';
+import { Package, Search, Eye, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, Star } from 'lucide-react';
+import ReviewModal from '../components/ReviewModal';
 import './Orders.css';
 
 const Orders = () => {
@@ -19,6 +20,8 @@ const Orders = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewOrder, setReviewOrder] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -151,6 +154,20 @@ const Orders = () => {
   const handleDeleteOrder = async (orderId) => {
     setOrderToCancel(orderId);
     setShowCancelModal(true);
+  };
+
+  const handleReviewClick = (order) => {
+    setReviewOrder(order);
+    setShowReviewModal(true);
+  };
+
+  const handleReviewSuccess = () => {
+    setShowReviewModal(false);
+    setReviewOrder(null);
+    setSuccessMessage('Review submitted successfully!');
+    setTimeout(() => {
+      setSuccessMessage('');
+    }, 3000);
   };
 
   const confirmCancelOrder = async () => {
@@ -459,6 +476,16 @@ const Orders = () => {
                           <Eye size={16} />
                           <span>View Details / Invoice</span>
                         </button>
+                        {order.status === 'DELIVERED' && (
+                          <button
+                            className="action-btn review-btn"
+                            onClick={() => handleReviewClick(order)}
+                            title="Review Order"
+                          >
+                            <Star size={16} />
+                            <span>Review Order</span>
+                          </button>
+                        )}
                         {(order.status === 'PENDING' || order.status === 'APPROVED') && (
                           <button
                             className="action-btn delete-btn"
@@ -541,6 +568,14 @@ const Orders = () => {
           <p>Need help? Contact us: support@peppernursery.com | 1-800-PLANT-GO</p>
         </div>
       </div>
+
+      {/* Review Modal */}
+      <ReviewModal
+        isOpen={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        order={reviewOrder || {}}
+        onSuccess={handleReviewSuccess}
+      />
 
       {/* Cancel Order Confirmation Modal */}
       {showCancelModal && (

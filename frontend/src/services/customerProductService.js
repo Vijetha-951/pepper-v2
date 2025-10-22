@@ -6,6 +6,7 @@ import { auth } from '../config/firebase';
 const BASE_URL = '/api/products';
 const CART_URL = '/api/cart';
 const ORDERS_URL = '/api/orders';
+const ADMIN_URL = '/api/admin';
 const RECOMMENDATIONS_URL = '/api/recommendations';
 
 class CustomerProductService {
@@ -239,6 +240,40 @@ class CustomerProductService {
       return await response.json();
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
+      throw error;
+    }
+  }
+
+  // Get admin dashboard stats - system-wide statistics for all orders
+  async getAdminDashboardStats() {
+    try {
+      const token = await this.getAuthToken();
+      if (!token) {
+        throw new Error('User not authenticated');
+      }
+
+      const response = await fetch(`${ADMIN_URL}/stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Admin dashboard stats error response:', errorText);
+        throw new Error(`Failed to fetch admin dashboard stats: ${response.status} ${response.statusText}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text();
+        console.error('Non-JSON response:', responseText);
+        throw new Error('Server returned non-JSON response');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching admin dashboard stats:', error);
       throw error;
     }
   }

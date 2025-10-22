@@ -4,6 +4,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import authService from "../services/authService";
 import customerProductService from "../services/customerProductService";
 import RecommendedProducts from "../components/RecommendedProducts";
+import MyReviews from "./MyReviews";
+import DemandPredictionWidget from "../components/DemandPredictionWidget";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -30,12 +32,24 @@ export default function Dashboard() {
   const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
-    const currentUser = authService.getCurrentUser();
-    if (!currentUser) {
-      window.location.href = '/login';
-      return;
-    }
-    setUser(currentUser);
+    const initializeUser = async () => {
+      let currentUser = authService.getCurrentUser();
+      if (!currentUser) {
+        window.location.href = '/login';
+        return;
+      }
+      
+      // Ensure user profile is refreshed from backend (to get latest role)
+      if (!currentUser.role) {
+        console.log('Refreshing user profile to fetch role...');
+        const refreshed = await authService.refreshUserProfile();
+        currentUser = refreshed || currentUser;
+      }
+      
+      setUser(currentUser);
+    };
+    
+    initializeUser();
   }, []);
 
   // Fetch products when products tab is active
@@ -133,7 +147,27 @@ export default function Dashboard() {
   const fetchDashboardStats = async () => {
     setStatsLoading(true);
     try {
-      const data = await customerProductService.getDashboardStats();
+      // Ensure user role is properly loaded
+      if (!user?.role) {
+        console.warn('⚠️ User role not found, attempting to refresh user profile...');
+        await authService.refreshUserProfile();
+        const updatedUser = authService.getCurrentUser();
+        setUser(updatedUser);
+      }
+
+      // Use admin stats endpoint for admin users, regular stats for other users
+      const endpoint = user?.role === 'admin' 
+        ? 'admin dashboard'
+        : 'user dashboard';
+      
+      console.log(`📊 Fetching ${endpoint} stats for user role: ${user?.role || 'unknown'}`);
+      
+      const data = user?.role === 'admin' 
+        ? await customerProductService.getAdminDashboardStats()
+        : await customerProductService.getDashboardStats();
+      
+      console.log('📊 Stats data received:', data);
+      
       setStats({
         totalOrders: data.totalOrders || 0,
         pendingDeliveries: data.pendingDeliveries || 0,
@@ -141,9 +175,15 @@ export default function Dashboard() {
         newNotifications: data.newNotifications || 0
       });
       setRecentActivity(data.recentActivity || []);
+      setErrorMessage(""); // Clear any previous errors
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
-      // Keep existing dummy data if fetch fails
+      console.error('❌ Error fetching dashboard stats:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        userRole: user?.role
+      });
+      setErrorMessage(`Failed to load dashboard stats: ${error.message}`);
     } finally {
       setStatsLoading(false);
     }
@@ -284,14 +324,15 @@ export default function Dashboard() {
 
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: Package },
-    ...(user.role !== 'admin' ? [
+    ...(user?.role !== 'admin' ? [
       { id: 'orders', label: 'My Orders', icon: ShoppingCart },
+      { id: 'reviews', label: 'My Reviews', icon: Sparkles },
       { id: 'products', label: 'Products', icon: Package },
       { id: 'recommendations', label: 'Recommendations', icon: Sparkles },
       { id: 'cart', label: 'My Cart', icon: ShoppingCart },
     ] : []),
-    ...(user.role === 'deliveryboy' ? [{ id: 'deliveries', label: 'Deliveries', icon: Truck }] : []),
-    ...(user.role === 'admin' ? [
+    ...(user?.role === 'deliveryboy' ? [{ id: 'deliveries', label: 'Deliveries', icon: Truck }] : []),
+    ...(user?.role === 'admin' ? [
       { id: 'admin-users', label: 'User Management', icon: User },
       { id: 'admin-products', label: 'Product Management', icon: Package },
       { id: 'admin-stock', label: 'Stock Management', icon: Package2 },
@@ -303,6 +344,22 @@ export default function Dashboard() {
 
   const renderOverview = () => (
     <div>
+      {errorMessage && (
+        <div style={{
+          padding: '1rem',
+          marginBottom: '1.5rem',
+          backgroundColor: '#fee2e2',
+          border: '1px solid #fca5a5',
+          borderRadius: '0.5rem',
+          color: '#991b1b',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem'
+        }}>
+          <AlertCircle size={20} />
+          <span>{errorMessage}</span>
+        </div>
+      )}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
@@ -436,6 +493,13 @@ export default function Dashboard() {
           </p>
         )}
       </div>
+
+      {/* Stock Demand Prediction Widget for Admins */}
+      {user?.role === 'admin' && (
+        <div style={{ marginTop: '2rem' }}>
+          <DemandPredictionWidget />
+        </div>
+      )}
     </div>
   );
 
@@ -1267,6 +1331,8 @@ export default function Dashboard() {
             <p style={{ color: '#6b7280', fontSize: 12, marginTop: 8 }}>Open full view at /admin-orders if the embed is blocked by CSP.</p>
           </div>
         );
+      case 'reviews':
+        return <MyReviews />;
       default:
         return renderOverview();
     }

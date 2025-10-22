@@ -291,6 +291,15 @@ class AuthService {
     this.firebaseAuth.onAuthStateChange(callback);
   }
 
+  // Get authentication token
+  async getAuthToken() {
+    const firebaseUser = this.firebaseAuth.getCurrentUser();
+    if (!firebaseUser) {
+      throw new Error('User not authenticated');
+    }
+    return await firebaseUser.getIdToken(true);
+  }
+
   // Forgot password helper
   async forgotPassword(email) {
     if (!email) return { success: false, error: 'Please enter your email address.' };
