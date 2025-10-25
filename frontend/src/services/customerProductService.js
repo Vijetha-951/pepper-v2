@@ -370,6 +370,44 @@ class CustomerProductService {
       throw error;
     }
   }
+
+  // Get full list of demand predictions for admin (for standalone page)
+  async getAdminDemandPredictionsFullList(limit = 50, monthsBack = 6) {
+    try {
+      const token = await this.getAuthToken();
+      if (!token) {
+        throw new Error('User not authenticated');
+      }
+
+      const params = new URLSearchParams();
+      params.append('limit', limit);
+      params.append('monthsBack', monthsBack);
+
+      const response = await fetch(`${ADMIN_URL}/demand-predictions?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Demand predictions error response:', errorText);
+        throw new Error(`Failed to fetch demand predictions: ${response.status} ${response.statusText}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text();
+        console.error('Non-JSON response:', responseText);
+        throw new Error('Server returned non-JSON response');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching demand predictions:', error);
+      throw error;
+    }
+  }
 }
 
 export default new CustomerProductService();

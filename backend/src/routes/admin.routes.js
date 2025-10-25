@@ -554,16 +554,25 @@ router.get('/demand-predictions', asyncHandler(async (req, res) => {
     parseInt(monthsBack)
   );
   
+  // Calculate stats for frontend
+  const stats = {
+    criticalStocks: predictions.filter(p => p.stock <= 10).length,
+    needIncrease: predictions.filter(p => p.prediction.recommendation === 'INCREASE').length,
+    canReduce: predictions.filter(p => p.prediction.recommendation === 'REDUCE').length,
+    totalAnalyzed: predictions.length
+  };
+  
   res.json({
     success: true,
     predictions,
+    stats,
     total: predictions.length,
     generatedAt: new Date(),
     analysisMetadata: {
       monthsAnalyzed: parseInt(monthsBack),
       recommendedActions: {
-        INCREASE: predictions.filter(p => p.prediction.recommendation === 'INCREASE').length,
-        REDUCE: predictions.filter(p => p.prediction.recommendation === 'REDUCE').length,
+        INCREASE: stats.needIncrease,
+        REDUCE: stats.canReduce,
         MAINTAIN: predictions.filter(p => p.prediction.recommendation === 'MAINTAIN').length,
         MONITOR: predictions.filter(p => p.prediction.recommendation === 'MONITOR').length
       }

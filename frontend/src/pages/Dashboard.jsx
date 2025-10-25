@@ -336,6 +336,7 @@ export default function Dashboard() {
       { id: 'admin-users', label: 'User Management', icon: User },
       { id: 'admin-products', label: 'Product Management', icon: Package },
       { id: 'admin-stock', label: 'Stock Management', icon: Package2 },
+      { id: 'admin-demand-predictions', label: 'Demand Predictions', icon: Sparkles },
       { id: 'admin-orders', label: 'All Orders', icon: ShoppingCart },
       { id: 'admin-delivery-status', label: 'Delivery Status', icon: Truck }
     ] : []),
@@ -494,12 +495,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Stock Demand Prediction Widget for Admins */}
-      {user?.role === 'admin' && (
-        <div style={{ marginTop: '2rem' }}>
-          <DemandPredictionWidget />
-        </div>
-      )}
     </div>
   );
 
@@ -1437,6 +1432,8 @@ export default function Dashboard() {
                     navigate('/admin-users');
                   } else if (item.id === 'admin-products') {
                     navigate('/admin-products');
+                  } else if (item.id === 'admin-demand-predictions') {
+                    navigate('/admin-demand-predictions');
                   } else if (item.id === 'admin-orders') {
                     navigate('/admin-orders');
                   } else if (item.id === 'admin-delivery-status') {

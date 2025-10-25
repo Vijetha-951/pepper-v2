@@ -17,6 +17,7 @@ import AdminStockManagement from "./pages/AdminStockManagement.jsx";
 import AdminAllOrders from "./pages/AdminAllOrders.jsx";
 import AdminOrderDetail from "./pages/AdminOrderDetail.jsx";
 import AdminDeliveryStatus from "./pages/AdminDeliveryStatus.jsx";
+import AdminDemandPrediction from "./pages/AdminDemandPrediction.jsx";
 import DeliveryBoyStatus from "./pages/DeliveryBoyStatus.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 
@@ -84,6 +85,7 @@ function App() {
         <Route path="/admin-users" element={<AdminUserManagement />} />
         <Route path="/admin-products" element={<AdminProductManagement />} />
         <Route path="/admin-stock" element={<AdminStockManagement />} />
+        <Route path="/admin-demand-predictions" element={<AdminDemandPrediction />} />
         <Route path="/admin-orders" element={<AdminAllOrders />} />
         <Route path="/admin/orders" element={<AdminAllOrders />} />
         <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
