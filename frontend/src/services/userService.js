@@ -5,6 +5,7 @@ import { apiFetch } from "./api";
 
 const BASE_URL = '/api/admin/users';
 const DELIVERY_BASE_URL = '/api/admin/delivery-boys';
+const SEGMENTATION_BASE_URL = '/api/admin/customer-segments';
 
 const handleJson = async (resp) => {
   let data = null;
@@ -107,6 +108,35 @@ const userService = {
     const resp = await apiFetch(`${BASE_URL}/${encodeURIComponent(userId)}`, {
       method: "DELETE",
     });
+    return handleJson(resp);
+  },
+
+  async getCustomerSegments({ query = "", page = 1, limit = 20 } = {}) {
+    const params = new URLSearchParams();
+    if (query) params.set("q", query);
+    params.set("page", String(page));
+    params.set("limit", String(limit));
+
+    const resp = await apiFetch(`${SEGMENTATION_BASE_URL}?${params.toString()}`, {
+      method: "GET",
+    });
+
+    return handleJson(resp);
+  },
+
+  async getSegmentationStats() {
+    const resp = await apiFetch(`${SEGMENTATION_BASE_URL}/stats`, {
+      method: "GET",
+    });
+
+    return handleJson(resp);
+  },
+
+  async getCustomerSegment(userId) {
+    const resp = await apiFetch(`${SEGMENTATION_BASE_URL}/${encodeURIComponent(userId)}`, {
+      method: "GET",
+    });
+
     return handleJson(resp);
   },
 };

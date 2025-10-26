@@ -112,7 +112,7 @@ router.put('/item/:product_id', requireAuth, asyncHandler(async (req, res) => {
   const { quantity } = req.body;
   const userId = req.user.uid;
 
-  if (!quantity || quantity < 0) {
+  if (quantity === null || quantity === undefined || quantity < 0) {
     return res.status(400).json({ message: 'Valid quantity is required' });
   }
 

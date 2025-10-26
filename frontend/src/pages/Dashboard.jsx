@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Package, ShoppingCart, Truck, LogOut, Bell, Search, Plus, Package2, AlertCircle, CheckCircle, Sparkles } from "lucide-react";
+import { User, Package, ShoppingCart, Truck, LogOut, Bell, Search, Plus, Package2, AlertCircle, CheckCircle, Sparkles, Target } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import authService from "../services/authService";
 import customerProductService from "../services/customerProductService";
@@ -337,6 +337,7 @@ export default function Dashboard() {
       { id: 'admin-products', label: 'Product Management', icon: Package },
       { id: 'admin-stock', label: 'Stock Management', icon: Package2 },
       { id: 'admin-demand-predictions', label: 'Demand Predictions', icon: Sparkles },
+      { id: 'admin-customer-segmentation', label: 'Customer Segmentation', icon: Target },
       { id: 'admin-orders', label: 'All Orders', icon: ShoppingCart },
       { id: 'admin-delivery-status', label: 'Delivery Status', icon: Truck }
     ] : []),
@@ -1434,6 +1435,8 @@ export default function Dashboard() {
                     navigate('/admin-products');
                   } else if (item.id === 'admin-demand-predictions') {
                     navigate('/admin-demand-predictions');
+                  } else if (item.id === 'admin-customer-segmentation') {
+                    navigate('/admin-customer-segmentation');
                   } else if (item.id === 'admin-orders') {
                     navigate('/admin-orders');
                   } else if (item.id === 'admin-delivery-status') {

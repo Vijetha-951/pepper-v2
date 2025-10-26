@@ -1,0 +1,28 @@
+{
+  "name": "pepper-selenium-tests",
+  "version": "1.0.0",
+  "description": "Selenium tests for PEPPER e-commerce application",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:headless": "HEADLESS=true jest",
+    "test:chrome": "BROWSER=chrome jest",
+    "test:firefox": "BROWSER=firefox jest"
+  },
+  "dependencies": {
+    "selenium-webdriver": "^4.15.0",
+    "chromedriver": "^119.0.1",
+    "geckodriver": "^4.2.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-node": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/tests/**/*.test.js"],
+    "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
+    "testTimeout": 30000
+  }
+}

@@ -7,6 +7,7 @@ import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import admin from '../config/firebase.js';
 import { getFirestore } from 'firebase-admin/firestore';
 import DemandPredictionService from '../services/demandPredictionService.js';
+import CustomerSegmentationService from '../services/customerSegmentationService.js';
 
 const router = express.Router();
 router.use(requireAuth, requireAdmin);
@@ -594,6 +595,149 @@ router.get('/demand-predictions/:productId', asyncHandler(async (req, res) => {
     prediction,
     generatedAt: new Date()
   });
+}));
+
+// Customer Segmentation Routes
+// GET /api/admin/customer-segments - Get all customer segments
+router.get('/customer-segments', asyncHandler(async (req, res) => {
+  try {
+    const { role, active, status, q } = req.query;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(1000, Math.max(1, parseInt(req.query.limit, 10) || 50));
+    const skip = (page - 1) * limit;
+
+    const filter = { role: 'user' };
+    if (active !== undefined) filter.isActive = active === 'true';
+    if (q) {
+      filter.$or = [
+        { firstName: { $regex: q, $options: 'i' } },
+        { lastName: { $regex: q, $options: 'i' } },
+        { email: { $regex: q, $options: 'i' } },
+      ];
+    }
+
+    const users = await User.find(filter)
+      .select('-__v -passwordHash')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const customersWithOrders = await Promise.all(
+      users.map(async (user) => {
+        const orders = await Order.find({ user: user._id })
+          .select('totalAmount createdAt status')
+          .sort({ createdAt: -1 })
+          .lean();
+        return {
+          ...user,
+          orders: orders || []
+        };
+      })
+    );
+
+    const segmentationResult = await CustomerSegmentationService.segmentCustomers(customersWithOrders);
+
+    res.json({
+      success: true,
+      customers: segmentationResult.customers || [],
+      summary: segmentationResult.summary || {},
+      page,
+      limit,
+      total: customersWithOrders.length
+    });
+  } catch (error) {
+    console.error('Customer segmentation error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to segment customers'
+    });
+  }
+}));
+
+// GET /api/admin/customer-segments/stats - Get segmentation statistics
+router.get('/customer-segments/stats', asyncHandler(async (req, res) => {
+  try {
+    const filter = { role: 'user' };
+    const users = await User.find(filter)
+      .select('-__v -passwordHash')
+      .lean();
+
+    const customersWithOrders = await Promise.all(
+      users.map(async (user) => {
+        const orders = await Order.find({ user: user._id })
+          .select('totalAmount createdAt status')
+          .sort({ createdAt: -1 })
+          .lean();
+        return {
+          ...user,
+          orders: orders || []
+        };
+      })
+    );
+
+    const segmentationResult = await CustomerSegmentationService.segmentCustomers(customersWithOrders);
+    const summary = segmentationResult.summary || {};
+
+    res.json({
+      success: true,
+      summary,
+      totalCustomers: customersWithOrders.length,
+      generatedAt: new Date(),
+      segments: {
+        new: summary.New || { count: 0, percentage: 0, avg_confidence: 0 },
+        regular: summary.Regular || { count: 0, percentage: 0, avg_confidence: 0 },
+        loyal: summary.Loyal || { count: 0, percentage: 0, avg_confidence: 0 },
+        inactive: summary.Inactive || { count: 0, percentage: 0, avg_confidence: 0 }
+      }
+    });
+  } catch (error) {
+    console.error('Segmentation stats error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to generate segmentation statistics'
+    });
+  }
+}));
+
+// GET /api/admin/customer-segments/:userId - Get single customer segment
+router.get('/customer-segments/:userId', asyncHandler(async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId)
+      .select('-__v -passwordHash')
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    const orders = await Order.find({ user: user._id })
+      .select('totalAmount createdAt status')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const customerWithOrders = {
+      ...user,
+      orders: orders || []
+    };
+
+    const segmentationResult = await CustomerSegmentationService.segmentSingleCustomer(customerWithOrders);
+
+    res.json({
+      success: true,
+      customer: segmentationResult.customer || segmentationResult,
+      generatedAt: new Date()
+    });
+  } catch (error) {
+    console.error('Single customer segmentation error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to segment customer'
+    });
+  }
 }));
 
 export default router;
