@@ -191,6 +191,11 @@ class DemandPredictionService {
     // Calculate urgency score (0-100) for sorting
     const urgencyScore = this.calculateUrgencyScore(recommendation, currentStock, recentAverage);
 
+    // Calculate suggested stock based on recent average or current stock (whichever is higher)
+    // This ensures meaningful suggestions even when current stock is 0
+    const baseStockForSuggestion = Math.max(currentStock, recentAverage);
+    const suggestedStock = Math.round(baseStockForSuggestion * (1 + adjustmentPercentage / 100));
+
     return {
       product: {
         _id: product._id,
@@ -212,7 +217,7 @@ class DemandPredictionService {
       prediction: {
         recommendation,
         adjustmentPercentage,
-        suggestedStock: Math.round(currentStock * (1 + adjustmentPercentage / 100)),
+        suggestedStock,
         reason,
         confidence: this.calculateConfidence(recentMonths.length, recentAverage)
       },
