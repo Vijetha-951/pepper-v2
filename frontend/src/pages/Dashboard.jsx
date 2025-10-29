@@ -338,6 +338,7 @@ export default function Dashboard() {
       { id: 'admin-stock', label: 'Stock Management', icon: Package2 },
       { id: 'admin-demand-predictions', label: 'Demand Predictions', icon: Sparkles },
       { id: 'admin-customer-segmentation', label: 'Customer Segmentation', icon: Target },
+      { id: 'admin-customer-reviews', label: 'Customer Reviews', icon: Sparkles },
       { id: 'admin-orders', label: 'All Orders', icon: ShoppingCart },
       { id: 'admin-delivery-status', label: 'Delivery Status', icon: Truck }
     ] : []),
@@ -1437,6 +1438,8 @@ export default function Dashboard() {
                     navigate('/admin-demand-predictions');
                   } else if (item.id === 'admin-customer-segmentation') {
                     navigate('/admin-customer-segmentation');
+                  } else if (item.id === 'admin-customer-reviews') {
+                    navigate('/admin-customer-reviews');
                   } else if (item.id === 'admin-orders') {
                     navigate('/admin-orders');
                   } else if (item.id === 'admin-delivery-status') {

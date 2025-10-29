@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler';
 import User from '../models/User.js';
 import Product from '../models/Product.js';
 import Order from '../models/Order.js';
+import Review from '../models/Review.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import admin from '../config/firebase.js';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -736,6 +737,232 @@ router.get('/customer-segments/:userId', asyncHandler(async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to segment customer'
+    });
+  }
+}));
+
+// ============ CUSTOMER REVIEWS MANAGEMENT ============
+
+// GET /api/admin/reviews - Get all customer reviews with filters
+router.get('/reviews', asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10, search, ratingFilter, complaintFilter, sortBy = 'recent', productFilter } = req.query;
+  
+  // Validate pagination
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
+  const skip = (pageNum - 1) * limitNum;
+
+  // Build filters
+  const filter = {};
+  
+  if (search) {
+    const searchRegex = new RegExp(search, 'i');
+    filter.$or = [
+      { comment: searchRegex },
+      { complaintDescription: searchRegex },
+      { 'user.firstName': searchRegex },
+      { 'user.lastName': searchRegex },
+      { 'product.name': searchRegex }
+    ];
+  }
+
+  if (ratingFilter && ratingFilter !== 'all') {
+    filter.rating = parseInt(ratingFilter, 10);
+  }
+
+  if (complaintFilter && complaintFilter !== 'all') {
+    filter.complaintType = complaintFilter;
+  }
+
+  if (productFilter) {
+    filter.product = productFilter;
+  }
+
+  // Sort options
+  const sortOptions = {
+    recent: { createdAt: -1 },
+    oldest: { createdAt: 1 },
+    highest_rating: { rating: -1 },
+    lowest_rating: { rating: 1 },
+    most_complaints: { complaintType: 1 }
+  };
+
+  try {
+    // Get total count
+    const total = await Review.countDocuments(filter);
+
+    // Fetch reviews with population
+    const reviews = await Review.find(filter)
+      .populate('user', 'firstName lastName email phone')
+      .populate('product', 'name image price category')
+      .populate('order', '_id')
+      .sort(sortOptions[sortBy] || sortOptions.recent)
+      .skip(skip)
+      .limit(limitNum)
+      .lean();
+
+    // Calculate statistics
+    const stats = await Review.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: null,
+          totalReviews: { $sum: 1 },
+          averageRating: { $avg: '$rating' },
+          ratingDistribution: {
+            $push: {
+              rating: '$rating',
+              count: 1
+            }
+          },
+          complaintCount: {
+            $sum: {
+              $cond: [{ $ne: ['$complaintType', 'None'] }, 1, 0]
+            }
+          }
+        }
+      }
+    ]);
+
+    // Format rating distribution
+    const ratingDistribution = {
+      5: 0,
+      4: 0,
+      3: 0,
+      2: 0,
+      1: 0
+    };
+
+    const reviewsByRating = await Review.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: '$rating',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    reviewsByRating.forEach(item => {
+      ratingDistribution[item._id] = item.count;
+    });
+
+    res.json({
+      reviews,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum)
+      },
+      stats: {
+        totalReviews: stats[0]?.totalReviews || 0,
+        averageRating: (stats[0]?.averageRating || 0).toFixed(1),
+        complaintCount: stats[0]?.complaintCount || 0,
+        ratingDistribution
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch reviews'
+    });
+  }
+}));
+
+// GET /api/admin/reviews/:reviewId - Get single review details
+router.get('/reviews/:reviewId', asyncHandler(async (req, res) => {
+  const review = await Review.findById(req.params.reviewId)
+    .populate('user', 'firstName lastName email phone address')
+    .populate('product', 'name image price category')
+    .populate('order');
+
+  if (!review) {
+    return res.status(404).json({ success: false, error: 'Review not found' });
+  }
+
+  res.json(review);
+}));
+
+// DELETE /api/admin/reviews/:reviewId - Delete a review
+router.delete('/reviews/:reviewId', asyncHandler(async (req, res) => {
+  const review = await Review.findById(req.params.reviewId);
+  
+  if (!review) {
+    return res.status(404).json({ success: false, error: 'Review not found' });
+  }
+
+  await Review.findByIdAndDelete(req.params.reviewId);
+  
+  res.json({ success: true, message: 'Review deleted successfully' });
+}));
+
+// PATCH /api/admin/reviews/:reviewId/publish - Toggle review visibility
+router.patch('/reviews/:reviewId/publish', asyncHandler(async (req, res) => {
+  const { isPublished } = req.body;
+  
+  const review = await Review.findByIdAndUpdate(
+    req.params.reviewId,
+    { isPublished: typeof isPublished === 'boolean' ? isPublished : !isPublished },
+    { new: true }
+  )
+    .populate('user', 'firstName lastName')
+    .populate('product', 'name');
+
+  if (!review) {
+    return res.status(404).json({ success: false, error: 'Review not found' });
+  }
+
+  res.json({ success: true, message: 'Review visibility updated', review });
+}));
+
+// GET /api/admin/reviews/stats/overview - Get reviews overview statistics
+router.get('/reviews/stats/overview', asyncHandler(async (req, res) => {
+  try {
+    const totalReviews = await Review.countDocuments();
+    const publishedReviews = await Review.countDocuments({ isPublished: true });
+    const unpublishedReviews = await Review.countDocuments({ isPublished: false });
+    const complaintReviews = await Review.countDocuments({ complaintType: { $ne: 'None' } });
+
+    const averageRatingAgg = await Review.aggregate([
+      {
+        $group: {
+          _id: null,
+          averageRating: { $avg: '$rating' }
+        }
+      }
+    ]);
+
+    const averageRating = averageRatingAgg[0]?.averageRating || 0;
+
+    const complaintTypes = await Review.aggregate([
+      { $match: { complaintType: { $ne: 'None' } } },
+      {
+        $group: {
+          _id: '$complaintType',
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]);
+
+    res.json({
+      success: true,
+      stats: {
+        totalReviews,
+        publishedReviews,
+        unpublishedReviews,
+        averageRating: averageRating.toFixed(1),
+        complaintReviews,
+        complaintTypes: complaintTypes || []
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching review statistics:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch review statistics'
     });
   }
 }));
