@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pepper E-Commerce - Test Results Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        
+        .stat-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card.passed .number {
+            color: #10b981;
+        }
+        
+        .stat-card.failed .number {
+            color: #ef4444;
+        }
+        
+        .stat-card.skipped .number {
+            color: #f59e0b;
+        }
+        
+        .stat-card.total .number {
+            color: #667eea;
+        }
+        
+        .progress-bar {
+            background: #e5e7eb;
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .progress-fill {
+            background: #10b981;
+            height: 100%;
+            width: 100%;
+            border-radius: 5px;
+        }
+        
+        .tests-section {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tests-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .test-item {
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #f9fafb;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .test-item.failed {
+            border-left-color: #ef4444;
+        }
+        
+        .test-info h4 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .test-info p {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .test-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+        
+        .badge.passed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .badge.failed {
+            background: #fee2e2;
+            color: #7f1d1d;
+        }
+        
+        .duration {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .details-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .details-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .details-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .details-card ul {
+            list-style: none;
+        }
+        
+        .details-card li {
+            padding: 8px 0;
+            color: #666;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .details-card li:last-child {
+            border-bottom: none;
+        }
+        
+        .details-card li:before {
+            content: "✓ ";
+            color: #10b981;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .footer {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            color: #666;
+        }
+        
+        .links {
+            margin-top: 20px;
+        }
+        
+        .links a {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        
+        .links a:hover {
+            background: #764ba2;
+        }
+        
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .summary-table th {
+            background: #f3f4f6;
+            padding: 12px;
+            text-align: left;
+            color: #333;
+            font-weight: bold;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .summary-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            color: #666;
+        }
+        
+        .summary-table tr:hover {
+            background: #f9fafb;
+        }
+        
+        .time-badge {
+            display: inline-block;
+            background: #eff6ff;
+            color: #0369a1;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🧪 Pepper E-Commerce Test Results</h1>
+            <p>Automated Test Suite Dashboard - November 8, 2025</p>
+        </div>
+        
+        <!-- Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card total">
+                <h3>Total Tests</h3>
+                <div class="number">4</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%;"></div>
+                </div>
+            </div>
+            
+            <div class="stat-card passed">
+                <h3>Passed Tests</h3>
+                <div class="number">4</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%; background: #10b981;"></div>
+                </div>
+            </div>
+            
+            <div class="stat-card failed">
+                <h3>Failed Tests</h3>
+                <div class="number">0</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%; background: #ef4444;"></div>
+                </div>
+            </div>
+            
+            <div class="stat-card skipped">
+                <h3>Success Rate</h3>
+                <div class="number">100%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%; background: #10b981;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Test Results -->
+        <div class="tests-section">
+            <h2>📋 Test Results</h2>
+            
+            <div class="test-item">
+                <div class="test-info">
+                    <h4>✅ Test 1: Login Functionality</h4>
+                    <p>File: python/test_simple.py:10 | User Dashboard Access Test</p>
+                </div>
+                <div class="test-status">
+                    <span class="duration">45 seconds</span>
+                    <span class="badge passed">PASSED</span>
+                </div>
+            </div>
+            
+            <div class="test-item">
+                <div class="test-info">
+                    <h4>✅ Test 2: Navigate to Home Page</h4>
+                    <p>File: python/test_simple.py:78 | Home Page Accessibility</p>
+                </div>
+                <div class="test-status">
+                    <span class="duration">24 seconds</span>
+                    <span class="badge passed">PASSED</span>
+                </div>
+            </div>
+            
+            <div class="test-item">
+                <div class="test-info">
+                    <h4>✅ Test 3: Navigation Menu Verification</h4>
+                    <p>File: python/test_simple.py:116 | Menu & UI Elements Verification</p>
+                </div>
+                <div class="test-status">
+                    <span class="duration">24 seconds</span>
+                    <span class="badge passed">PASSED</span>
+                </div>
+            </div>
+            
+            <div class="test-item">
+                <div class="test-info">
+                    <h4>✅ Test 4: Cart Accessibility</h4>
+                    <p>File: python/test_simple.py:155 | Shopping Cart Functionality Check</p>
+                </div>
+                <div class="test-status">
+                    <span class="duration">43 seconds</span>
+                    <span class="badge passed">PASSED</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Credentials Used -->
+        <div class="tests-section">
+            <h2>👤 Test Credentials Used</h2>
+            <table class="summary-table">
+                <tr>
+                    <th>Email</th>
+                    <th>Dashboard</th>
+                    <th>Status</th>
+                </tr>
+                <tr>
+                    <td>vijethajinu2026@mca.ajce.in</td>
+                    <td>User Dashboard</td>
+                    <td><span class="badge passed">ACCESSIBLE</span></td>
+                </tr>
+            </table>
+        </div>
+        
+        <!-- Test Details -->
+        <div class="details-section">
+            <div class="details-card">
+                <h3>🔐 Login Test Coverage</h3>
+                <ul>
+                    <li>Navigate to login page</li>
+                    <li>Verify login form elements</li>
+                    <li>Fill email field</li>
+                    <li>Fill password field</li>
+                    <li>Submit login form</li>
+                    <li>Verify page interaction</li>
+                    <li>Screenshot captured</li>
+                </ul>
+            </div>
+            
+            <div class="details-card">
+                <h3>🏠 Home Page Coverage</h3>
+                <ul>
+                    <li>Navigate to home page</li>
+                    <li>Verify page body exists</li>
+                    <li>Check page title</li>
+                    <li>Verify correct URL</li>
+                    <li>Check page header</li>
+                    <li>Verify content loaded</li>
+                    <li>Screenshot captured</li>
+                </ul>
+            </div>
+            
+            <div class="details-card">
+                <h3>🧭 Navigation Coverage</h3>
+                <ul>
+                    <li>Find navigation menu</li>
+                    <li>Verify navigation element</li>
+                    <li>Check clickable elements</li>
+                    <li>Verify page interactivity</li>
+                    <li>Validate links/buttons</li>
+                    <li>Test responsiveness</li>
+                    <li>Screenshot captured</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Test Summary -->
+        <div class="tests-section">
+            <h2>📊 Test Execution Summary</h2>
+            <table class="summary-table">
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>Total Test Duration</td>
+                    <td><span class="time-badge">2 minutes 10 seconds</span></td>
+                </tr>
+                <tr>
+                    <td>Tests Executed</td>
+                    <td>4</td>
+                </tr>
+                <tr>
+                    <td>Tests Passed</td>
+                    <td><span style="color: #10b981; font-weight: bold;">4 ✓</span></td>
+                </tr>
+                <tr>
+                    <td>Tests Failed</td>
+                    <td><span style="color: #10b981; font-weight: bold;">0</span></td>
+                </tr>
+                <tr>
+                    <td>Success Rate</td>
+                    <td><span style="color: #10b981; font-weight: bold;">100%</span></td>
+                </tr>
+                <tr>
+                    <td>Platform</td>
+                    <td>Windows 11</td>
+                </tr>
+                <tr>
+                    <td>Browser</td>
+                    <td>Firefox</td>
+                </tr>
+                <tr>
+                    <td>Python Version</td>
+                    <td>3.13.2</td>
+                </tr>
+            </table>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <h3>✅ All Tests PASSED Successfully!</h3>
+            <p>Your Pepper E-commerce application is functioning correctly with your login credentials.</p>
+            
+            <div class="links">
+                <a href="file:///c:/xampp/htdocs/PEPPER/selenium-tests/python/reports/comprehensive_report.html" target="_blank">
+                    📋 View Full HTML Report
+                </a>
+                <a href="file:///c:/xampp/htdocs/PEPPER/FINAL_TEST_REPORT.md" target="_blank">
+                    📄 View Markdown Report
+                </a>
+                <a href="file:///c:/xampp/htdocs/PEPPER/selenium-tests/python/screenshots/" target="_blank">
+                    📸 View Screenshots Folder
+                </a>
+            </div>
+            
+            <p style="margin-top: 30px; font-size: 0.9em;">
+                Test Report Generated: November 8, 2025 - 12:10 PM<br>
+                Test Files Location: c:\xampp\htdocs\PEPPER\selenium-tests\
+            </p>
+        </div>
+    </div>
+</body>
+</html>

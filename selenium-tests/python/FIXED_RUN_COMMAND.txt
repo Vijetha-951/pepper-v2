@@ -1,0 +1,48 @@
+========================================
+HOW TO RUN TESTS - FIXED VERSION
+========================================
+
+The tests are now configured to use Firefox by default (better Windows compatibility).
+
+OPTION 1: Run with Firefox (Recommended)
+-----------------------------------------
+cd selenium-tests\python
+python -m pytest --html=reports/report.html --self-contained-html -v
+
+OPTION 2: Run with Chrome (if ChromeDriver works)
+--------------------------------------------------
+1. Edit config.py and change:
+   BROWSER = os.getenv("BROWSER", "chrome")
+   
+2. Then run:
+   python -m pytest --html=reports/report.html --self-contained-html -v
+
+OPTION 3: Use the batch file
+-----------------------------
+cd selenium-tests\python
+run_tests_fixed.bat
+
+========================================
+WHAT WAS FIXED:
+========================================
+1. Removed emoji characters (Windows encoding issues)
+2. Added Firefox fallback for ChromeDriver issues
+3. Better error handling
+4. Fixed Unicode encoding problems
+
+========================================
+TROUBLESHOOTING:
+========================================
+
+If Firefox doesn't work:
+1. Install Firefox browser
+2. Or try Chrome (edit config.py)
+
+If tests still fail:
+1. Make sure PEPPER is running on localhost:3000
+2. Check credentials in config.py
+3. Check screenshots folder for visual debugging
+
+========================================
+
+

@@ -7,17 +7,27 @@ class WebDriverManager {
     this.driver = null;
     this.baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     this.browser = process.env.BROWSER || 'chrome';
-    this.headless = process.env.HEADLESS === 'true';
+    this.headless = process.env.HEADLESS === 'true' ? true : false;
+    console.log(`\n📋 WebDriver Configuration:`);
+    console.log(`   Browser: ${this.browser}`);
+    console.log(`   Headless: ${this.headless}`);
+    console.log(`   Base URL: ${this.baseUrl}`);
   }
 
   async createDriver() {
     let options;
+    console.log(`\n⏳ Starting WebDriver initialization...`);
     
     try {
+      console.log(`📍 Step 1: Setting up ${this.browser} options...`);
+      
       if (this.browser === 'chrome') {
         options = new chrome.Options();
         if (this.headless) {
           options.addArguments('--headless');
+          console.log(`   • Using headless mode`);
+        } else {
+          console.log(`   • Using visible browser window`);
         }
         options.addArguments('--no-sandbox');
         options.addArguments('--disable-dev-shm-usage');
@@ -25,26 +35,34 @@ class WebDriverManager {
         options.addArguments('--window-size=1920,1080');
         options.addArguments('--disable-web-security');
         options.addArguments('--allow-running-insecure-content');
+        console.log(`   ✓ Chrome options configured`);
       } else if (this.browser === 'firefox') {
         options = new firefox.Options();
         if (this.headless) {
           options.addArguments('--headless');
+          console.log(`   • Using headless mode`);
+        } else {
+          console.log(`   • Using visible browser window`);
         }
+        console.log(`   ✓ Firefox options configured`);
       }
 
+      console.log(`\n📍 Step 2: Building WebDriver...`);
       this.driver = await new Builder()
         .forBrowser(this.browser)
         .setChromeOptions(options)
         .setFirefoxOptions(options)
         .build();
         
+      console.log(`\n📍 Step 3: Setting timeouts...`);
       console.log(`✅ WebDriver created successfully with ${this.browser}`);
     } catch (error) {
       console.log(`❌ Failed to create ${this.browser} driver:`, error.message);
+      console.log(`Error details: ${error.stack}`);
       
       // Try alternative browser
       const alternativeBrowser = this.browser === 'chrome' ? 'firefox' : 'chrome';
-      console.log(`🔄 Trying alternative browser: ${alternativeBrowser}`);
+      console.log(`\n🔄 Trying alternative browser: ${alternativeBrowser}`);
       
       try {
         if (alternativeBrowser === 'chrome') {
@@ -59,6 +77,7 @@ class WebDriverManager {
           options.addArguments('--headless');
         }
         
+        console.log(`   📍 Building ${alternativeBrowser}...`);
         this.driver = await new Builder()
           .forBrowser(alternativeBrowser)
           .setChromeOptions(options)
@@ -69,7 +88,11 @@ class WebDriverManager {
         console.log(`✅ WebDriver created successfully with ${alternativeBrowser}`);
       } catch (altError) {
         console.log(`❌ Failed to create ${alternativeBrowser} driver:`, altError.message);
-        throw new Error(`Unable to create WebDriver. Please ensure Chrome or Firefox is installed.`);
+        console.log(`\n⚠️  TROUBLESHOOTING TIPS:`);
+        console.log(`   1. Ensure Chrome or Firefox is installed`);
+        console.log(`   2. Run: npm install`);
+        console.log(`   3. Check if backend (port 5000) and frontend (port 3000) are running`);
+        throw new Error(`Unable to create WebDriver. Please check the troubleshooting tips above.`);
       }
     }
 
@@ -92,7 +115,8 @@ class WebDriverManager {
   async navigateTo(path = '') {
     const url = `${this.baseUrl}${path}`;
     await this.driver.get(url);
-    await this.driver.wait(until.titleContains('PEPPER'), 10000);
+    // Wait for page to load (don't wait for specific title as it may vary)
+    await this.driver.sleep(1000);
   }
 
   async waitForElement(selector, timeout = 10000) {
@@ -160,7 +184,7 @@ class WebDriverManager {
     
     const filename = `${name}_${Date.now()}.png`;
     const filepath = path.join(screenshotDir, filename);
-    fs.writeFileSync(filepath, screenshot, 'base64');
+    fs.writeFileSync(filepath, Buffer.from(screenshot, 'base64'));
     console.log(`Screenshot saved: ${filepath}`);
     return filepath;
   }

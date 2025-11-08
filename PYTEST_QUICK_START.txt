@@ -1,0 +1,196 @@
+================================================================================
+PEPPER SELENIUM TESTS - PYTEST VERSION - QUICK START
+================================================================================
+
+WHAT'S BEEN CREATED:
+  ✅ 8 test cases (2 each: login, browse, cart, checkout)
+  ✅ Python base class with reusable methods
+  ✅ Configuration file for easy customization
+  ✅ Pytest configuration & fixtures
+  ✅ Batch & shell scripts for test execution
+  ✅ Complete documentation
+
+FILES CREATED:
+  selenium-tests/
+    ├── config.py                   # Configuration file
+    ├── base_test.py               # Base class with helper methods
+    ├── test_login.py              # Login tests
+    ├── test_browse_products.py    # Browse product tests
+    ├── test_add_to_cart.py        # Cart tests
+    ├── test_checkout.py           # Checkout tests
+    ├── conftest.py                # Pytest configuration
+    ├── pytest.ini                 # Pytest settings
+    ├── requirements.txt           # Python dependencies
+    ├── run-pytest.bat             # Windows test runner
+    ├── run-pytest.sh              # Unix/Linux test runner
+    └── PYTEST_TESTS_GUIDE.md      # Full documentation
+
+QUICK START STEPS:
+
+1. Install Python Dependencies
+   ────────────────────────────
+   cd selenium-tests
+   pip install -r requirements.txt
+
+2. Ensure Services Running
+   ────────────────────────
+   Terminal 1: cd backend && npm start
+   Terminal 2: cd frontend && npm start
+   
+3. Run Tests
+   ────────────
+   Windows: run-pytest.bat
+   Linux/Mac: ./run-pytest.sh
+   
+   Or manually:
+   python -m pytest test_*.py -v
+
+TEST OUTPUT FORMAT:
+   ──────────────────
+   ======================================================================
+   🔐 TEST: User Login
+   ======================================================================
+   
+   Step 1: Navigate to login page...
+   ✓ Login page loaded
+   📸 Screenshot saved: selenium-tests/screenshots/01_login_page_loaded_[timestamp].png
+   
+   Step 2: Enter email and password...
+   ✓ Entered email: testuser@example.com
+   ✓ Entered password
+   
+   Step 3: Submit login form...
+   ✓ Clicked login button
+   
+   Step 4: Verify successful login...
+   ✓ User redirected to: http://localhost:3000/dashboard
+   
+   ✅ TEST PASSED: User successfully logged in
+
+TEST SUITES:
+
+1. test_login.py
+   • test_user_login() - User authentication
+   • test_admin_login() - Admin login
+
+2. test_browse_products.py
+   • test_browse_products() - Browse products
+   • test_filter_products() - Filter products
+
+3. test_add_to_cart.py
+   • test_add_to_cart() - Add to cart
+   • test_update_cart_quantity() - Update quantity
+
+4. test_checkout.py
+   • test_checkout_process() - Checkout flow
+   • test_place_order() - Place order
+
+COMMAND EXAMPLES:
+
+Run all tests:
+  python -m pytest test_*.py -v
+
+Run specific test file:
+  python -m pytest test_login.py -v
+
+Run specific test case:
+  python -m pytest test_login.py::TestLogin::test_user_login -v
+
+Run with verbose output (show print statements):
+  python -m pytest test_*.py -v -s
+
+Stop on first failure:
+  python -m pytest test_*.py -v -x
+
+Run tests in parallel:
+  pip install pytest-xdist
+  python -m pytest test_*.py -v -n auto
+
+CONFIGURATION:
+
+Edit selenium-tests/config.py:
+
+  BASE_URL = "http://localhost:3000"
+  BROWSER = "chrome"                 # or "firefox"
+  HEADLESS = False                   # Set to True for CI/CD
+  
+  TEST_USER = {
+      "email": "testuser@example.com",
+      "password": "testuser123"
+  }
+  
+  ADMIN_USER = {
+      "email": "vj.vijetha01@gmail.com",
+      "password": "Admin123#"
+  }
+
+SCREENSHOTS:
+
+All screenshots saved to: selenium-tests/screenshots/
+
+Format: {test_number}_{test_name}_{step}_{timestamp}.png
+
+Examples:
+  01_login_page_loaded_1730997227000.png
+  02_products_visible_1730997237500.png
+  03_added_to_cart_1730997245000.png
+
+TROUBLESHOOTING:
+
+Problem: "Python is not installed"
+Solution: Install Python 3.8+ from python.org
+
+Problem: "ModuleNotFoundError: No module named 'selenium'"
+Solution: pip install -r requirements.txt
+
+Problem: "Chrome/Firefox not found"
+Solution: Install Chrome or Firefox browser
+
+Problem: Tests timeout
+Solution: Increase timeouts in config.py:
+  IMPLICIT_WAIT = 30
+  PAGE_LOAD_TIMEOUT = 60
+
+Problem: Tests fail on login
+Solution: Check TEST_USER credentials in config.py
+
+COMMON PYTEST FLAGS:
+
+-v      Verbose output
+-s      Show print statements
+-x      Stop on first failure
+-k      Run tests matching keyword (e.g., -k "login")
+-m      Run tests with marker (e.g., -m "smoke")
+--tb    Traceback format (short, long, native)
+
+HELPFUL METHODS:
+
+From base_test.py, available in all tests:
+
+  wait_for_element(by, value, timeout=None)
+  wait_for_clickable(by, value, timeout=None)
+  wait_for_visible(by, value, timeout=None)
+  safe_click(element)
+  safe_send_keys(element, text)
+  scroll_to_element(element)
+  navigate_to(path="")
+  take_screenshot(name="screenshot")
+  get_current_url()
+  find_element(by, value)
+  find_elements(by, value)
+  element_exists(by, value)
+  get_element_text(element)
+
+FULL DOCUMENTATION:
+
+For complete details, read: PYTEST_TESTS_GUIDE.md
+
+READY TO GO!
+
+All test files are created and ready to run. Execute:
+
+  python -m pytest test_*.py -v
+
+This will run all 8 test cases and generate detailed reports with screenshots.
+
+================================================================================

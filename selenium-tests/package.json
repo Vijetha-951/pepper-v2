@@ -5,24 +5,26 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
+    "test:enhanced": "jest pepper-enhanced-tests.test.js --verbose",
     "test:watch": "jest --watch",
     "test:headless": "HEADLESS=true jest",
     "test:chrome": "BROWSER=chrome jest",
-    "test:firefox": "BROWSER=firefox jest"
+    "test:firefox": "BROWSER=firefox jest",
+    "pytest": "python -m pytest",
+    "pytest:verbose": "python -m pytest -v",
+    "pytest:login": "python -m pytest test_login.py -v",
+    "pytest:browse": "python -m pytest test_browse_products.py -v",
+    "pytest:cart": "python -m pytest test_add_to_cart.py -v",
+    "pytest:checkout": "python -m pytest test_checkout.py -v",
+    "pytest:all": "python -m pytest test_*.py -v"
   },
   "dependencies": {
-    "selenium-webdriver": "^4.15.0",
-    "chromedriver": "^119.0.1",
-    "geckodriver": "^4.2.1"
+    "chromedriver": "^142.0.1",
+    "geckodriver": "^4.2.1",
+    "selenium-webdriver": "^4.15.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",
     "jest-environment-node": "^29.7.0"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "testMatch": ["**/tests/**/*.test.js"],
-    "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
-    "testTimeout": 30000
   }
 }

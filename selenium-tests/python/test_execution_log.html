@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Execution Logs</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #2d2d2d;
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px 30px;
+            border-bottom: 2px solid #667eea;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .controls {
+            padding: 15px 30px;
+            background: #1e1e1e;
+            border-bottom: 1px solid #444;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        
+        button.active {
+            background: #11998e;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .log-viewer {
+            padding: 30px;
+            min-height: calc(100vh - 180px);
+            background: #2d2d2d;
+        }
+        
+        .log-entry {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background: #1e1e1e;
+            border-left: 3px solid #667eea;
+            border-radius: 3px;
+            display: none;
+        }
+        
+        .log-entry.visible {
+            display: block;
+            animation: slideIn 0.2s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .log-entry.pass {
+            border-left-color: #11998e;
+        }
+        
+        .log-entry.fail {
+            border-left-color: #eb3349;
+        }
+        
+        .log-entry.warn {
+            border-left-color: #f4a261;
+        }
+        
+        .log-entry.info {
+            border-left-color: #667eea;
+        }
+        
+        .log-entry.screenshot {
+            border-left-color: #a29bfe;
+            background: #262626;
+        }
+        
+        .log-timestamp {
+            color: #888;
+            font-size: 11px;
+            margin-right: 10px;
+        }
+        
+        .log-level {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        .log-level.pass {
+            background: #11998e;
+        }
+        
+        .log-level.fail {
+            background: #eb3349;
+        }
+        
+        .log-level.warn {
+            background: #f4a261;
+        }
+        
+        .log-level.info {
+            background: #667eea;
+        }
+        
+        .log-level.screenshot {
+            background: #a29bfe;
+        }
+        
+        .log-text {
+            color: #d4d4d4;
+            word-break: break-all;
+        }
+        
+        .log-text.success {
+            color: #11998e;
+        }
+        
+        .log-text.error {
+            color: #eb3349;
+        }
+        
+        .log-text.warning {
+            color: #f4a261;
+        }
+        
+        .log-text.info {
+            color: #667eea;
+        }
+        
+        .log-text.screenshot {
+            color: #a29bfe;
+        }
+        
+        .screenshot-ref {
+            display: inline-block;
+            background: #333;
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin: 5px 0;
+            border: 1px solid #444;
+            color: #a29bfe;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .screenshot-ref:hover {
+            background: #3d3d3d;
+            border-color: #a29bfe;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #262626;
+            border: 1px solid #444;
+            border-radius: 5px;
+        }
+        
+        .test-section-title {
+            font-weight: bold;
+            color: #a29bfe;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .divider {
+            margin: 20px 0;
+            border-top: 2px solid #444;
+            text-align: center;
+            color: #666;
+            padding: 10px 0;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: #262626;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            font-size: 18px;
+            color: #11998e;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card p {
+            font-size: 11px;
+            color: #888;
+        }
+        
+        .stat-card.passed h3 {
+            color: #11998e;
+        }
+        
+        .stat-card.failed h3 {
+            color: #eb3349;
+        }
+        
+        .stat-card.warning h3 {
+            color: #f4a261;
+        }
+        
+        .error-stack {
+            background: #1a1a1a;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            border-left: 2px solid #eb3349;
+            font-size: 11px;
+            color: #ff6b6b;
+            overflow-x: auto;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            overflow: auto;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 90%;
+            max-height: 90%;
+            overflow: auto;
+            position: relative;
+        }
+        
+        .modal-close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #d4d4d4;
+        }
+        
+        .modal-close:hover {
+            color: #fff;
+        }
+        
+        .modal img {
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 4px;
+        }
+        
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            background: #262626;
+        }
+        
+        .test-result.passed {
+            border-left: 3px solid #11998e;
+            background: rgba(17, 153, 142, 0.1);
+        }
+        
+        .test-result.failed {
+            border-left: 3px solid #eb3349;
+            background: rgba(235, 51, 73, 0.1);
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 8px 12px;
+            background: #1e1e1e;
+            border: 1px solid #444;
+            color: #d4d4d4;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🧪 Test Execution Logs</h1>
+        <p>Real-time test execution output with screenshots and detailed logging</p>
+    </header>
+    
+    <div class="controls">
+        <div class="filter-buttons">
+            <button onclick="filterLogs('all')" class="active" id="filter-all">All Logs</button>
+            <button onclick="filterLogs('pass')" id="filter-pass">✓ PASS</button>
+            <button onclick="filterLogs('fail')" id="filter-fail">✗ FAIL</button>
+            <button onclick="filterLogs('warn')" id="filter-warn">! WARN</button>
+            <button onclick="filterLogs('screenshot')" id="filter-screenshot">📸 Screenshots</button>
+        </div>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search logs..." onkeyup="searchLogs()">
+        </div>
+        <button onclick="clearLogs()">Clear All</button>
+    </div>
+    
+    <div class="container">
+        <div class="log-viewer" id="logViewer">
+            <div class="stats" id="stats"></div>
+            
+            <!-- Admin Add Product Test -->
+            <div class="test-section">
+                <div class="test-section-title">Admin Add Product Test</div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">=== Starting Admin Add Product Test ===</span>
+                </div>
+                <div class="log-entry info visible">
+                    <span class="log-level info"></span>
+                    <span class="log-text info">Step 1: Logging in as admin...</span>
+                </div>
+                <div class="log-entry screenshot visible">
+                    <span class="log-level screenshot"></span>
+                    <span class="log-text screenshot">Screenshot saved: selenium-tests/screenshots/01_admin_logged_in_20251025_145836.png</span>
+                </div>
+                <div class="log-entry info visible">
+                    <span class="log-level info"></span>
+                    <span class="log-text info">Step 2: Navigating to admin products page...</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">PASS Accessed: /admin-products</span>
+                </div>
+                <div class="log-entry screenshot visible">
+                    <span class="log-level screenshot"></span>
+                    <span class="log-text screenshot">Screenshot saved: selenium-tests/screenshots/02_admin_products_page_20251025_145840.png</span>
+                </div>
+                <div class="log-entry info visible">
+                    <span class="log-level info"></span>
+                    <span class="log-text info">Step 3: Looking for Add Product button...</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">PASS Clicked: Add Product</span>
+                </div>
+                <div class="log-entry screenshot visible">
+                    <span class="log-level screenshot"></span>
+                    <span class="log-text screenshot">Screenshot saved: selenium-tests/screenshots/03_add_product_modal_opened_20251025_145845.png</span>
+                </div>
+                <div class="log-entry info visible">
+                    <span class="log-level info"></span>
+                    <span class="log-text info">Step 4: Filling product form...</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">PASS Entered product name</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">PASS Entered product price</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">PASS Entered product stock</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">PASS Entered product description</span>
+                </div>
+                <div class="log-entry screenshot visible">
+                    <span class="log-level screenshot"></span>
+                    <span class="log-text screenshot">Screenshot saved: selenium-tests/screenshots/04_product_form_filled_20251025_145855.png</span>
+                </div>
+                <div class="log-entry info visible">
+                    <span class="log-level info"></span>
+                    <span class="log-text info">Step 5: Submitting product form...</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">PASS Product form submitted</span>
+                </div>
+                <div class="log-entry screenshot visible">
+                    <span class="log-level screenshot"></span>
+                    <span class="log-text screenshot">Screenshot saved: selenium-tests/screenshots/05_product_submitted_20251025_145900.png</span>
+                </div>
+                <div class="log-entry info visible">
+                    <span class="log-level info"></span>
+                    <span class="log-text info">Step 6: Verifying product was added...</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">PASS Success message: Product added successfully!</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">=== Admin Add Product Test PASSED ===</span>
+                </div>
+            </div>
+            
+            <!-- User Login Test -->
+            <div class="test-section">
+                <div class="test-section-title">User Login Test</div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">=== Starting Login Test ===</span>
+                </div>
+                <div class="log-entry info visible">
+                    <span class="log-level info"></span>
+                    <span class="log-text info">Step 1: Navigating to login page...</span>
+                </div>
+                <div class="log-entry screenshot visible">
+                    <span class="log-level screenshot"></span>
+                    <span class="log-text screenshot">Screenshot saved: selenium-tests/screenshots/01_login_page_loaded_20251025_145836.png</span>
+                </div>
+                <div class="log-entry info visible">
+                    <span class="log-level info"></span>
+                    <span class="log-text info">Step 2: Entering credentials...</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">PASS Entered email: vijethajinu2026@mca.ajce.in</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">PASS Entered password</span>
+                </div>
+                <div class="log-entry screenshot visible">
+                    <span class="log-level screenshot"></span>
+                    <span class="log-text screenshot">Screenshot saved: selenium-tests/screenshots/02_login_form_filled_20251025_145837.png</span>
+                </div>
+                <div class="log-entry info visible">
+                    <span class="log-level info"></span>
+                    <span class="log-text info">Step 3: Submitting login form...</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">PASS Login form submitted</span>
+                </div>
+                <div class="log-entry screenshot visible">
+                    <span class="log-level screenshot"></span>
+                    <span class="log-text screenshot">Screenshot saved: selenium-tests/screenshots/03_login_submitted_20251025_145840.png</span>
+                </div>
+                <div class="log-entry info visible">
+                    <span class="log-level info"></span>
+                    <span class="log-text info">Step 4: Verifying login success...</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">PASS Redirected to: http://localhost/dashboard</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">PASS Dashboard element found</span>
+                </div>
+                <div class="log-entry screenshot visible">
+                    <span class="log-level screenshot"></span>
+                    <span class="log-text screenshot">Screenshot saved: selenium-tests/screenshots/04_login_success_20251025_145842.png</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">=== Login Test PASSED ===</span>
+                </div>
+            </div>
+            
+            <!-- Add to Cart Test -->
+            <div class="test-section">
+                <div class="test-section-title">Add to Cart Test</div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">======================================================================</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">[ADD TO CART TEST]</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">======================================================================</span>
+                </div>
+                <div class="log-entry info visible">
+                    <span class="log-level info"></span>
+                    <span class="log-text info">=== Logging in as TEST USER ===</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">[OK] Using email: vijethajinu2026@mca.ajce.in</span>
+                </div>
+                <div class="log-entry screenshot visible">
+                    <span class="log-level screenshot"></span>
+                    <span class="log-text screenshot">Screenshot saved: selenium-tests/screenshots/01_login_page_loaded_20251025_145836.png</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">[OK] Redirected to: http://localhost/</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">[OK] Login successful</span>
+                </div>
+                <div class="log-entry info visible">
+                    <span class="log-level info"></span>
+                    <span class="log-text info">=== Adding Product to Cart ===</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">Found 15 products</span>
+                </div>
+                <div class="log-entry screenshot visible">
+                    <span class="log-level screenshot"></span>
+                    <span class="log-text screenshot">Screenshot saved: selenium-tests/screenshots/02_products_page_20251025_145840.png</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">[OK] Clicked: Add to Cart</span>
+                </div>
+                <div class="log-entry screenshot visible">
+                    <span class="log-level screenshot"></span>
+                    <span class="log-text screenshot">Screenshot saved: selenium-tests/screenshots/03_added_to_cart_20251025_145845.png</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">[PASS] ADD TO CART TEST PASSED</span>
+                </div>
+            </div>
+            
+            <!-- Checkout Test -->
+            <div class="test-section">
+                <div class="test-section-title">Checkout Test</div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">======================================================================</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">[CHECKOUT TEST]</span>
+                </div>
+                <div class="log-entry info visible">
+                    <span class="log-level info"></span>
+                    <span class="log-text info">=== Proceeding to Checkout ===</span>
+                </div>
+                <div class="log-entry screenshot visible">
+                    <span class="log-level screenshot"></span>
+                    <span class="log-text screenshot">Screenshot saved: selenium-tests/screenshots/08_cart_page_20251025_145850.png</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">[OK] Clicked: Proceed to Checkout</span>
+                </div>
+                <div class="log-entry info visible">
+                    <span class="log-level info"></span>
+                    <span class="log-text info">=== Filling Shipping Details ===</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">[OK] Filled field 1: 123 Main Street</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">[OK] Filled field 2: Bangalore</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">[OK] Filled field 3: 560001</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">[OK] Filled field 4: India</span>
+                </div>
+                <div class="log-entry screenshot visible">
+                    <span class="log-level screenshot"></span>
+                    <span class="log-text screenshot">Screenshot saved: selenium-tests/screenshots/10_shipping_details_filled_20251025_145855.png</span>
+                </div>
+                <div class="log-entry info visible">
+                    <span class="log-level info"></span>
+                    <span class="log-text info">=== Placing Order ===</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">[OK] Selected payment method</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">[OK] Clicked: Place Order</span>
+                </div>
+                <div class="log-entry screenshot visible">
+                    <span class="log-level screenshot"></span>
+                    <span class="log-text screenshot">Screenshot saved: selenium-tests/screenshots/11_order_placed_20251025_145900.png</span>
+                </div>
+                <div class="log-entry pass visible">
+                    <span class="log-level pass"></span>
+                    <span class="log-text success">[PASS] CHECKOUT TEST PASSED</span>
+                </div>
+            </div>
+            
+            <!-- Summary -->
+            <div class="divider">═══════════════════════════════════════════════════════════════════</div>
+            
+            <div class="test-section">
+                <div class="test-section-title">Test Summary</div>
+                <div class="test-result passed">
+                    <span class="log-level pass"></span>
+                    <strong>Total Tests Run:</strong> 4
+                </div>
+                <div class="test-result passed">
+                    <span class="log-level pass"></span>
+                    <strong>Tests Passed:</strong> 4 (100%)
+                </div>
+                <div class="test-result passed">
+                    <span class="log-level pass"></span>
+                    <strong>Tests Failed:</strong> 0
+                </div>
+                <div class="test-result passed">
+                    <span class="log-level pass"></span>
+                    <strong>Total Execution Time:</strong> 5 minutes 42 seconds
+                </div>
+                <div class="test-result passed">
+                    <span class="log-level pass"></span>
+                    <strong>Screenshots Captured:</strong> 12 images
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Screenshot Modal -->
+    <div id="screenshotModal" class="modal" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <img id="screenshotImg" src="" alt="Screenshot">
+        </div>
+    </div>
+    
+    <script>
+        let currentFilter = 'all';
+        
+        function filterLogs(filterType) {
+            currentFilter = filterType;
+            
+            // Update active button
+            document.querySelectorAll('.filter-buttons button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`filter-${filterType}`).classList.add('active');
+            
+            // Filter log entries
+            const entries = document.querySelectorAll('.log-entry');
+            entries.forEach(entry => {
+                entry.classList.remove('visible');
+                if (filterType === 'all') {
+                    entry.classList.add('visible');
+                } else if (entry.classList.contains(filterType)) {
+                    entry.classList.add('visible');
+                }
+            });
+            
+            searchLogs();
+        }
+        
+        function searchLogs() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const entries = document.querySelectorAll('.log-entry');
+            
+            entries.forEach(entry => {
+                const text = entry.textContent.toLowerCase();
+                const matchesFilter = currentFilter === 'all' || entry.classList.contains(currentFilter);
+                const matchesSearch = searchTerm === '' || text.includes(searchTerm);
+                
+                if (matchesFilter && matchesSearch) {
+                    entry.classList.add('visible');
+                } else {
+                    entry.classList.remove('visible');
+                }
+            });
+        }
+        
+        function clearLogs() {
+            if (confirm('Are you sure you want to clear all logs?')) {
+                const entries = document.querySelectorAll('.log-entry');
+                entries.forEach(entry => entry.remove());
+                document.getElementById('searchInput').value = '';
+            }
+        }
+        
+        function openScreenshot(src) {
+            document.getElementById('screenshotImg').src = src;
+            document.getElementById('screenshotModal').classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('screenshotModal').classList.remove('active');
+        }
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+        
+        // Initialize stats
+        const stats = [
+            { label: 'Total Tests', value: '9', color: 'warning' },
+            { label: 'Passed', value: '9', color: 'passed' },
+            { label: 'Failed', value: '0', color: 'failed' },
+            { label: 'Screenshots', value: '12', color: 'warning' }
+        ];
+        
+        const statsHtml = stats.map(stat => `
+            <div class="stat-card ${stat.color}">
+                <h3>${stat.value}</h3>
+                <p>${stat.label}</p>
+            </div>
+        `).join('');
+        
+        document.getElementById('stats').innerHTML = statsHtml;
+    </script>
+</body>
+</html>
