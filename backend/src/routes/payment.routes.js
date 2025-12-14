@@ -9,6 +9,7 @@ import Order from '../models/Order.js';
 import User from '../models/User.js';
 import { requireAuth } from '../middleware/auth.js';
 import { sendPaymentSuccessEmail } from '../services/emailService.js';
+import { planRoute } from '../services/logisticsService.js';
 
 const router = express.Router();
 
@@ -238,6 +239,10 @@ router.post('/verify', requireAuth, asyncHandler(async (req, res) => {
 
       const totalAmount = await cart.getCartTotal();
 
+      // Plan Route
+      const route = await planRoute(shippingAddress?.pincode, shippingAddress?.district);
+      const initialHub = route.length > 0 ? route[0] : null;
+
       const order = new Order({
         user: user._id, // Use MongoDB ObjectId instead of Firebase UID
         items: orderItems,
@@ -248,7 +253,15 @@ router.post('/verify', requireAuth, asyncHandler(async (req, res) => {
           method: 'ONLINE',
           status: 'PAID',
           transactionId: razorpay_payment_id
-        }
+        },
+        route: route,
+        currentHub: initialHub,
+        trackingTimeline: initialHub ? [{
+          status: 'ORDER_PLACED',
+          location: 'Warehouse', // Assuming first hub is warehouse
+          hub: initialHub,
+          description: 'Order placed and assigned to route'
+        }] : []
       });
 
       await order.save({ session });

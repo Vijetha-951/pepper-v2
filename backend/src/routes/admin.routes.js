@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import Product from '../models/Product.js';
 import Order from '../models/Order.js';
 import Review from '../models/Review.js';
+import Hub from '../models/Hub.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import admin from '../config/firebase.js';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -361,6 +362,41 @@ router.get('/orders/:id', asyncHandler(async (req, res) => {
   }
   
   res.json(order);
+}));
+
+// Get full delivery route for an order (Admin monitoring)
+router.get('/orders/:id/route', asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id)
+    .populate('route', 'name district order type')
+    .populate('currentHub', 'name district order type')
+    .populate('user', 'firstName lastName email phone')
+    .populate({
+      path: 'trackingTimeline',
+      populate: {
+        path: 'hub',
+        select: 'name district'
+      }
+    });
+
+  if (!order) {
+    return res.status(404).json({ message: 'Order not found' });
+  }
+
+  res.json({
+    order: {
+      _id: order._id,
+      user: order.user,
+      status: order.status,
+      shippingAddress: order.shippingAddress,
+      items: order.items,
+      totalAmount: order.totalAmount
+    },
+    route: order.route,
+    currentHub: order.currentHub,
+    trackingTimeline: order.trackingTimeline,
+    totalHubsInRoute: order.route?.length || 0,
+    currentHubIndex: order.route?.findIndex(h => h._id.toString() === order.currentHub?._id.toString()) || -1
+  });
 }));
 
 // Admin Dashboard Stats - comprehensive system-wide statistics

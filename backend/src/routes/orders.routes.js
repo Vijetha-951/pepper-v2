@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler';
 import Order from '../models/Order.js';
 import User from '../models/User.js';
 import Product from '../models/Product.js';
+import Hub from '../models/Hub.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -82,13 +83,73 @@ router.get('/:order_id', requireAuth, asyncHandler(async (req, res) => {
   const order = await Order.findOne({ _id: order_id, user: user._id })
     .populate('items.product', 'name image price')
     .populate('user', 'firstName lastName email phone')
-    .populate('deliveryBoy', 'firstName lastName phone');
+    .populate('deliveryBoy', 'firstName lastName phone')
+    .populate('route', 'name district order type')
+    .populate('currentHub', 'name district order type');
 
   if (!order) {
     return res.status(404).json({ message: 'Order not found' });
   }
 
   res.status(200).json(order);
+}));
+
+// Get order tracking details
+router.get('/:order_id/tracking', requireAuth, asyncHandler(async (req, res) => {
+  const { order_id } = req.params;
+  const firebaseUid = req.user.uid;
+
+  const user = await User.findOne({ firebaseUid });
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  const order = await Order.findOne({ _id: order_id, user: user._id })
+    .populate('route', 'name district order type')
+    .populate('currentHub', 'name district order type')
+    .populate({
+      path: 'trackingTimeline.hub',
+      select: 'name district type'
+    });
+
+  if (!order) {
+    return res.status(404).json({ message: 'Order not found' });
+  }
+
+  const routeProgress = order.route?.map((hub, index) => {
+    const isCurrentHub = order.currentHub?._id.toString() === hub._id.toString();
+    const isPassed = order.route?.slice(0, index).some(h => h._id.toString() === order.currentHub?._id.toString());
+    
+    return {
+      hub: {
+        _id: hub._id,
+        name: hub.name,
+        district: hub.district,
+        order: hub.order,
+        type: hub.type
+      },
+      status: isCurrentHub ? 'CURRENT' : isPassed ? 'PASSED' : 'UPCOMING',
+      arrivedAt: order.trackingTimeline?.find(t => t.hub?.toString() === hub._id.toString())?.timestamp
+    };
+  }) || [];
+
+  const response = {
+    orderId: order._id,
+    status: order.status,
+    totalAmount: order.totalAmount,
+    shippingAddress: order.shippingAddress,
+    currentHub: order.currentHub,
+    route: routeProgress,
+    trackingTimeline: order.trackingTimeline,
+    deliveryBoy: order.deliveryBoy,
+    deliveryStatus: order.deliveryStatus
+  };
+
+  if (order.status === 'OUT_FOR_DELIVERY' && order.deliveryOtp) {
+    response.deliveryOtp = order.deliveryOtp;
+  }
+
+  res.status(200).json(response);
 }));
 
 // Get all orders (admin only)

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import authService from "../services/authService";
 import Dashboard from "./Dashboard.jsx";
 import DeliveryDashboard from "./DeliveryDashboard.jsx";
+import HubManagerDashboard from "./HubManagerDashboard.jsx";
 
 export default function RoleBasedDashboard() {
   const [user, setUser] = useState(null);
@@ -57,5 +58,11 @@ export default function RoleBasedDashboard() {
 
   if (!user) return null;
 
-  return user.role === 'deliveryboy' ? <DeliveryDashboard /> : <Dashboard />;
+  if (user.role === 'deliveryboy') {
+    return <DeliveryDashboard />;
+  } else if (user.role === 'hubmanager') {
+    return <HubManagerDashboard />;
+  } else {
+    return <Dashboard />;
+  }
 }

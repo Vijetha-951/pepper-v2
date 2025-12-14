@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler';
 import Order from '../models/Order.js';
 import User from '../models/User.js';
 import { requireAuth } from '../middleware/auth.js';
+import { sendDeliveryOtpEmail } from '../services/emailService.js';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -39,22 +40,64 @@ router.patch('/orders/:id/accept', requireDeliveryBoy, asyncHandler(async (req, 
 
 router.patch('/orders/:id/out-for-delivery', requireDeliveryBoy, asyncHandler(async (req, res) => {
   const me = await User.findOne({ email: req.user.email });
-  const o = await Order.findOneAndUpdate(
-    { _id: req.params.id, deliveryBoy: me._id },
-    { deliveryStatus: 'OUT_FOR_DELIVERY', status: 'OUT_FOR_DELIVERY' },
-    { new: true }
-  );
-  res.json(o);
+  
+  const order = await Order.findOne({ _id: req.params.id, deliveryBoy: me._id }).populate('user');
+  if (!order) return res.status(404).json({ message: 'Order not found' });
+
+  // Generate OTP if not exists
+  if (!order.deliveryOtp) {
+    order.deliveryOtp = Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  order.deliveryStatus = 'OUT_FOR_DELIVERY';
+  order.status = 'OUT_FOR_DELIVERY';
+  
+  order.trackingTimeline.push({
+    status: 'OUT_FOR_DELIVERY',
+    location: 'Out for Delivery',
+    timestamp: new Date(),
+    description: `Out for delivery by ${me.firstName} ${me.lastName}`
+  });
+
+  await order.save();
+
+  // Send OTP Email
+  if (order.user && order.user.email) {
+    await sendDeliveryOtpEmail({
+      to: order.user.email,
+      userName: order.user.firstName,
+      order: order,
+      otp: order.deliveryOtp
+    });
+  }
+
+  res.json(order);
 }));
 
 router.patch('/orders/:id/delivered', requireDeliveryBoy, asyncHandler(async (req, res) => {
+  const { otp } = req.body;
   const me = await User.findOne({ email: req.user.email });
-  const o = await Order.findOneAndUpdate(
-    { _id: req.params.id, deliveryBoy: me._id },
-    { deliveryStatus: 'DELIVERED', status: 'DELIVERED' },
-    { new: true }
-  );
-  res.json(o);
+  
+  const order = await Order.findOne({ _id: req.params.id, deliveryBoy: me._id });
+  if (!order) return res.status(404).json({ message: 'Order not found' });
+
+  // Verify OTP
+  if (order.deliveryOtp && order.deliveryOtp !== otp) {
+    return res.status(400).json({ message: 'Invalid OTP' });
+  }
+
+  order.deliveryStatus = 'DELIVERED';
+  order.status = 'DELIVERED';
+  
+  order.trackingTimeline.push({
+    status: 'DELIVERED',
+    location: 'Delivered',
+    timestamp: new Date(),
+    description: `Delivered by ${me.firstName} ${me.lastName}`
+  });
+
+  await order.save();
+  res.json(order);
 }));
 
 // Mark COD payment as accepted (payment collected)

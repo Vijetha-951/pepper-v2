@@ -10,6 +10,7 @@ export default function AdminOrderDetail() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [order, setOrder] = useState(null);
+  const [routeData, setRouteData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -25,10 +26,11 @@ export default function AdminOrderDetail() {
     }
     setUser(currentUser);
     fetchOrderDetail();
+    fetchRouteDetail();
   }, [id, navigate]);
 
   const fetchOrderDetail = async () => {
-    setLoading(true);
+    // ... existing fetchOrderDetail logic ...
     try {
       const response = await apiFetch(`/api/admin/orders/${id}`, { method: 'GET' });
       const data = await response.json();
@@ -40,6 +42,18 @@ export default function AdminOrderDetail() {
     } catch (err) {
       console.error('Error fetching order:', err);
       setError('Failed to load order details');
+    }
+  };
+
+  const fetchRouteDetail = async () => {
+    try {
+      const response = await apiFetch(`/api/admin/orders/${id}/route`, { method: 'GET' });
+      if (response.ok) {
+        const data = await response.json();
+        setRouteData(data);
+      }
+    } catch (err) {
+      console.error('Error fetching route:', err);
     } finally {
       setLoading(false);
     }
@@ -174,49 +188,110 @@ export default function AdminOrderDetail() {
         {/* Left Column */}
         <div>
           {/* Order Status Management & Timeline */}
+          {/* Hub Transit Route Visualization */}
           <div className="admin-order-detail-card">
-            <h2 className="card-title">Order Status Management & Timeline</h2>
-            
-            {orderStatuses.map((status, idx) => {
-              const StatusIcon = getStatusIcon(status);
-              const isActive = order.status === status;
-              const isCompleted = currentStatusIndex >= idx;
-              const color = getStatusColor(status);
+            <h2 className="card-title">Hub Transit Route</h2>
 
-              return (
-                <div key={status} className="timeline-item" style={{ opacity: isActive || isCompleted ? 1 : 0.6 }}>
-                  {idx < orderStatuses.length - 1 && (
-                    <div style={{
-                      position: 'absolute',
-                      left: '1.5rem',
-                      top: '3rem',
-                      width: '2px',
-                      height: '2rem',
-                      background: isCompleted ? color : '#e5e7eb'
-                    }}></div>
-                  )}
-                  <div className="timeline-circle" style={{
-                    borderColor: color,
-                    backgroundColor: color + '15'
-                  }}>
-                    <StatusIcon size={16} color={color} />
-                  </div>
-                  <div className="timeline-text">
-                    <div className="timeline-text-status" style={{ color: isActive ? color : '#6b7280' }}>
-                      {status.replace(/_/g, ' ')}
-                    </div>
-                    <div className="timeline-text-label">
-                      {isActive ? 'Current Status' : isCompleted ? 'Completed' : 'Pending'}
-                    </div>
-                  </div>
+            {routeData && routeData.route && routeData.route.length > 0 ? (
+              <div className="hub-route-timeline">
+                <div style={{ marginBottom: '1rem', fontWeight: '600', color: '#10b981' }}>
+                  Destination: {routeData.route[routeData.route.length - 1].name}
                 </div>
-              );
-            })}
 
-            {order.status === 'CANCELLED' && (
-              <div className="cancelled-alert">
-                <AlertCircle size={16} />
-                <span>Order Cancelled</span>
+                {routeData.route.map((hub, index) => {
+                  const isCurrent = routeData.currentHub && routeData.currentHub._id === hub._id;
+                  const isPassed = routeData.currentHubIndex > index;
+                  // If we are at the last hub and it is 'current', it might be delivered or waiting there.
+
+                  // Status Icons
+                  // Passed: Green Check
+                  // Current: Blue Dot with Pulse
+                  // Future: Gray Ring
+
+                  return (
+                    <div key={hub._id} className="hub-timeline-item" style={{ display: 'flex', gap: '1rem', paddingBottom: '1.5rem', position: 'relative' }}>
+                      {/* Connector Line */}
+                      {index < routeData.route.length - 1 && (
+                        <div style={{
+                          position: 'absolute',
+                          left: '0.6rem',
+                          top: '1.5rem',
+                          bottom: 0,
+                          width: '2px',
+                          background: isPassed ? '#10b981' : '#e2e8f0'
+                        }}></div>
+                      )}
+
+                      {/* Icon */}
+                      <div className="hub-timeline-icon" style={{ zIndex: 1 }}>
+                        {isPassed ? (
+                          <div style={{
+                            width: '1.25rem',
+                            height: '1.25rem',
+                            borderRadius: '50%',
+                            background: '#10b981',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white'
+                          }}>
+                            <CheckCircle size={14} />
+                          </div>
+                        ) : isCurrent ? (
+                          <div style={{
+                            width: '1.25rem',
+                            height: '1.25rem',
+                            borderRadius: '50%',
+                            background: '#3b82f6',
+                            boxShadow: '0 0 0 4px #dbeafe',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white'
+                          }}>
+                            <div style={{ width: '0.5rem', height: '0.5rem', background: 'white', borderRadius: '50%' }}></div>
+                          </div>
+                        ) : (
+                          <div style={{
+                            width: '1.25rem',
+                            height: '1.25rem',
+                            borderRadius: '50%',
+                            border: '2px solid #cbd5e1',
+                            background: 'white'
+                          }}></div>
+                        )}
+                      </div>
+
+                      {/* Content */}
+                      <div className="hub-timeline-content">
+                        <div style={{
+                          fontWeight: isCurrent ? '700' : '500',
+                          color: isPassed ? '#10b981' : isCurrent ? '#3b82f6' : '#64748b'
+                        }}>
+                          {hub.name}
+                          {isCurrent && <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', padding: '0.1rem 0.5rem', background: '#dbeafe', color: '#1e40af', borderRadius: '999px' }}>Current</span>}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                          {hub.district}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="no-route-alert" style={{
+                padding: '1rem',
+                background: '#fff7ed',
+                border: '1px solid #ffedd5',
+                borderRadius: '8px',
+                color: '#c2410c',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <AlertCircle size={18} />
+                <span>Route Pending / Not Planned Yet</span>
               </div>
             )}
           </div>
@@ -265,7 +340,72 @@ export default function AdminOrderDetail() {
           {/* Delivery & Real-Time Tracking */}
           <div className="admin-order-detail-card">
             <h2 className="card-title">Delivery & Real-Time Tracking</h2>
-            
+
+            {/* Hub Route Visualization */}
+            {routeData && routeData.route && routeData.route.length > 0 && (
+              <div style={{ marginBottom: '2rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <h3 style={{ fontSize: '0.9rem', fontWeight: '600', color: '#475569', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <MapPin size={14} /> HUB TRANSIT ROUTE
+                </h3>
+                <div style={{ position: 'relative', paddingLeft: '1rem' }}>
+                  {routeData.route.map((hub, index) => {
+                    const isCurrent = routeData.currentHub && routeData.currentHub._id === hub._id;
+                    const isPassed = routeData.currentHubIndex > index;
+                    const isUpcoming = routeData.currentHubIndex < index;
+
+                    let statusColor = '#cbd5e1'; // gray (upcoming)
+                    if (isPassed) statusColor = '#10b981'; // green (passed)
+                    if (isCurrent) statusColor = '#3b82f6'; // blue (current)
+
+                    return (
+                      <div key={hub._id} style={{ position: 'relative', paddingBottom: index === routeData.route.length - 1 ? 0 : '1.5rem' }}>
+                        {/* Vertical Line */}
+                        {index < routeData.route.length - 1 && (
+                          <div style={{
+                            position: 'absolute',
+                            left: '0.35rem',
+                            top: '1.2rem',
+                            bottom: 0,
+                            width: '2px',
+                            background: isPassed ? '#10b981' : '#e2e8f0'
+                          }}></div>
+                        )}
+
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                          {/* Dot */}
+                          <div style={{
+                            width: '0.8rem',
+                            height: '0.8rem',
+                            borderRadius: '50%',
+                            background: statusColor,
+                            border: isCurrent ? '2px solid #dbeafe' : 'none',
+                            boxShadow: isCurrent ? '0 0 0 2px #3b82f6' : 'none',
+                            zIndex: 1,
+                            marginTop: '0.2rem'
+                          }}></div>
+
+                          {/* Content */}
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '0.875rem', fontWeight: isCurrent ? '700' : '500', color: isCurrent ? '#1e293b' : '#64748b' }}>
+                              {hub.name}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                              {hub.district} • {hub.type.replace('_', ' ')}
+                            </div>
+                            {isCurrent && (
+                              <div style={{ marginTop: '0.25rem', fontSize: '0.75rem', color: '#3b82f6', fontWeight: '600' }}>
+                                ● Current Location
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {order.deliveryBoy ? (
               <>
                 <div style={{ marginBottom: '1.5rem' }}>

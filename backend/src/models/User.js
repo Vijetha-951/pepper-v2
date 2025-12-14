@@ -29,18 +29,18 @@ const AddressItemSchema = new mongoose.Schema(
 const userSchema = new mongoose.Schema(
   {
     firebaseUid: { type: String, required: true, unique: true }, // Firebase user ID
-    email: { 
-      type: String, 
-      required: true, 
-      unique: true, 
-      lowercase: true, 
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
       trim: true,
       validate: {
-        validator: function(email) {
+        validator: function (email) {
           const validation = validateMeaningfulEmail(email);
           return validation.isValid;
         },
-        message: function(props) {
+        message: function (props) {
           const validation = validateMeaningfulEmail(props.value);
           return validation.reason || 'Invalid email address';
         }
@@ -49,7 +49,7 @@ const userSchema = new mongoose.Schema(
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
     phone: { type: String, trim: true },
-    role: { type: String, enum: ['user', 'admin', 'deliveryboy'], default: 'user', index: true },
+    role: { type: String, enum: ['user', 'admin', 'deliveryboy', 'hubmanager'], default: 'user', index: true },
     place: { type: String, trim: true },
     district: { type: String, trim: true },
     pincode: { type: String, trim: true },
@@ -62,6 +62,7 @@ const userSchema = new mongoose.Schema(
       pincodes: [String],
       districts: [String],
     },
+    hubId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hub' }, // for hub managers
     deliveryStatus: { // for delivery boys
       type: String,
       enum: ['OFFLINE', 'OPEN_FOR_DELIVERY', 'OUT_FOR_DELIVERY'],

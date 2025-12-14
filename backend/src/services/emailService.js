@@ -317,7 +317,90 @@ export const sendOrderConfirmationEmail = async ({ to, userName, order }) => {
   }
 };
 
+export const sendDeliveryOtpEmail = async ({ to, userName, order, otp }) => {
+  const emailTransporter = initializeTransporter();
+  
+  if (!emailTransporter) {
+    console.warn('⚠️ Email service not available. Skipping OTP email.');
+    return { success: false, message: 'Email service not configured' };
+  }
+
+  try {
+    const mailOptions = {
+      from: `"PEPPER Store" <${process.env.EMAIL_USER}>`,
+      to: to,
+      subject: '📦 Out for Delivery - Your Delivery OTP',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Out for Delivery</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f3f4f6;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #2c5f2d 0%, #10b981 100%); padding: 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px;">Out for Delivery! 🚚</h1>
+            </div>
+            
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
+                Dear ${userName},
+              </p>
+              
+              <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
+                Your order is out for delivery and will reach you soon!
+              </p>
+              
+              <!-- OTP Section -->
+              <div style="background-color: #f0fdf4; border: 2px dashed #16a34a; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center;">
+                <p style="margin: 0 0 10px 0; color: #166534; font-weight: bold;">Your Delivery OTP</p>
+                <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #15803d;">
+                  ${otp}
+                </div>
+                <p style="margin: 10px 0 0 0; font-size: 12px; color: #166534;">
+                  Please share this code with the delivery agent only upon receiving your package.
+                </p>
+              </div>
+              
+              <!-- Order Details -->
+              <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                <h2 style="color: #2c5f2d; font-size: 20px; margin-top: 0;">Order Details</h2>
+                <p style="margin: 5px 0;"><strong>Order ID:</strong> ${order._id}</p>
+                <p style="margin: 5px 0;"><strong>Amount to Pay:</strong> ₹${order.totalAmount.toFixed(2)} (${order.payment.method})</p>
+              </div>
+              
+              <p style="font-size: 16px; color: #374151;">
+                Thank you for shopping with PEPPER Store!
+              </p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background-color: #f3f4f6; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 5px 0; color: #6b7280; font-size: 14px;">
+                PEPPER Store - Premium Pepper Products
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const info = await emailTransporter.sendMail(mailOptions);
+    console.log('✅ Delivery OTP email sent:', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('❌ Failed to send delivery OTP email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 export default {
   sendPaymentSuccessEmail,
-  sendOrderConfirmationEmail
+  sendOrderConfirmationEmail,
+  sendDeliveryOtpEmail
 };

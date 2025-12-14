@@ -256,3 +256,4 @@ class TestAddToCart(BaseTest):
             pytest.fail(f"Add to cart test failed: {str(e)}")
 
 
+

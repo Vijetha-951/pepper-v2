@@ -21,6 +21,13 @@ export default function DeliveryDashboard() {
     outForDelivery: 0
   });
 
+  // OTP Modal State
+  const [otpModal, setOtpModal] = useState({
+    isOpen: false,
+    orderId: null,
+    otp: ''
+  });
+
   // Fetch assigned orders
   const fetchAssignedOrders = async () => {
     try {
@@ -241,6 +248,58 @@ export default function DeliveryDashboard() {
     }
   };
 
+
+
+  const handleOpenOtpModal = (orderId) => {
+    setOtpModal({
+      isOpen: true,
+      orderId,
+      otp: ''
+    });
+  };
+
+  const handleCloseOtpModal = () => {
+    setOtpModal({
+      isOpen: false,
+      orderId: null,
+      otp: ''
+    });
+  };
+
+  const submitDeliveryWithOtp = async () => {
+    const { orderId, otp } = otpModal;
+    if (!otp || otp.length !== 6) {
+      alert('Please enter a valid 6-digit OTP');
+      return;
+    }
+
+    try {
+      setMarkingDelivered(orderId);
+      const response = await apiFetch(`/api/delivery/orders/${orderId}/delivered`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ otp })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to verify OTP');
+      }
+
+      // Success
+      handleCloseOtpModal();
+      fetchAssignedOrders();
+      alert('Order marked as delivered successfully!');
+    } catch (err) {
+      console.error('Error marking order as delivered:', err);
+      alert('Failed: ' + err.message);
+    } finally {
+      setMarkingDelivered(null);
+    }
+  };
+
   const renderDeliveries = () => (
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -264,7 +323,7 @@ export default function DeliveryDashboard() {
       <div style={cardStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>Assigned Orders</h3>
-          <button 
+          <button
             onClick={fetchAssignedOrders}
             disabled={loading}
             style={{
@@ -307,7 +366,7 @@ export default function DeliveryDashboard() {
               const statusColor = getStatusColor(order.deliveryStatus);
               const itemNames = order.items?.map(item => item.name || 'Product').join(', ') || 'Order';
               const address = order.shippingAddress ? `${order.shippingAddress.line1}, ${order.shippingAddress.district}` : 'Address not available';
-              
+
               return (
                 <div key={order._id} style={{ padding: '1rem', border: '2px solid #e5e7eb', borderRadius: '10px', background: '#fff', transition: 'all 0.3s ease' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
@@ -330,9 +389,9 @@ export default function DeliveryDashboard() {
                         </div>
                         <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <span style={{ fontWeight: 600, color: '#1f2937' }}>Payment: </span>
-                          <span style={{ 
-                            padding: '0.25rem 0.75rem', 
-                            borderRadius: '6px', 
+                          <span style={{
+                            padding: '0.25rem 0.75rem',
+                            borderRadius: '6px',
                             background: order.payment?.method === 'COD' ? '#fee2e2' : '#d1fae5',
                             color: order.payment?.method === 'COD' ? '#991b1b' : '#065f46',
                             fontWeight: 'bold',
@@ -347,6 +406,8 @@ export default function DeliveryDashboard() {
                       <span style={{ padding: '0.25rem 0.75rem', borderRadius: '6px', background: statusColor.bg, color: statusColor.text, fontSize: '0.75rem', fontWeight: 'bold' }}>
                         {order.deliveryStatus || 'UNASSIGNED'}
                       </span>
+
+                      {/* ACTION BUTTONS */}
                       {order.deliveryStatus === 'ASSIGNED' && (
                         <button
                           onClick={() => handleAcceptOrder(order._id)}
@@ -435,7 +496,7 @@ export default function DeliveryDashboard() {
                       )}
                       {order.deliveryStatus === 'OUT_FOR_DELIVERY' && (
                         <button
-                          onClick={() => handleMarkDelivered(order._id)}
+                          onClick={() => handleOpenOtpModal(order._id)}
                           disabled={markingDelivered === order._id}
                           style={{
                             padding: '0.5rem 1rem',
@@ -527,6 +588,92 @@ export default function DeliveryDashboard() {
           </div>
         )}
       </div>
+
+      {/* OTP Modal */}
+      {otpModal.isOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          backdropFilter: 'blur(4px)'
+        }} onClick={handleCloseOtpModal}>
+          <div style={{
+            background: 'white',
+            padding: '2rem',
+            borderRadius: '16px',
+            width: '90%',
+            maxWidth: '400px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ marginTop: 0, color: '#1f2937', fontSize: '1.5rem' }}>Delivery Confirmation</h2>
+            <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>Ask the customer for the One-Time Password (OTP) sent to their email to complete the delivery.</p>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#374151' }}>Enter 6-Digit OTP</label>
+              <input
+                type="text"
+                maxLength="6"
+                placeholder="XXXXXX"
+                value={otpModal.otp}
+                onChange={(e) => setOtpModal(prev => ({ ...prev, otp: e.target.value.replace(/\D/g, '') }))}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  fontSize: '1.25rem',
+                  textAlign: 'center',
+                  letterSpacing: '0.5rem',
+                  borderRadius: '8px',
+                  border: '2px solid #e5e7eb',
+                  outline: 'none',
+                  transition: 'border-color 0.2s'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button
+                onClick={handleCloseOtpModal}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  background: '#f3f4f6',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#4b5563',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitDeliveryWithOtp}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  background: '#22c55e',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: 'white',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Confirm Delivery
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -585,7 +732,7 @@ export default function DeliveryDashboard() {
               <item.icon size={18} /> {item.label}
             </button>
           ))}
-          
+
           {/* Update Status Button */}
           <button
             onClick={handleStatusClick}
@@ -614,15 +761,15 @@ export default function DeliveryDashboard() {
         </div>
 
         <div style={{ marginTop: 'auto', zIndex: 10 }}>
-          <button 
-            onClick={handleLogout} 
-            style={{ 
-              width: '100%', 
-              padding: '0.75rem 1rem', 
-              borderRadius: '10px', 
-              border: '1px solid rgba(255,255,255,0.3)', 
-              background: 'rgba(255,255,255,0.1)', 
-              color: 'white', 
+          <button
+            onClick={handleLogout}
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              borderRadius: '10px',
+              border: '1px solid rgba(255,255,255,0.3)',
+              background: 'rgba(255,255,255,0.1)',
+              color: 'white',
               cursor: 'pointer',
               transition: 'all 0.3s ease',
               display: 'flex',

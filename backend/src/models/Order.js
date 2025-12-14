@@ -17,6 +17,7 @@ const AddressSnapshotSchema = new mongoose.Schema(
     district: String,
     state: String,
     pincode: String,
+    destinationDistrict: String
   },
   { _id: false }
 );
@@ -52,6 +53,21 @@ const OrderSchema = new mongoose.Schema(
       index: true,
     },
     deliveryBoy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
+    
+    // Multi-Hub Tracking Fields
+    currentHub: { type: mongoose.Schema.Types.ObjectId, ref: 'Hub' },
+    route: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Hub' }], // Planned route
+    trackingTimeline: [
+      {
+        status: String, // e.g., 'ARRIVED_AT_HUB', 'DISPATCHED', 'OUT_FOR_DELIVERY'
+        location: String, // Hub name or 'Out for Delivery'
+        hub: { type: mongoose.Schema.Types.ObjectId, ref: 'Hub' },
+        timestamp: { type: Date, default: Date.now },
+        description: String
+      }
+    ],
+    deliveryOtp: { type: String }, // OTP for secure delivery
+
     shippingAddress: AddressSnapshotSchema,
     payment: PaymentSchema,
     notes: String,

@@ -228,3 +228,4 @@ class TestAdminAddProduct(BaseTest):
             pytest.fail(f"Admin add product test failed: {str(e)}")
 
 
+

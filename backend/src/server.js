@@ -14,6 +14,7 @@ import ordersRouter from './routes/orders.routes.js';
 import paymentRouter from './routes/payment.routes.js';
 import recommendationsRouter from './routes/recommendations.routes.js';
 import reviewsRouter from './routes/reviews.routes.js';
+import hubRouter from './routes/hub.routes.js';
 
 // Debug environment variables
 console.log('Environment variables loaded:');
@@ -45,7 +46,18 @@ app.use('/api/orders', ordersRouter);
 app.use('/api/payment', paymentRouter);
 app.use('/api/recommendations', recommendationsRouter);
 app.use('/api/reviews', reviewsRouter);
+app.use('/api/hub', hubRouter);
 app.use('/api', stockRouter);
+
+// ====== Global Error Handler ======
+app.use((err, req, res, next) => {
+  console.error('🔥 Server Error:', err);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Internal Server Error',
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
 
 // ====== Start server after DB connect ======
 connectDB()
