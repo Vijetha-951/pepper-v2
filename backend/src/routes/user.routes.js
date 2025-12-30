@@ -6,6 +6,7 @@ import User from '../models/User.js';
 import { requireAuth } from '../middleware/auth.js';
 import { sendOrderConfirmationEmail } from '../services/emailService.js';
 import { processOrderRefund } from '../services/refundService.js';
+import { planRoute } from '../services/logisticsService.js';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -229,21 +230,36 @@ router.post('/orders', requireCustomer, asyncHandler(async (req, res) => {
   }
 
   const me = await User.findOne({ email: req.user.email });
+  
+  // Plan route for the order
+  const shippingAddress = {
+    line1: me?.place || '',
+    line2: '',
+    district: me?.district || '',
+    state: 'Kerala',
+    pincode: me?.pincode || '',
+  };
+  
+  const route = await planRoute(shippingAddress.pincode, shippingAddress.district);
+  const initialHub = route.length > 0 ? route[0] : null;
+  
   const order = await Order.create({
     user: me._id,
     items: orderItems,
     totalAmount: total,
     status: 'PENDING',
     deliveryStatus: null,
-    shippingAddress: {
-      line1: me?.place || '',
-      line2: '',
-      district: me?.district || '',
-      state: 'Kerala',
-      pincode: me?.pincode || '',
-    },
+    shippingAddress,
     payment,
     notes,
+    route: route,
+    currentHub: initialHub,
+    trackingTimeline: initialHub ? [{
+      status: 'ORDER_PLACED',
+      location: initialHub.name || 'Warehouse',
+      hub: initialHub,
+      description: 'Order placed and assigned to route'
+    }] : []
   });
 
   await Promise.all(orderItems.map(i =>

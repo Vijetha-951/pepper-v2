@@ -467,13 +467,36 @@ const Checkout = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
                   <label htmlFor="district">District *</label>
-                  <input
-                    type="text"
+                  <select
                     id="district"
                     value={shippingAddress.district ?? ''}
                     onChange={(e) => handleAddressChange('district', e.target.value)}
-                    placeholder="District"
-                  />
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '1px solid #ddd',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      backgroundColor: 'white',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="">Select District</option>
+                    <option value="Thiruvananthapuram">Thiruvananthapuram</option>
+                    <option value="Kollam">Kollam</option>
+                    <option value="Pathanamthitta">Pathanamthitta</option>
+                    <option value="Alappuzha">Alappuzha</option>
+                    <option value="Kottayam">Kottayam</option>
+                    <option value="Idukki">Idukki</option>
+                    <option value="Ernakulam">Ernakulam</option>
+                    <option value="Thrissur">Thrissur</option>
+                    <option value="Palakkad">Palakkad</option>
+                    <option value="Malappuram">Malappuram</option>
+                    <option value="Kozhikode">Kozhikode</option>
+                    <option value="Wayanad">Wayanad</option>
+                    <option value="Kannur">Kannur</option>
+                    <option value="Kasaragod">Kasaragod</option>
+                  </select>
                 </div>
 
                 <div>
@@ -483,7 +506,7 @@ const Checkout = () => {
                     id="state"
                     value={shippingAddress.state ?? ''}
                     onChange={(e) => handleAddressChange('state', e.target.value)}
-                    placeholder="State"
+                    placeholder="State (default: Kerala)"
                   />
                 </div>
               </div>

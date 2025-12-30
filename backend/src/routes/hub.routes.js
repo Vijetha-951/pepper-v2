@@ -29,7 +29,11 @@ async function requireHubManager(req, res, next) {
     }
 
     // Find the hub managed by this user
-    const hub = await Hub.findOne({ managedBy: mongoUserId });
+    // Prioritize hubs with district field set (properly configured hubs)
+    const hub = await Hub.findOne({ 
+      managedBy: mongoUserId,
+      district: { $exists: true, $ne: null, $ne: '' }
+    }) || await Hub.findOne({ managedBy: mongoUserId });
 
     if (!hub && req.userRole !== 'admin') {
       return res.status(403).json({ message: 'You are not assigned to any Hub', debug_id: mongoUserId });
@@ -76,22 +80,123 @@ router.get('/next-hub/:orderId', requireHubManager, asyncHandler(async (req, res
   res.json(nextHub);
 }));
 
-// Get Orders currently at the Hub
+// Get Active Orders currently at the Hub (not yet dispatched)
 router.get('/orders', requireHubManager, asyncHandler(async (req, res) => {
-  const filter = { currentHub: req.userHub._id };
-  // Optionally filter by status (e.g., exclude dispatched ones if they are still linked to this hub but in transit? 
-  // Actually, if it's dispatched, currentHub might still be this one until scanned in at next hub, 
-  // OR we update currentHub to null or next hub upon dispatch.
-  // Let's assume currentHub points to the hub where it physically IS or is EXPECTED to be.
-  // If status is 'IN_TRANSIT', it's moving TO currentHub? Or FROM currentHub?
-  // Let's say: currentHub is where it is. When dispatched, it's still associated with this hub until next hub scans it?
-  // Better: currentHub is the LAST hub it was scanned at.
+  const hub = req.userHub;
+  
+  console.log(`[Hub Orders] Fetching orders for hub: ${hub.name} (${hub._id})`);
+  
+  // Helper function to compare hub IDs
+  const hubIdsMatch = (hubId1, hubId2) => {
+    if (!hubId1 || !hubId2) return false;
+    const id1 = typeof hubId1 === 'object' && hubId1._id ? hubId1._id.toString() : hubId1.toString();
+    const id2 = typeof hubId2 === 'object' && hubId2._id ? hubId2._id.toString() : hubId2.toString();
+    return id1 === id2;
+  };
+  
+  // Find orders at this hub that haven't been dispatched yet
+  // Include IN_TRANSIT orders that are heading to this hub
+  const orders = await Order.find({ 
+    currentHub: hub._id,
+    status: { $nin: ['DELIVERED', 'CANCELLED', 'OUT_FOR_DELIVERY'] }
+  })
+    .populate('user', 'firstName lastName email phone name')
+    .populate('route', 'name district order type location')
+    .populate('currentHub', 'name district type')
+    .lean();
+  
+  console.log(`[Hub Orders] Found ${orders.length} orders at this hub before filtering`);
 
-  const orders = await Order.find(filter)
-    .sort({ updatedAt: -1 })
-    .populate('route', 'name type location')
-    .populate('currentHub', 'name type');
-  res.json(orders);
+  // Filter out orders that have been dispatched from this hub
+  const activeOrders = orders.filter(order => {
+    const dispatchedFromHub = order.trackingTimeline?.some(
+      entry => entry.status === 'IN_TRANSIT' && 
+      entry.hub && hubIdsMatch(entry.hub, hub._id)
+    );
+    return !dispatchedFromHub;
+  });
+
+  console.log(`[Hub Orders] After filtering out dispatched: ${activeOrders.length} active orders`);
+  console.log(`[Hub Orders] Order statuses:`, activeOrders.map(o => ({ id: o._id, status: o.status, currentHub: o.currentHub?.name })));
+
+  // Sort by priority: IN_TRANSIT (incoming) first, then PENDING, then APPROVED, then by creation date (newest first)
+  activeOrders.sort((a, b) => {
+    const statusPriority = { 'IN_TRANSIT': 1, 'PENDING': 2, 'APPROVED': 3 };
+    const aPriority = statusPriority[a.status] || 4;
+    const bPriority = statusPriority[b.status] || 4;
+    
+    if (aPriority !== bPriority) {
+      return aPriority - bPriority;
+    }
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
+
+  res.json(activeOrders);
+}));
+
+// Get Dispatched Orders from the Hub
+router.get('/dispatched-orders', requireHubManager, asyncHandler(async (req, res) => {
+  const hub = req.userHub;
+  
+  // Find orders that have been dispatched from this hub
+  const allOrders = await Order.find({ 
+    $or: [
+      { currentHub: hub._id },
+      { 'trackingTimeline.hub': hub._id }
+    ]
+  })
+    .populate('user', 'firstName lastName email phone name')
+    .populate('route', 'name district order type location')
+    .populate('currentHub', 'name district type')
+    .lean();
+
+  // Helper function to compare hub IDs
+  const hubIdsMatch = (hubId1, hubId2) => {
+    if (!hubId1 || !hubId2) return false;
+    const id1 = typeof hubId1 === 'object' && hubId1._id ? hubId1._id.toString() : hubId1.toString();
+    const id2 = typeof hubId2 === 'object' && hubId2._id ? hubId2._id.toString() : hubId2.toString();
+    return id1 === id2;
+  };
+
+  // Filter to only dispatched orders from this hub
+  const dispatchedOrders = allOrders.filter(order => {
+    if (!order.trackingTimeline || order.trackingTimeline.length === 0) {
+      return false;
+    }
+
+    // Check if dispatched to delivery boy from this hub
+    if (order.status === 'OUT_FOR_DELIVERY') {
+      const outForDeliveryEvent = order.trackingTimeline.find(
+        entry => entry.status === 'OUT_FOR_DELIVERY' && 
+        entry.hub && hubIdsMatch(entry.hub, hub._id)
+      );
+      if (outForDeliveryEvent) return true;
+    }
+
+    // Check if dispatched to another hub from this hub
+    const dispatchedFromHub = order.trackingTimeline.some(
+      entry => entry.status === 'IN_TRANSIT' && 
+      entry.hub && hubIdsMatch(entry.hub, hub._id)
+    );
+    return dispatchedFromHub;
+  });
+
+  // Sort by dispatch time (most recent first)
+  dispatchedOrders.sort((a, b) => {
+    const getDispatchTime = (order) => {
+      const events = order.trackingTimeline?.filter(
+        entry => (entry.status === 'IN_TRANSIT' || entry.status === 'OUT_FOR_DELIVERY') &&
+        entry.hub && hubIdsMatch(entry.hub, hub._id)
+      ) || [];
+      if (events.length === 0) return 0;
+      const latestEvent = events[events.length - 1];
+      return new Date(latestEvent.timestamp || latestEvent.createdAt).getTime();
+    };
+    
+    return getDispatchTime(b) - getDispatchTime(a);
+  });
+
+  res.json(dispatchedOrders);
 }));
 
 // Scan In (Receive Package at Hub)
@@ -114,15 +219,31 @@ router.post('/scan-in', requireHubManager, asyncHandler(async (req, res) => {
   if (hubIndex > 0) {
     const previousHubId = order.route[hubIndex - 1].toString();
     if (order.currentHub && order.currentHub.toString() !== previousHubId && order.currentHub.toString() !== hub._id.toString()) {
-       return res.status(400).json({ 
-         message: 'Order sequence violation. Package skipped a hub or is off-route.',
-         expectedFrom: previousHubId,
-         actualCurrent: order.currentHub
-       });
+      return res.status(400).json({
+        message: 'Order sequence violation. Package skipped a hub or is off-route.',
+        expectedFrom: previousHubId,
+        actualCurrent: order.currentHub
+      });
     }
   }
 
+  // Check if already scanned at this hub (check all timeline events, not just the last one)
+  const alreadyScannedAtHub = order.trackingTimeline.some(
+    event => event.hub && event.hub.toString() === hub._id.toString() && event.status === 'ARRIVED_AT_HUB'
+  );
+  
+  if (alreadyScannedAtHub) {
+    return res.status(400).json({ message: 'Package already scanned at this hub' });
+  }
+
   order.currentHub = hub._id;
+  
+  // Update order status to APPROVED after scan-in at any hub
+  // This makes the order ready for dispatch from this hub
+  if (order.status === 'PENDING' || order.status === 'IN_TRANSIT') {
+    order.status = 'APPROVED';
+  }
+  
   order.trackingTimeline.push({
     status: 'ARRIVED_AT_HUB',
     location: hub.name,
@@ -131,7 +252,14 @@ router.post('/scan-in', requireHubManager, asyncHandler(async (req, res) => {
   });
 
   await order.save();
-  res.json(order);
+  
+  // Re-fetch and populate the order before returning
+  const populatedOrder = await Order.findById(order._id)
+    .populate('route', 'name district order type location')
+    .populate('currentHub', 'name district type')
+    .populate('user', 'firstName lastName email phone name');
+  
+  res.json(populatedOrder);
 }));
 
 // Dispatch (Send to next Hub or Out for Delivery)
@@ -146,6 +274,21 @@ router.post('/dispatch', requireHubManager, asyncHandler(async (req, res) => {
 
   if (order.currentHub && order.currentHub.toString() !== hub._id.toString()) {
     return res.status(400).json({ message: 'Order is not currently at your hub' });
+  }
+
+  // Prevent dispatching if already dispatched
+  if (order.status === 'OUT_FOR_DELIVERY') {
+    return res.status(400).json({ message: 'Order is already out for delivery and cannot be dispatched again' });
+  }
+
+  // Check if already dispatched from this hub (has IN_TRANSIT entry from this hub)
+  const alreadyDispatchedFromHub = order.trackingTimeline.some(
+    entry => entry.status === 'IN_TRANSIT' && 
+    entry.hub && entry.hub.toString() === hub._id.toString()
+  );
+
+  if (alreadyDispatchedFromHub) {
+    return res.status(400).json({ message: 'Order has already been dispatched from this hub' });
   }
 
   // Check if it's the last hub (Local Hub) -> Out for Delivery
@@ -214,24 +357,93 @@ router.post('/dispatch', requireHubManager, asyncHandler(async (req, res) => {
     }
 
     if (nextHub) {
+      console.log(`[Dispatch] Dispatching order ${order._id} from ${hub.name} to ${nextHub.name}`);
+      console.log(`[Dispatch] Setting currentHub from ${order.currentHub} to ${nextHub._id}`);
+      
       order.trackingTimeline.push({
         status: 'IN_TRANSIT',
         location: `In Transit to ${nextHub.name}`,
         hub: hub._id,
         description: `Package dispatched from ${hub.name} to ${nextHub.name}`
       });
-      // We don't change currentHub yet? Or we do?
-      // If we change currentHub to nextHub, it will show up in nextHub's list?
-      // Maybe nextHub's list should show "Incoming"?
-      // For simplicity, let's keep currentHub as this hub until next hub scans it in.
-      // But we need a way to know it's "In Transit".
+      
+      // Update currentHub to nextHub so it appears in next hub manager's list
+      order.currentHub = nextHub._id;
+      order.status = 'IN_TRANSIT';
+      
+      console.log(`[Dispatch] Order updated - currentHub: ${order.currentHub}, status: ${order.status}`);
     } else {
       return res.status(400).json({ message: 'Next Hub not determined' });
     }
   }
 
   await order.save();
-  res.json(order);
+  
+  // Re-fetch and populate the order before returning
+  const populatedOrder = await Order.findById(order._id)
+    .populate('route', 'name district order type location')
+    .populate('currentHub', 'name district type')
+    .populate('user', 'firstName lastName email phone name');
+  
+  res.json(populatedOrder);
+}));
+
+// Fix order route - regenerate with correct hub IDs
+router.post('/fix-route/:orderId', requireHubManager, asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.orderId)
+    .populate('currentHub')
+    .populate('route');
+  
+  if (!order) {
+    return res.status(404).json({ message: 'Order not found' });
+  }
+  
+  console.log(`[Fix Route] Order ${order._id} current route:`, order.route?.map(h => h.name));
+  console.log(`[Fix Route] Destination: ${order.shippingAddress?.destinationDistrict || order.shippingAddress?.district}`);
+  
+  // Regenerate route
+  const destination = order.shippingAddress?.destinationDistrict || order.shippingAddress?.district;
+  if (!destination) {
+    return res.status(400).json({ message: 'Order destination not found' });
+  }
+  
+  const { generateRoute } = await import('../services/routeGenerationService.js');
+  const newRoute = await generateRoute(destination);
+  
+  console.log(`[Fix Route] New route:`, newRoute.map(h => h.name));
+  
+  // Update order route
+  order.route = newRoute.map(h => h._id);
+  
+  // If order is IN_TRANSIT, update currentHub to match the correct hub in the new route
+  if (order.status === 'IN_TRANSIT') {
+    // Find which hub it should be at based on tracking timeline
+    const lastDispatch = [...order.trackingTimeline].reverse().find(t => t.status === 'IN_TRANSIT');
+    if (lastDispatch) {
+      const dispatchFromHubIndex = newRoute.findIndex(h => h._id.toString() === lastDispatch.hub?.toString());
+      if (dispatchFromHubIndex !== -1 && dispatchFromHubIndex < newRoute.length - 1) {
+        const correctNextHub = newRoute[dispatchFromHubIndex + 1];
+        order.currentHub = correctNextHub._id;
+        console.log(`[Fix Route] Updated currentHub to: ${correctNextHub.name} (${correctNextHub._id})`);
+      }
+    }
+  }
+  
+  await order.save();
+  
+  const updatedOrder = await Order.findById(order._id)
+    .populate('route', 'name _id')
+    .populate('currentHub', 'name _id');
+  
+  res.json({
+    message: 'Route fixed successfully',
+    order: {
+      _id: updatedOrder._id,
+      status: updatedOrder.status,
+      currentHub: updatedOrder.currentHub,
+      route: updatedOrder.route
+    }
+  });
 }));
 
 // Get all hubs (Admin only)
@@ -243,7 +455,7 @@ router.get('/admin/all-hubs', requireAuth, asyncHandler(async (req, res) => {
   const hubs = await Hub.find({ isActive: true })
     .populate('managedBy', 'firstName lastName email phone')
     .sort({ order: 1 });
-  
+
   res.json(hubs);
 }));
 
@@ -255,7 +467,7 @@ router.get('/admin/hub/:hubId/details', requireAuth, asyncHandler(async (req, re
 
   const hub = await Hub.findById(req.params.hubId)
     .populate('managedBy', 'firstName lastName email phone');
-  
+
   if (!hub) {
     return res.status(404).json({ message: 'Hub not found' });
   }

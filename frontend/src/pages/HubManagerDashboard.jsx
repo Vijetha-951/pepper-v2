@@ -8,13 +8,16 @@ const HubManagerDashboard = () => {
   const [user, setUser] = useState(null);
   const [hub, setHub] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [dispatchedOrders, setDispatchedOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
+  const [filteredDispatchedOrders, setFilteredDispatchedOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
   const [manualOrderId, setManualOrderId] = useState(''); // New state for manual input
+  const [activeTab, setActiveTab] = useState('active'); // 'active' or 'dispatched'
 
   const [modals, setModals] = useState({
     scanIn: { isOpen: false, orderId: null, loading: false },
@@ -36,7 +39,7 @@ const HubManagerDashboard = () => {
   });
 
   const [summary, setSummary] = useState({
-    totalPackages: 0,
+    ordersLeftToScan: 0,
     readyForDispatch: 0,
     inTransit: 0,
     recentArrivals: 0
@@ -57,9 +60,11 @@ const HubManagerDashboard = () => {
   }, []);
 
   useEffect(() => {
-    filterOrders();
-    calculateSummary();
-  }, [orders, searchTerm]);
+    if (hub) {
+      filterOrders();
+      calculateSummary();
+    }
+  }, [orders, dispatchedOrders, searchTerm, hub]);
 
   const fetchHubAndOrders = async (firebaseUser) => {
     try {
@@ -86,9 +91,25 @@ const HubManagerDashboard = () => {
 
         if (ordersResponse.ok) {
           const ordersData = await ordersResponse.json();
+          console.log('🔍 Hub Manager - Orders fetched:', ordersData.length);
+          console.log('🔍 First order route:', ordersData[0]?.route);
           setOrders(ordersData);
         } else {
           setError('Failed to fetch orders');
+        }
+
+        // Fetch dispatched orders
+        const dispatchedResponse = await fetch('/api/hub/dispatched-orders', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (dispatchedResponse.ok) {
+          const dispatchedData = await dispatchedResponse.json();
+          console.log('🔍 Hub Manager - Dispatched orders fetched:', dispatchedData.length);
+          setDispatchedOrders(dispatchedData);
         }
       } else {
         setError('Failed to fetch hub details');
@@ -103,33 +124,93 @@ const HubManagerDashboard = () => {
 
   const filterOrders = () => {
     let filtered = orders;
+    let filteredDispatched = dispatchedOrders;
 
     if (searchTerm) {
-      filtered = filtered.filter(order =>
-        order._id.includes(searchTerm) ||
-        order.user?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter(order => {
+        const customerName = order.user?.name || `${order.user?.firstName || ''} ${order.user?.lastName || ''}`.trim();
+        return order._id.includes(searchTerm) ||
+               customerName.toLowerCase().includes(searchTerm.toLowerCase());
+      });
+      filteredDispatched = filteredDispatched.filter(order => {
+        const customerName = order.user?.name || `${order.user?.firstName || ''} ${order.user?.lastName || ''}`.trim();
+        return order._id.includes(searchTerm) ||
+               customerName.toLowerCase().includes(searchTerm.toLowerCase());
+      });
     }
 
     setFilteredOrders(filtered);
+    setFilteredDispatchedOrders(filteredDispatched);
   };
 
   const calculateSummary = () => {
-    const total = orders.length;
-    const readyForDispatch = orders.filter(order => order.currentHub && order.deliveryStatus !== 'DELIVERED').length;
-    const inTransit = orders.filter(order => order.trackingTimeline?.some(t => t.status === 'IN_TRANSIT')).length;
-    const recent = orders.filter(order => {
-      const arrivalTime = order.trackingTimeline?.find(t => t.status === 'ARRIVED_AT_HUB')?.createdAt;
-      if (!arrivalTime) return false;
-      const diff = Date.now() - new Date(arrivalTime).getTime();
-      return diff < 3600000; // Last hour
-    }).length;
+    if (!hub) return;
+
+    const oneHourAgo = Date.now() - 3600000;
+
+    let ordersLeftToScanCount = 0;
+    let readyForDispatchCount = 0;
+    let inTransitCount = 0;
+    let recentArrivalsCount = 0;
+
+    orders.forEach(order => {
+      // Find events related to THIS hub
+      const getHubId = (h) => (typeof h === 'object' && h !== null ? h._id : h);
+
+      // Get latest arrival at this hub
+      const arrivalEvent = [...(order.trackingTimeline || [])]
+        .reverse()
+        .find(t => t.status === 'ARRIVED_AT_HUB' && getHubId(t.hub) === hub._id);
+
+      // Get latest dispatch from this hub
+      const dispatchEvent = [...(order.trackingTimeline || [])]
+        .reverse()
+        .find(t => 
+          (t.status === 'IN_TRANSIT' || t.status === 'OUT_FOR_DELIVERY') && 
+          getHubId(t.hub) === hub._id
+        );
+
+      // 1. Orders Left to Scan: Active orders at this hub that haven't been scanned in yet
+      const isActive = order.status !== 'CANCELLED' && order.status !== 'DELIVERED';
+      const isAtThisHub = order.currentHub && getHubId(order.currentHub) === hub._id;
+      
+      // Count orders that are at this hub but haven't been scanned in yet
+      if (isActive && isAtThisHub && !arrivalEvent) {
+        ordersLeftToScanCount++;
+      }
+
+      // Check if dispatched (Dispatch event exists and is after arrival)
+      const dispatchTime = dispatchEvent ? (dispatchEvent.timestamp || dispatchEvent.createdAt) : null;
+      const arrivalTimeVal = arrivalEvent ? (arrivalEvent.timestamp || arrivalEvent.createdAt) : null;
+      
+      const isDispatched = dispatchEvent && arrivalEvent && 
+        new Date(dispatchTime) > new Date(arrivalTimeVal);
+
+      // 2. Ready for Dispatch: Scanned in (Approved) and NOT dispatched
+      if (order.status === 'APPROVED' && !isDispatched) {
+        readyForDispatchCount++;
+      }
+
+      // 3. In Transit: Dispatched from this hub
+      if (isDispatched || order.status === 'OUT_FOR_DELIVERY') {
+        inTransitCount++;
+      }
+
+      // 4. Recent Arrivals: Arrived in last 1 hour
+      if (arrivalEvent) {
+        const eventTime = arrivalEvent.timestamp || arrivalEvent.createdAt;
+        const arrivalTime = new Date(eventTime).getTime();
+        if (arrivalTime > oneHourAgo) {
+          recentArrivalsCount++;
+        }
+      }
+    });
 
     setSummary({
-      totalPackages: total,
-      readyForDispatch: readyForDispatch,
-      inTransit: inTransit,
-      recentArrivals: recent
+      ordersLeftToScan: ordersLeftToScanCount,
+      readyForDispatch: readyForDispatchCount,
+      inTransit: inTransitCount,
+      recentArrivals: recentArrivalsCount
     });
   };
 
@@ -310,7 +391,22 @@ const HubManagerDashboard = () => {
 
       if (response.ok) {
         const updatedOrder = await response.json();
-        setOrders(prev => prev.map(o => o._id === orderId ? updatedOrder : o));
+        // Remove from active orders and refresh both lists
+        setOrders(prev => prev.filter(o => o._id !== orderId));
+        
+        // Refresh dispatched orders to include the newly dispatched order
+        const dispatchedResponse = await fetch('/api/hub/dispatched-orders', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (dispatchedResponse.ok) {
+          const dispatchedData = await dispatchedResponse.json();
+          setDispatchedOrders(dispatchedData);
+        }
+
         setActionSuccess('Package dispatched successfully!');
         closeModal('dispatch');
 
@@ -405,8 +501,8 @@ const HubManagerDashboard = () => {
             <Package size={24} />
           </div>
           <div className="summary-content">
-            <p className="summary-label">Total Packages</p>
-            <p className="summary-value">{summary.totalPackages}</p>
+            <p className="summary-label">Total Orders Left to Scan</p>
+            <p className="summary-value">{summary.ordersLeftToScan}</p>
           </div>
         </div>
         <div className="summary-card">
@@ -441,7 +537,20 @@ const HubManagerDashboard = () => {
       <div className="hub-content">
         <div className="hub-orders-section">
           <div className="section-header">
-            <h2>Current Packages at Hub</h2>
+            <div className="tabs-container">
+              <button 
+                className={`tab-btn ${activeTab === 'active' ? 'active' : ''}`}
+                onClick={() => setActiveTab('active')}
+              >
+                Active Orders ({filteredOrders.length})
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'dispatched' ? 'active' : ''}`}
+                onClick={() => setActiveTab('dispatched')}
+              >
+                Dispatched Orders ({filteredDispatchedOrders.length})
+              </button>
+            </div>
             <div className="search-box">
               <Search size={16} />
               <input
@@ -453,12 +562,21 @@ const HubManagerDashboard = () => {
             </div>
           </div>
 
-          {filteredOrders.length === 0 ? (
+          {activeTab === 'active' && filteredOrders.length === 0 && (
             <div className="no-orders">
               <Package size={48} />
-              <p>No packages at this hub</p>
+              <p>No active packages at this hub</p>
             </div>
-          ) : (
+          )}
+
+          {activeTab === 'dispatched' && filteredDispatchedOrders.length === 0 && (
+            <div className="no-orders">
+              <Truck size={48} />
+              <p>No dispatched packages from this hub</p>
+            </div>
+          )}
+
+          {activeTab === 'active' && filteredOrders.length > 0 && (
             <div className="orders-table-wrapper">
               <table className="orders-table">
                 <thead>
@@ -477,7 +595,7 @@ const HubManagerDashboard = () => {
                       <td className="order-id-cell">
                         <code>{order._id.substring(0, 8)}...</code>
                       </td>
-                      <td>{order.user?.name || 'Unknown'}</td>
+                      <td>{order.user?.name || `${order.user?.firstName || ''} ${order.user?.lastName || ''}`.trim() || 'Unknown'}</td>
                       <td>
                         <span className={`status-badge status-${order.status?.toLowerCase()}`}>
                           {order.status || 'PENDING'}
@@ -510,7 +628,7 @@ const HubManagerDashboard = () => {
                               </button>
                             )}
 
-                            {(order.currentHub === hub?._id || order.status === 'ARRIVED_AT_HUB') && (
+                            {(order.status === 'APPROVED' && order.currentHub?._id === hub?._id) && (
                               <button
                                 className="action-btn dispatch-btn"
                                 onClick={() => loadDispatchOptions(order._id)}
@@ -524,6 +642,63 @@ const HubManagerDashboard = () => {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {activeTab === 'dispatched' && filteredDispatchedOrders.length > 0 && (
+            <div className="orders-table-wrapper">
+              <table className="orders-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th>Items</th>
+                    <th>Destination</th>
+                    <th>Dispatch Time</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredDispatchedOrders.map(order => {
+                    // Get dispatch event from this hub
+                    const dispatchEvent = order.trackingTimeline?.find(
+                      entry => (entry.status === 'IN_TRANSIT' || entry.status === 'OUT_FOR_DELIVERY') &&
+                      entry.hub && (typeof entry.hub === 'object' ? entry.hub._id : entry.hub) === hub?._id
+                    );
+                    
+                    return (
+                      <tr key={order._id}>
+                        <td className="order-id-cell">
+                          <code>{order._id.substring(0, 8)}...</code>
+                        </td>
+                        <td>{order.user?.name || `${order.user?.firstName || ''} ${order.user?.lastName || ''}`.trim() || 'Unknown'}</td>
+                        <td>
+                          <span className={`status-badge status-${order.status?.toLowerCase()}`}>
+                            {order.status || 'IN_TRANSIT'}
+                          </span>
+                        </td>
+                        <td>{order.items?.length || 0} items</td>
+                        <td>
+                          {order.shippingAddress?.district}, {order.shippingAddress?.state}
+                        </td>
+                        <td>
+                          {dispatchEvent ? new Date(dispatchEvent.timestamp || dispatchEvent.createdAt).toLocaleString() : 'N/A'}
+                        </td>
+                        <td className="actions-cell">
+                          <button
+                            className="action-btn view-btn"
+                            onClick={() => openTrackingDetail(order)}
+                            title="View tracking"
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -697,7 +872,7 @@ const HubManagerDashboard = () => {
                         <div className="step-content">
                           <p className="step-name">{hubStep.name}</p>
                           <p className="step-type">{hubStep.type?.replace('_', ' ')}</p>
-                          {hubStep.location && <p className="step-location">{hubStep.location.city}</p>}
+                          {hubStep.district && <p className="step-location">{hubStep.district}</p>}
                         </div>
                         {index < modals.trackingDetail.order.route.length - 1 && (
                           <div className="step-arrow">↓</div>

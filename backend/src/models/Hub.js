@@ -5,10 +5,10 @@ const HubSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     district: { type: String, required: true, trim: true, index: true },
     order: { type: Number, required: true, index: true },
-    type: { 
-      type: String, 
-      enum: ['WAREHOUSE', 'REGIONAL_HUB', 'LOCAL_HUB'], 
-      required: true 
+    type: {
+      type: String,
+      enum: ['WAREHOUSE', 'REGIONAL_HUB', 'LOCAL_HUB', 'MEGA_HUB'],
+      required: true
     },
     location: {
       address: String,
