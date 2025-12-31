@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Package, Truck, MapPin, Clock, Search, RefreshCw, X, AlertCircle, CheckCircle, ScanLine } from 'lucide-react';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import './HubManagerDashboard.css';
 
 const HubManagerDashboard = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [hub, setHub] = useState(null);
   const [orders, setOrders] = useState([]);
@@ -45,6 +47,23 @@ const HubManagerDashboard = () => {
     recentArrivals: 0
   });
 
+  // Helper function to generate headers with district selection
+  const getApiHeaders = async (firebaseUser) => {
+    const token = await firebaseUser.getIdToken();
+    const selectedDistrict = sessionStorage.getItem('selectedDistrict');
+    
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+    
+    if (selectedDistrict) {
+      headers['X-Selected-District'] = selectedDistrict;
+    }
+    
+    return headers;
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
@@ -69,25 +88,15 @@ const HubManagerDashboard = () => {
   const fetchHubAndOrders = async (firebaseUser) => {
     try {
       setLoading(true);
-      const token = await firebaseUser.getIdToken();
+      const headers = await getApiHeaders(firebaseUser);
 
-      const hubResponse = await fetch('/api/hub/my-hub', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const hubResponse = await fetch('/api/hub/my-hub', { headers });
 
       if (hubResponse.ok) {
         const hubData = await hubResponse.json();
         setHub(hubData);
 
-        const ordersResponse = await fetch('/api/hub/orders', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        const ordersResponse = await fetch('/api/hub/orders', { headers });
 
         if (ordersResponse.ok) {
           const ordersData = await ordersResponse.json();
@@ -99,12 +108,7 @@ const HubManagerDashboard = () => {
         }
 
         // Fetch dispatched orders
-        const dispatchedResponse = await fetch('/api/hub/dispatched-orders', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        const dispatchedResponse = await fetch('/api/hub/dispatched-orders', { headers });
 
         if (dispatchedResponse.ok) {
           const dispatchedData = await dispatchedResponse.json();
@@ -231,13 +235,10 @@ const HubManagerDashboard = () => {
       setActionError('');
       setActionSuccess('');
 
-      const token = await user.getIdToken();
+      const headers = await getApiHeaders(user);
       const response = await fetch('/api/hub/scan-in', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({ orderId: finalOrderId })
       });
 
@@ -272,7 +273,7 @@ const HubManagerDashboard = () => {
 
   const loadDispatchOptions = async (orderId) => {
     try {
-      const token = await user.getIdToken();
+      const headers = await getApiHeaders(user);
       const order = orders.find(o => o._id === orderId);
 
       if (!order) return;
@@ -290,10 +291,7 @@ const HubManagerDashboard = () => {
       let nextHubId = '';
       try {
         const nextHubResponse = await fetch(`/api/hub/next-hub/${orderId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+          headers
         });
 
         if (nextHubResponse.ok) {
@@ -309,10 +307,7 @@ const HubManagerDashboard = () => {
       if (hub?.type === 'LOCAL_HUB') {
         try {
           const boysResponse = await fetch('/api/hub/available-delivery-boys', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+            headers
           });
 
           if (boysResponse.ok) {
@@ -375,13 +370,10 @@ const HubManagerDashboard = () => {
       setActionError('');
       setActionSuccess('');
 
-      const token = await user.getIdToken();
+      const headers = await getApiHeaders(user);
       const response = await fetch('/api/hub/dispatch', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({
           orderId,
           nextHubId: hub?.type !== 'LOCAL_HUB' ? nextHubId : undefined,
@@ -396,10 +388,7 @@ const HubManagerDashboard = () => {
         
         // Refresh dispatched orders to include the newly dispatched order
         const dispatchedResponse = await fetch('/api/hub/dispatched-orders', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+          headers
         });
 
         if (dispatchedResponse.ok) {
@@ -474,10 +463,29 @@ const HubManagerDashboard = () => {
                   {hub.location.city}, {hub.location.state}
                 </p>
               )}
+              {sessionStorage.getItem('selectedDistrict') && (
+                <p className="hub-district-indicator">
+                  <strong>District:</strong> {sessionStorage.getItem('selectedDistrict')}
+                </p>
+              )}
             </div>
           )}
         </div>
         <div className="hub-actions">
+          {sessionStorage.getItem('selectedDistrict') && (
+            <button
+              className="hub-action-btn secondary"
+              onClick={() => {
+                sessionStorage.removeItem('selectedDistrict');
+                sessionStorage.removeItem('selectedHub');
+                navigate('/dashboard');
+              }}
+              title="Switch to another district"
+            >
+              <MapPin size={18} />
+              Switch District
+            </button>
+          )}
           <button
             className="hub-action-btn primary"
             onClick={() => {

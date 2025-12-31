@@ -70,6 +70,10 @@ export default function Login() {
       console.log('Login result:', result);
       
       if (result.success) {
+        // Clear any previous hub manager district selection
+        sessionStorage.removeItem('selectedDistrict');
+        sessionStorage.removeItem('selectedHub');
+        
         setSuccessMessage("Login successful! Redirecting...");
         setTimeout(() => {
           navigate('/dashboard');
@@ -95,6 +99,10 @@ export default function Login() {
       const result = await authService.googleSignIn();
       
       if (result.success) {
+        // Clear any previous hub manager district selection
+        sessionStorage.removeItem('selectedDistrict');
+        sessionStorage.removeItem('selectedHub');
+        
         setSuccessMessage("Google login successful! Redirecting...");
         
         // Check if user needs to complete profile

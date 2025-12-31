@@ -10,6 +10,127 @@ import { sendDeliveryOtpEmail } from '../services/emailService.js';
 const router = express.Router();
 router.use(requireAuth);
 
+// Get all available districts with hub information (for district selection)
+router.get('/districts', asyncHandler(async (req, res) => {
+  if (req.userRole !== 'hubmanager' && req.userRole !== 'admin') {
+    return res.status(403).json({ message: 'Hub Managers only' });
+  }
+
+  // Get all districts with their hub counts and types
+  const districts = await Hub.aggregate([
+    { $match: { isActive: true, district: { $exists: true, $ne: null, $ne: '' } } },
+    {
+      $group: {
+        _id: '$district',
+        hubCount: { $sum: 1 },
+        hubTypes: { $addToSet: '$type' }
+      }
+    },
+    { $sort: { _id: 1 } },
+    {
+      $project: {
+        _id: 0,
+        district: '$_id',
+        hubCount: 1,
+        hubTypes: 1
+      }
+    }
+  ]);
+
+  // Get order counts per district (optional enhancement)
+  const orderCounts = await Order.aggregate([
+    {
+      $match: {
+        status: { $nin: ['DELIVERED', 'CANCELLED'] }
+      }
+    },
+    {
+      $lookup: {
+        from: 'hubs',
+        localField: 'currentHub',
+        foreignField: '_id',
+        as: 'hubInfo'
+      }
+    },
+    { $unwind: '$hubInfo' },
+    {
+      $group: {
+        _id: '$hubInfo.district',
+        orderCount: { $sum: 1 }
+      }
+    }
+  ]);
+
+  // Merge order counts with district data
+  const orderCountMap = {};
+  orderCounts.forEach(oc => {
+    orderCountMap[oc._id] = oc.orderCount;
+  });
+
+  const districtsWithOrders = districts.map(d => ({
+    ...d,
+    orderCount: orderCountMap[d.district] || 0
+  }));
+
+  res.json({ districts: districtsWithOrders });
+}));
+
+// Select a district for hub management (stores in session)
+router.post('/select-district', asyncHandler(async (req, res) => {
+  if (req.userRole !== 'hubmanager' && req.userRole !== 'admin') {
+    return res.status(403).json({ message: 'Hub Managers only' });
+  }
+
+  const { district } = req.body;
+  
+  if (!district) {
+    return res.status(400).json({ error: 'District is required' });
+  }
+
+  // Find a hub in the selected district (prefer the main/first hub)
+  const hub = await Hub.findOne({ 
+    district: { $regex: new RegExp(`^${district}$`, 'i') },
+    isActive: true
+  }).sort({ order: 1 });
+
+  if (!hub) {
+    return res.status(404).json({ error: 'No hub found for this district' });
+  }
+
+  // Return hub data - the frontend will store this in session storage
+  res.json({ 
+    success: true, 
+    hub: {
+      _id: hub._id,
+      name: hub.name,
+      district: hub.district,
+      type: hub.type,
+      order: hub.order
+    },
+    district 
+  });
+}));
+
+// Get hub by district (for fetching hub info after district selection)
+router.get('/by-district/:district', asyncHandler(async (req, res) => {
+  if (req.userRole !== 'hubmanager' && req.userRole !== 'admin') {
+    return res.status(403).json({ message: 'Hub Managers only' });
+  }
+
+  const district = req.params.district;
+  
+  const hub = await Hub.findOne({ 
+    district: { $regex: new RegExp(`^${district}$`, 'i') },
+    isActive: true
+  }).sort({ order: 1 });
+
+  if (!hub) {
+    return res.status(404).json({ error: 'No hub found for this district' });
+  }
+
+  res.json(hub);
+}));
+
 // Middleware to check if user is a Hub Manager
 // Middleware to check if user is a Hub Manager
 async function requireHubManager(req, res, next) {
@@ -28,22 +149,28 @@ async function requireHubManager(req, res, next) {
       req.user = { ...req.user, ...user.toObject(), _id: user._id };
     }
 
-    // Find the hub managed by this user
-    // Prioritize hubs with district field set (properly configured hubs)
-    const hub = await Hub.findOne({ 
-      managedBy: mongoUserId,
-      district: { $exists: true, $ne: null, $ne: '' }
-    }) || await Hub.findOne({ managedBy: mongoUserId });
-
-    if (!hub && req.userRole !== 'admin') {
-      return res.status(403).json({ message: 'You are not assigned to any Hub', debug_id: mongoUserId });
+    // Check if district is passed in request headers (for common hub manager account)
+    const selectedDistrict = req.headers['x-selected-district'];
+    
+    let hub;
+    
+    if (selectedDistrict) {
+      // District-based selection (for common hub manager)
+      hub = await Hub.findOne({ 
+        district: { $regex: new RegExp(`^${selectedDistrict}$`, 'i') },
+        isActive: true
+      }).sort({ order: 1 });
+    } else {
+      // Traditional hubId assignment
+      hub = await Hub.findOne({ 
+        managedBy: mongoUserId,
+        district: { $exists: true, $ne: null, $ne: '' }
+      }) || await Hub.findOne({ managedBy: mongoUserId });
     }
 
-    // If admin is not assigned to a hub, maybe give them the first one or a dummy?
-    // For now, let admins pass but userHub might be null if not assigned.
-    // Better to just let admins view any hub via different routes or assign them temporarily.
-    // If admin, and no hub found, we might want to return all hubs? 
-    // This middleware specifically sets ONE userHub.
+    if (!hub && req.userRole !== 'admin') {
+      return res.status(403).json({ message: 'You are not assigned to any Hub or no district selected', debug_id: mongoUserId });
+    }
 
     req.userHub = hub;
     return next();

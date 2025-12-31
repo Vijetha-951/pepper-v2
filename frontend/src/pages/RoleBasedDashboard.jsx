@@ -1,14 +1,32 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import authService from "../services/authService";
 import Dashboard from "./Dashboard.jsx";
 import DeliveryDashboard from "./DeliveryDashboard.jsx";
 import HubManagerDashboard from "./HubManagerDashboard.jsx";
+import DistrictSelection from "./DistrictSelection.jsx";
 
 export default function RoleBasedDashboard() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
 
   useEffect(() => {
+    console.log('RoleBasedDashboard mounted/updated');
+    console.log('Selected district from sessionStorage:', sessionStorage.getItem('selectedDistrict'));
+    console.log('Location state:', location.state);
+    
+    // If coming to /dashboard without the state flag and user is hub manager, clear district selection
+    // This handles back button navigation
+    if (location.pathname === '/dashboard' && !location.state?.fromDistrictSelection) {
+      const storedDistrict = sessionStorage.getItem('selectedDistrict');
+      if (storedDistrict) {
+        console.log('Back navigation detected - clearing district selection');
+        sessionStorage.removeItem('selectedDistrict');
+        sessionStorage.removeItem('selectedHub');
+      }
+    }
+    
     const loadUserWithRefresh = async () => {
       const u = authService.getCurrentUser();
       if (!u) {
@@ -22,6 +40,7 @@ export default function RoleBasedDashboard() {
       // Get updated user after refresh
       const refreshedUser = authService.getCurrentUser();
       setUser(refreshedUser || u);
+      
       setLoading(false);
     };
 
@@ -46,7 +65,7 @@ export default function RoleBasedDashboard() {
 
     // Cleanup interval on component unmount
     return () => clearInterval(roleCheckInterval);
-  }, []);
+  }, [location]); // Re-run when location changes
 
   if (loading) {
     return (
@@ -58,9 +77,16 @@ export default function RoleBasedDashboard() {
 
   if (!user) return null;
 
+  // Check district selection every render for hub managers
+  const needsDistrictSelection = user.role === 'hubmanager' && !sessionStorage.getItem('selectedDistrict');
+
   if (user.role === 'deliveryboy') {
     return <DeliveryDashboard />;
   } else if (user.role === 'hubmanager') {
+    // Check if district selection is needed
+    if (needsDistrictSelection) {
+      return <DistrictSelection />;
+    }
     return <HubManagerDashboard />;
   } else {
     return <Dashboard />;

@@ -102,6 +102,21 @@
   gap: 4px;
 }
 
+.hub-district-indicator {
+  margin: 8px 0 4px 0;
+  font-size: 14px;
+  color: #059669;
+  background-color: #d1fae5;
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #6ee7b7;
+}
+
+.hub-district-indicator strong {
+  margin-right: 4px;
+}
+
 .hub-actions {
   display: flex;
   gap: 12px;
@@ -140,6 +155,14 @@
   background-color: #059669;
 }
 
+.hub-action-btn.secondary {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.hub-action-btn.secondary:hover {
+  background-color: #2563eb;
+}
 
 .hub-refresh-btn:active,
 .hub-action-btn:active {
