@@ -37,22 +37,6 @@ const Orders = () => {
     setCurrentPage(1); // Reset to first page when filters change
   }, [orders, searchTerm, statusFilter, dateRange]);
 
-  // Handle browser back button - ensure it goes to dashboard
-  useEffect(() => {
-    // Store the current state in history so browser back goes to dashboard
-    window.history.pushState({ from: 'orders' }, '', window.location.pathname);
-
-    // Listen for back button
-    const handlePopState = (event) => {
-      if (event.state?.from !== 'orders') {
-        navigate('/dashboard');
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [navigate]);
-
   const fetchOrders = async () => {
     try {
       const token = await user.getIdToken();
@@ -295,9 +279,14 @@ const Orders = () => {
         {/* Header */}
         <div className="orders-header">
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              navigate('/dashboard');
+            }}
             className="back-button-orders"
             title="Back to Dashboard"
+            type="button"
           >
             <ArrowLeft size={20} />
             Back

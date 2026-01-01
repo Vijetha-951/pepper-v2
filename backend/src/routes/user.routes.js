@@ -299,6 +299,37 @@ router.get('/orders/:id', requireCustomer, asyncHandler(async (req, res) => {
   res.json(o);
 }));
 
+// Get order route details for hub-based tracking
+router.get('/orders/:id/route', requireCustomer, asyncHandler(async (req, res) => {
+  const me = await User.findOne({ email: req.user.email });
+  const order = await Order.findOne({ _id: req.params.id, user: me._id })
+    .populate('route', 'name district state')
+    .populate('currentHub', 'name district state');
+  
+  if (!order) return res.status(404).json({ message: 'Order not found' });
+  
+  // If order has no route/hub data, return empty response
+  if (!order.route || order.route.length === 0) {
+    return res.json({ route: [], currentHub: null, currentHubIndex: -1 });
+  }
+  
+  // Find current hub index in route
+  let currentHubIndex = -1;
+  if (order.currentHub) {
+    const currentHubId = order.currentHub._id || order.currentHub;
+    currentHubIndex = order.route.findIndex(hub => {
+      const hubId = hub._id || hub;
+      return hubId.toString() === currentHubId.toString();
+    });
+  }
+  
+  res.json({
+    route: order.route,
+    currentHub: order.currentHub,
+    currentHubIndex
+  });
+}));
+
 // Cancel order (user can cancel their own order)
 router.delete('/orders/:id', requireCustomer, asyncHandler(async (req, res) => {
   const me = await User.findOne({ email: req.user.email });

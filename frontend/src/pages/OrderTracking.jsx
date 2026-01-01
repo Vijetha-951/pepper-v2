@@ -3,6 +3,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, MapPin, Clock, CheckCircle, XCircle, Truck, Package, AlertCircle, Cog } from 'lucide-react';
+import { HUB_LAUNCH_DATE } from '../config/constants';
 import './OrderTracking.css';
 
 const OrderTracking = () => {
@@ -12,14 +13,25 @@ const OrderTracking = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [routeData, setRouteData] = useState(null);
 
   useEffect(() => {
     if (!user) {
       navigate('/login');
     } else if (orderId) {
       fetchOrderDetails();
+      fetchRouteDetails();
     }
   }, [user, orderId, navigate]);
+
+  // Determine if order uses hub-based tracking
+  const isHubBasedOrder = (order) => {
+    if (!order) return false;
+    const orderDate = new Date(order.createdAt);
+    return orderDate >= HUB_LAUNCH_DATE && 
+           order.trackingTimeline && 
+           order.trackingTimeline.length > 0;
+  };
 
   const fetchOrderDetails = async () => {
     try {
@@ -45,6 +57,26 @@ const OrderTracking = () => {
       setError('Failed to load order details');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRouteDetails = async () => {
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/user/orders/${orderId}/route`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRouteData(data);
+      }
+    } catch (err) {
+      console.error('Error fetching route details:', err);
+      // Route data is optional, don't set error
     }
   };
 
@@ -142,7 +174,7 @@ const OrderTracking = () => {
         <div className="error-state">
           <AlertCircle size={64} />
           <h2>{error || 'Order not found'}</h2>
-          <button onClick={() => navigate('/my-orders')} className="btn-primary">
+          <button onClick={() => navigate(-1)} className="btn-primary">
             Back to Orders
           </button>
         </div>
@@ -152,15 +184,21 @@ const OrderTracking = () => {
 
   const timeline = getStatusTimeline();
   const currentStatusColor = getStatusColor(order.status);
+  const useHubTracking = isHubBasedOrder(order);
 
   return (
     <div className="order-tracking-container">
       {/* Header */}
       <div className="tracking-header">
         <button
-          onClick={() => navigate('/my-orders')}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            navigate(-1);
+          }}
           className="back-button"
           title="Back to Orders"
+          type="button"
         >
           <ArrowLeft size={20} />
           Back
@@ -182,8 +220,146 @@ const OrderTracking = () => {
               </div>
             </div>
 
-            {/* Delivery & Real-Time Tracking Section */}
-            {order.deliveryBoy && (typeof order.deliveryBoy === 'object') && (
+            {/* Hub-Based Tracking (New Orders) */}
+            {useHubTracking && routeData && routeData.route && routeData.route.length > 0 && (
+              <div className="hub-tracking-section" style={{ marginTop: '1.5rem' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '1rem', color: '#1f2937' }}>
+                  Hub Transit Route
+                </h3>
+                <div style={{ marginBottom: '0.75rem', fontWeight: '600', color: '#10b981', fontSize: '0.95rem' }}>
+                  📍 Destination: {routeData.route[routeData.route.length - 1]?.name || 'Unknown'}
+                </div>
+
+                <div className="hub-route-timeline" style={{ marginTop: '1rem' }}>
+                  {routeData.route.map((hub, index) => {
+                    const isCurrent = routeData.currentHub && routeData.currentHub._id === hub._id;
+                    const isPassed = routeData.currentHubIndex > index;
+                    
+                    return (
+                      <div key={hub._id} style={{ 
+                        display: 'flex', 
+                        gap: '1rem', 
+                        paddingBottom: '1.5rem', 
+                        position: 'relative' 
+                      }}>
+                        {/* Connector Line */}
+                        {index < routeData.route.length - 1 && (
+                          <div style={{
+                            position: 'absolute',
+                            left: '0.6rem',
+                            top: '1.75rem',
+                            bottom: 0,
+                            width: '2px',
+                            background: isPassed ? '#10b981' : '#e2e8f0'
+                          }}></div>
+                        )}
+
+                        {/* Icon */}
+                        <div style={{ zIndex: 1 }}>
+                          {isPassed ? (
+                            <div style={{
+                              width: '1.5rem',
+                              height: '1.5rem',
+                              borderRadius: '50%',
+                              background: '#10b981',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: 'white'
+                            }}>
+                              <CheckCircle size={16} />
+                            </div>
+                          ) : isCurrent ? (
+                            <div style={{
+                              width: '1.5rem',
+                              height: '1.5rem',
+                              borderRadius: '50%',
+                              background: '#3b82f6',
+                              boxShadow: '0 0 0 4px #dbeafe',
+                              animation: 'pulse 2s ease-in-out infinite'
+                            }}></div>
+                          ) : (
+                            <div style={{
+                              width: '1.5rem',
+                              height: '1.5rem',
+                              borderRadius: '50%',
+                              border: '2px solid #cbd5e1',
+                              background: 'white'
+                            }}></div>
+                          )}
+                        </div>
+
+                        {/* Hub Details */}
+                        <div style={{ flex: 1 }}>
+                          <div style={{ 
+                            fontWeight: '600', 
+                            color: isCurrent ? '#3b82f6' : isPassed ? '#10b981' : '#6b7280',
+                            fontSize: '0.95rem'
+                          }}>
+                            {hub.name}
+                            {isCurrent && <span style={{ 
+                              marginLeft: '0.5rem', 
+                              fontSize: '0.75rem',
+                              background: '#dbeafe',
+                              color: '#1e40af',
+                              padding: '0.125rem 0.5rem',
+                              borderRadius: '0.375rem',
+                              fontWeight: '600'
+                            }}>Current</span>}
+                          </div>
+                          <div style={{ 
+                            fontSize: '0.875rem', 
+                            color: '#6b7280',
+                            marginTop: '0.25rem'
+                          }}>
+                            {hub.district}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Tracking Timeline Events */}
+                {order.trackingTimeline && order.trackingTimeline.length > 0 && (
+                  <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e5e7eb' }}>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: '600', marginBottom: '1rem', color: '#1f2937' }}>
+                      Tracking History
+                    </h4>
+                    {order.trackingTimeline.map((event, index) => (
+                      <div key={index} style={{
+                        padding: '0.75rem',
+                        background: '#f9fafb',
+                        borderRadius: '0.5rem',
+                        marginBottom: '0.5rem'
+                      }}>
+                        <div style={{ fontWeight: '600', fontSize: '0.875rem', color: '#374151' }}>
+                          {event.status}
+                        </div>
+                        <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                          {event.location} {event.description && `- ${event.description}`}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.25rem' }}>
+                          {new Date(event.timestamp).toLocaleString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Legacy Tracking (Old Orders) */}
+            {!useHubTracking && (
+              <>
+                {/* Delivery & Real-Time Tracking Section */}
+                {order.deliveryBoy && (typeof order.deliveryBoy === 'object') && (
               <div className="delivery-tracking-section">
                 <h3 className="tracking-section-title">Delivery & Real-Time Tracking</h3>
                 
@@ -234,17 +410,17 @@ const OrderTracking = () => {
               </div>
             )}
 
-            {order.status === 'CANCELLED' ? (
-              // Cancelled State
-              <div className="cancelled-state">
-                <XCircle size={48} color="#ef4444" />
-                <h2>Order Cancelled</h2>
-                <p>Order cancelled by customer</p>
-              </div>
-            ) : (
-              <>
-                {/* Timeline - Horizontal */}
-                <div className="timeline-horizontal">
+                {order.status === 'CANCELLED' ? (
+                  // Cancelled State
+                  <div className="cancelled-state">
+                    <XCircle size={48} color="#ef4444" />
+                    <h2>Order Cancelled</h2>
+                    <p>Order cancelled by customer</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Timeline - Horizontal */}
+                    <div className="timeline-horizontal">
                   {timeline.map((step, index) => {
                     const StepIcon = step.icon;
                     const isCompleted = step.completed;
@@ -274,79 +450,81 @@ const OrderTracking = () => {
                   })}
                 </div>
 
-                {/* Status Details */}
-                <div className="status-details">
-                  <div className="status-section">
-                    <div className={`status-icon ${order.status === 'PENDING' ? 'active' : 'completed'}`}>
-                      <Package size={24} />
-                    </div>
-                    <div>
-                      <h3>Pending</h3>
-                      <p>Order just placed. Awaiting confirmation.</p>
-                    </div>
-                  </div>
-
-                  <div className="status-section">
-                    <div className={`status-icon ${order.status === 'APPROVED' ? 'active' : order.status === 'PENDING' ? 'pending' : 'completed'}`}>
-                      <Cog size={24} />
-                    </div>
-                    <div>
-                      <h3>Delivery boy confirmed!</h3>
-                      <p>Preparing for dispatch</p>
-                    </div>
-                  </div>
-
-                  <div className="status-section">
-                    <div className={`status-icon ${order.status === 'OUT_FOR_DELIVERY' ? 'active' : ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(order.status) ? 'completed' : 'pending'}`}>
-                      <Truck size={24} />
-                    </div>
-                    <div>
-                      <h3>Out for Delivery</h3>
-                      <p>{order.status === 'OUT_FOR_DELIVERY' ? 'Estimated arrival: 1 hour' : 'On the way'}</p>
-                    </div>
-                  </div>
-
-                  <div className="status-section">
-                    {order.status === 'DELIVERED' && (
-                      <>
-                        <div className="status-icon completed">
-                          <CheckCircle size={24} />
+                    {/* Status Details */}
+                    <div className="status-details">
+                      <div className="status-section">
+                        <div className={`status-icon ${order.status === 'PENDING' ? 'active' : 'completed'}`}>
+                          <Package size={24} />
                         </div>
                         <div>
-                          <h3>Order completed</h3>
-                          <p>on {formatDate(order.updatedAt).split(',')[0]}</p>
+                          <h3>Pending</h3>
+                          <p>Order just placed. Awaiting confirmation.</p>
                         </div>
-                      </>
-                    )}
-                    {order.status === 'CANCELLED' && (
-                      <>
-                        <div className="status-icon cancelled">
-                          <XCircle size={24} />
+                      </div>
+
+                      <div className="status-section">
+                        <div className={`status-icon ${order.status === 'APPROVED' ? 'active' : order.status === 'PENDING' ? 'pending' : 'completed'}`}>
+                          <Cog size={24} />
                         </div>
                         <div>
-                          <h3>Cancelled</h3>
-                          <p>Order cancelled by customer</p>
+                          <h3>Delivery boy confirmed!</h3>
+                          <p>Preparing for dispatch</p>
                         </div>
-                      </>
-                    )}
-                    {!['DELIVERED', 'CANCELLED'].includes(order.status) && (
-                      <>
-                        <div className="status-icon pending">
-                          <div className="circle-outline"></div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
+                      </div>
 
-                {/* Map Placeholder */}
-                {order.status === 'OUT_FOR_DELIVERY' && (
-                  <div className="map-container">
-                    <div className="map-placeholder">
-                      <div className="map-marker-delivery"></div>
-                      <div className="map-marker-destination"></div>
+                      <div className="status-section">
+                        <div className={`status-icon ${order.status === 'OUT_FOR_DELIVERY' ? 'active' : ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(order.status) ? 'completed' : 'pending'}`}>
+                          <Truck size={24} />
+                        </div>
+                        <div>
+                          <h3>Out for Delivery</h3>
+                          <p>{order.status === 'OUT_FOR_DELIVERY' ? 'Estimated arrival: 1 hour' : 'On the way'}</p>
+                        </div>
+                      </div>
+
+                      <div className="status-section">
+                        {order.status === 'DELIVERED' && (
+                          <>
+                            <div className="status-icon completed">
+                              <CheckCircle size={24} />
+                            </div>
+                            <div>
+                              <h3>Order completed</h3>
+                              <p>on {formatDate(order.updatedAt).split(',')[0]}</p>
+                            </div>
+                          </>
+                        )}
+                        {order.status === 'CANCELLED' && (
+                          <>
+                            <div className="status-icon cancelled">
+                              <XCircle size={24} />
+                            </div>
+                            <div>
+                              <h3>Cancelled</h3>
+                              <p>Order cancelled by customer</p>
+                            </div>
+                          </>
+                        )}
+                        {!['DELIVERED', 'CANCELLED'].includes(order.status) && (
+                          <>
+                            <div className="status-icon pending">
+                              <div className="circle-outline"></div>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
+
+                    {/* Map Placeholder */}
+                    {order.status === 'OUT_FOR_DELIVERY' && (
+                      <div className="map-container">
+                        <div className="map-placeholder">
+                          <div className="map-marker-delivery"></div>
+                          <div className="map-marker-destination"></div>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}
