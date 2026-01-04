@@ -5,7 +5,7 @@ import Hub from '../models/Hub.js';
 import User from '../models/User.js';
 import { requireAuth } from '../middleware/auth.js';
 import { generateRoute } from '../services/routeGenerationService.js';
-import { sendDeliveryOtpEmail } from '../services/emailService.js';
+import { sendDeliveryOtpEmail, sendHubArrivalEmail } from '../services/emailService.js';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -371,10 +371,12 @@ router.post('/scan-in', requireHubManager, asyncHandler(async (req, res) => {
     order.status = 'APPROVED';
   }
   
+  const arrivalTimestamp = new Date();
   order.trackingTimeline.push({
     status: 'ARRIVED_AT_HUB',
     location: hub.name,
     hub: hub._id,
+    timestamp: arrivalTimestamp,
     description: `Package arrived at ${hub.name} (${hub.type})`
   });
 
@@ -385,6 +387,29 @@ router.post('/scan-in', requireHubManager, asyncHandler(async (req, res) => {
     .populate('route', 'name district order type location')
     .populate('currentHub', 'name district type')
     .populate('user', 'firstName lastName email phone name');
+  
+  // Send hub arrival email notification to the user
+  if (populatedOrder.user && populatedOrder.user.email) {
+    const userName = populatedOrder.user.name || 
+                     `${populatedOrder.user.firstName || ''} ${populatedOrder.user.lastName || ''}`.trim() || 
+                     'Valued Customer';
+    
+    // Send email asynchronously without blocking the response
+    sendHubArrivalEmail({
+      to: populatedOrder.user.email,
+      userName: userName,
+      order: populatedOrder,
+      hub: {
+        name: hub.name,
+        district: hub.district,
+        type: hub.type
+      },
+      arrivedAt: arrivalTimestamp
+    }).catch(error => {
+      console.error('❌ Error sending hub arrival email:', error);
+      // Don't fail the request if email fails
+    });
+  }
   
   res.json(populatedOrder);
 }));

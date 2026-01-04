@@ -399,8 +399,135 @@ export const sendDeliveryOtpEmail = async ({ to, userName, order, otp }) => {
   }
 };
 
+/**
+ * Send hub arrival notification email to user
+ * @param {Object} options - Email options
+ * @param {string} options.to - Recipient email
+ * @param {string} options.userName - User's name
+ * @param {Object} options.order - Order details
+ * @param {Object} options.hub - Hub details where order arrived
+ * @param {Date} options.arrivedAt - Timestamp when order arrived
+ */
+export const sendHubArrivalEmail = async ({ to, userName, order, hub, arrivedAt }) => {
+  const emailTransporter = initializeTransporter();
+  
+  if (!emailTransporter) {
+    console.warn('⚠️ Email service not available. Skipping hub arrival notification.');
+    return { success: false, message: 'Email service not configured' };
+  }
+
+  try {
+    const formattedDate = new Date(arrivedAt).toLocaleString('en-IN', { 
+      dateStyle: 'full', 
+      timeStyle: 'short' 
+    });
+
+    const mailOptions = {
+      from: `"PEPPER Store" <${process.env.EMAIL_USER}>`,
+      to: to,
+      subject: `📍 Order Update - Package Arrived at ${hub.name}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Package Tracking Update</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f3f4f6;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #2c5f2d 0%, #10b981 100%); padding: 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px;">📍 Package Tracking Update</h1>
+            </div>
+            
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
+                Dear ${userName},
+              </p>
+              
+              <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
+                Great news! Your order has reached a new destination in its journey to you.
+              </p>
+              
+              <!-- Current Location -->
+              <div style="background-color: #dcfce7; border-left: 4px solid #10b981; padding: 20px; margin-bottom: 20px;">
+                <h2 style="color: #166534; font-size: 20px; margin-top: 0;">📦 Current Location</h2>
+                <div style="background-color: #ffffff; border-radius: 8px; padding: 15px; margin-top: 10px;">
+                  <p style="margin: 5px 0; font-size: 18px; font-weight: bold; color: #15803d;">
+                    ${hub.name}
+                  </p>
+                  ${hub.district ? `<p style="margin: 5px 0; color: #166534;">📍 ${hub.district}</p>` : ''}
+                  ${hub.type ? `<p style="margin: 5px 0; color: #166534; font-size: 14px;">Hub Type: ${hub.type.replace('_', ' ')}</p>` : ''}
+                </div>
+              </div>
+              
+              <!-- Arrival Time -->
+              <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                <h3 style="color: #2c5f2d; font-size: 18px; margin-top: 0;">⏰ Arrival Time</h3>
+                <p style="margin: 5px 0; color: #374151; font-size: 16px;">
+                  <strong>${formattedDate}</strong>
+                </p>
+              </div>
+              
+              <!-- Order Details -->
+              <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                <h3 style="color: #2c5f2d; font-size: 18px; margin-top: 0;">📋 Order Details</h3>
+                <p style="margin: 5px 0;"><strong>Order ID:</strong> ${order._id}</p>
+                <p style="margin: 5px 0;"><strong>Total Items:</strong> ${order.items.length}</p>
+                <p style="margin: 5px 0;"><strong>Order Amount:</strong> ₹${order.totalAmount.toFixed(2)}</p>
+              </div>
+              
+              ${order.shippingAddress && order.shippingAddress.line1 ? `
+              <!-- Delivery Address -->
+              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin-bottom: 20px;">
+                <h3 style="color: #92400e; font-size: 16px; margin-top: 0;">🏠 Delivery Destination</h3>
+                <p style="margin: 5px 0; color: #92400e;">
+                  ${order.shippingAddress.line1}<br>
+                  ${order.shippingAddress.line2 ? order.shippingAddress.line2 + '<br>' : ''}
+                  ${order.shippingAddress.district}, ${order.shippingAddress.state || ''}<br>
+                  ${order.shippingAddress.pincode}
+                </p>
+              </div>
+              ` : ''}
+              
+              <p style="font-size: 16px; color: #374151; margin-bottom: 10px;">
+                Your order is progressing smoothly towards its final destination. We'll keep you updated with each step of the journey!
+              </p>
+              
+              <p style="font-size: 16px; color: #374151;">
+                Thank you for your patience and for choosing PEPPER Store!
+              </p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background-color: #f3f4f6; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 5px 0; color: #6b7280; font-size: 14px;">
+                PEPPER Store - Premium Pepper Products
+              </p>
+              <p style="margin: 5px 0; color: #6b7280; font-size: 12px;">
+                This is an automated email. Please do not reply to this message.
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const info = await emailTransporter.sendMail(mailOptions);
+    console.log(`✅ Hub arrival email sent to ${to} for hub ${hub.name}:`, info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('❌ Failed to send hub arrival email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 export default {
   sendPaymentSuccessEmail,
   sendOrderConfirmationEmail,
-  sendDeliveryOtpEmail
+  sendDeliveryOtpEmail,
+  sendHubArrivalEmail
 };
