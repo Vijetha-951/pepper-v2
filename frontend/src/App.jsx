@@ -20,6 +20,7 @@ import AdminDeliveryStatus from "./pages/AdminDeliveryStatus.jsx";
 import AdminDemandPrediction from "./pages/AdminDemandPrediction.jsx";
 import AdminCustomerSegmentation from "./pages/AdminCustomerSegmentation.jsx";
 import AdminCustomerReviews from "./pages/AdminCustomerReviews.jsx";
+import AdminHubInventory from "./pages/AdminHubInventory.jsx";
 import DeliveryBoyStatus from "./pages/DeliveryBoyStatus.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 
@@ -28,6 +29,8 @@ import Cart from "./pages/Cart.jsx";
 import Checkout from "./pages/Checkout.jsx";
 import Orders from "./pages/Orders.jsx";
 import PaymentSuccess from "./pages/PaymentSuccess.jsx";
+import HubSelection from "./pages/HubSelection.jsx";
+import CollectionVerification from "./pages/CollectionVerification.jsx";
 import OrderTracking from "./pages/OrderTracking.jsx";
 
 function App() {
@@ -59,6 +62,18 @@ function App() {
             <Checkout />
           </>
         } />
+        <Route path="/hub-selection" element={
+          <>
+            <Navbar />
+            <HubSelection />
+          </>
+        } />
+        <Route path="/collection-verification/:orderId" element={
+          <>
+            <Navbar />
+            <CollectionVerification />
+          </>
+        } />
         <Route path="/orders" element={<Orders />} />
         <Route path="/my-orders" element={<Orders />} />
         <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
@@ -87,6 +102,8 @@ function App() {
         <Route path="/admin-users" element={<AdminUserManagement />} />
         <Route path="/admin-products" element={<AdminProductManagement />} />
         <Route path="/admin-stock" element={<AdminStockManagement />} />
+        <Route path="/admin-hub-inventory" element={<AdminHubInventory />} />
+        <Route path="/admin/hub-inventory" element={<AdminHubInventory />} />
         <Route path="/admin-demand-predictions" element={<AdminDemandPrediction />} />
         <Route path="/admin-customer-segmentation" element={<AdminCustomerSegmentation />} />
         <Route path="/admin-customer-reviews" element={<AdminCustomerReviews />} />

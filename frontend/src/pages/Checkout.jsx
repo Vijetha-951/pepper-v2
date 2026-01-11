@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { CreditCard, MapPin, AlertCircle, CheckCircle } from 'lucide-react';
 import './Checkout.css';
 
@@ -13,6 +13,11 @@ const Checkout = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Hub collection data from location state
+  const hubCollectionData = location.state || {};
+  const isHubCollection = hubCollectionData.deliveryType === 'HUB_COLLECTION';
   
   // Normalize address objects so all fields exist and are strings
   const emptyAddress = { line1: '', line2: '', district: '', state: '', pincode: '', phone: '' };
@@ -229,12 +234,52 @@ const Checkout = () => {
     setProcessing(true);
     setError('');
 
-    // Always persist address before attempting any order
-    const saved = await saveAddress();
-    if (!saved) { setProcessing(false); return; }
+    // Always persist address before attempting any order (skip for hub collection)
+    if (!isHubCollection) {
+      const saved = await saveAddress();
+      if (!saved) { setProcessing(false); return; }
+    }
 
     try {
       const token = await user.getIdToken();
+
+      // Hub Collection Order Flow
+      if (isHubCollection && hubCollectionData.collectionHub) {
+        const createRes = await fetch('/api/hub-collection/orders/hub-collection', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            items: (hubCollectionData.cartItems || [])
+              .filter(i => i && i.product && i.product._id)
+              .map(i => ({ productId: i.product._id, quantity: i.quantity })),
+            collectionHubId: hubCollectionData.collectionHub._id,
+            payment: { method: paymentMethod, status: 'PENDING' },
+            notes: ''
+          })
+        });
+        
+        if (!createRes.ok) {
+          const err = await createRes.json().catch(() => ({ message: 'Failed to place hub collection order' }));
+          throw new Error(err.message || 'Failed to place hub collection order');
+        }
+        
+        const orderData = await createRes.json();
+        setSuccess('Hub collection order placed successfully! You will be notified when ready for collection.');
+        
+        // Clear cart
+        await fetch(`/api/cart/${user.uid}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        setTimeout(() => navigate('/orders'), 1500);
+        return;
+      }
 
       // COD flow: directly create order via /api/user/orders
       if (paymentMethod === 'COD') {

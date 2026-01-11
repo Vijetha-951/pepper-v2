@@ -42,7 +42,7 @@ const OrderSchema = new mongoose.Schema(
     totalAmount: { type: Number, required: true, min: 0 },
     status: {
       type: String,
-      enum: ['PENDING', 'APPROVED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'],
+      enum: ['PENDING', 'APPROVED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'READY_FOR_COLLECTION'],
       default: 'PENDING',
       index: true,
     },
@@ -53,6 +53,24 @@ const OrderSchema = new mongoose.Schema(
       index: true,
     },
     deliveryBoy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
+    
+    // Collection/Delivery Type
+    deliveryType: {
+      type: String,
+      enum: ['HOME_DELIVERY', 'HUB_COLLECTION'],
+      default: 'HOME_DELIVERY',
+      index: true
+    },
+    
+    // Hub Collection Fields
+    collectionHub: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'Hub',
+      index: true
+    }, // Hub selected by user for collection
+    collectionOtp: { type: String }, // OTP for hub collection
+    collectionOtpGeneratedAt: Date,
+    collectedAt: Date, // Timestamp when order was collected
     
     // Multi-Hub Tracking Fields
     currentHub: { type: mongoose.Schema.Types.ObjectId, ref: 'Hub' },

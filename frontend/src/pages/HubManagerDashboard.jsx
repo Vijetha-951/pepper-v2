@@ -19,7 +19,9 @@ const HubManagerDashboard = () => {
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
   const [manualOrderId, setManualOrderId] = useState(''); // New state for manual input
-  const [activeTab, setActiveTab] = useState('active'); // 'active' or 'dispatched'
+  const [activeTab, setActiveTab] = useState('active'); // 'active', 'dispatched', or 'hub-collection'
+  const [collectionOrders, setCollectionOrders] = useState([]);
+  const [filteredCollectionOrders, setFilteredCollectionOrders] = useState([]);
 
   const [modals, setModals] = useState({
     scanIn: { isOpen: false, orderId: null, loading: false },
@@ -83,7 +85,7 @@ const HubManagerDashboard = () => {
       filterOrders();
       calculateSummary();
     }
-  }, [orders, dispatchedOrders, searchTerm, hub]);
+  }, [orders, dispatchedOrders, collectionOrders, searchTerm, hub]);
 
   const fetchHubAndOrders = async (firebaseUser) => {
     try {
@@ -115,6 +117,15 @@ const HubManagerDashboard = () => {
           console.log('🔍 Hub Manager - Dispatched orders fetched:', dispatchedData.length);
           setDispatchedOrders(dispatchedData);
         }
+
+        // Fetch hub collection orders
+        const collectionResponse = await fetch(`/api/orders?deliveryType=HUB_COLLECTION&collectionHub=${hubData._id}`, { headers });
+
+        if (collectionResponse.ok) {
+          const collectionData = await collectionResponse.json();
+          console.log('🔍 Hub Manager - Hub collection orders fetched:', collectionData.length);
+          setCollectionOrders(collectionData);
+        }
       } else {
         setError('Failed to fetch hub details');
       }
@@ -129,6 +140,7 @@ const HubManagerDashboard = () => {
   const filterOrders = () => {
     let filtered = orders;
     let filteredDispatched = dispatchedOrders;
+    let filteredCollection = collectionOrders;
 
     if (searchTerm) {
       filtered = filtered.filter(order => {
@@ -141,16 +153,25 @@ const HubManagerDashboard = () => {
         return order._id.includes(searchTerm) ||
                customerName.toLowerCase().includes(searchTerm.toLowerCase());
       });
+      filteredCollection = filteredCollection.filter(order => {
+        const customerName = order.user?.name || `${order.user?.firstName || ''} ${order.user?.lastName || ''}`.trim();
+        return order._id.includes(searchTerm) ||
+               customerName.toLowerCase().includes(searchTerm.toLowerCase());
+      });
     }
 
     setFilteredOrders(filtered);
     setFilteredDispatchedOrders(filteredDispatched);
+    setFilteredCollectionOrders(filteredCollection);
   };
 
   const calculateSummary = () => {
     if (!hub) return;
 
-    const oneHourAgo = Date.now() - 3600000;
+    // Get start of today (midnight)
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const todayTimestamp = startOfToday.getTime();
 
     let ordersLeftToScanCount = 0;
     let readyForDispatchCount = 0;
@@ -200,11 +221,11 @@ const HubManagerDashboard = () => {
         inTransitCount++;
       }
 
-      // 4. Recent Arrivals: Arrived in last 1 hour
+      // 4. Recent Arrivals: Arrived today (since midnight)
       if (arrivalEvent) {
         const eventTime = arrivalEvent.timestamp || arrivalEvent.createdAt;
         const arrivalTime = new Date(eventTime).getTime();
-        if (arrivalTime > oneHourAgo) {
+        if (arrivalTime >= todayTimestamp) {
           recentArrivalsCount++;
         }
       }
@@ -435,6 +456,37 @@ const HubManagerDashboard = () => {
     }));
   };
 
+  const handleMarkReadyForCollection = async (orderId) => {
+    if (!window.confirm('Mark this order as ready for collection? An OTP will be generated and emailed to the customer.')) {
+      return;
+    }
+
+    try {
+      setActionError('');
+      setActionSuccess('');
+
+      const headers = await getApiHeaders(user);
+      const response = await fetch(`/api/hub-collection/orders/${orderId}/ready-for-collection`, {
+        method: 'PATCH',
+        headers
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setActionSuccess(`Order marked as ready! OTP sent to customer: ${data.order.user.email}`);
+        
+        // Refresh collection orders
+        fetchHubAndOrders(user);
+      } else {
+        const errorData = await response.json();
+        setActionError(errorData.message || 'Failed to mark order as ready');
+      }
+    } catch (error) {
+      console.error('Error marking order ready:', error);
+      setActionError('Failed to mark order as ready for collection');
+    }
+  };
+
   if (loading) {
     return (
       <div className="hub-loading">
@@ -536,7 +588,7 @@ const HubManagerDashboard = () => {
             <AlertCircle size={24} />
           </div>
           <div className="summary-content">
-            <p className="summary-label">Recent Arrivals</p>
+            <p className="summary-label">Arrivals Today</p>
             <p className="summary-value">{summary.recentArrivals}</p>
           </div>
         </div>
@@ -557,6 +609,12 @@ const HubManagerDashboard = () => {
                 onClick={() => setActiveTab('dispatched')}
               >
                 Dispatched Orders ({filteredDispatchedOrders.length})
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'hub-collection' ? 'active' : ''}`}
+                onClick={() => setActiveTab('hub-collection')}
+              >
+                📍 Hub Collection ({filteredCollectionOrders.length})
               </button>
             </div>
             <div className="search-box">
@@ -707,6 +765,80 @@ const HubManagerDashboard = () => {
                       </tr>
                     );
                   })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Hub Collection Orders Tab */}
+          {activeTab === 'hub-collection' && filteredCollectionOrders.length === 0 && (
+            <div className="empty-state">
+              <Package size={48} color="#9ca3af" />
+              <p>No hub collection orders</p>
+            </div>
+          )}
+
+          {activeTab === 'hub-collection' && filteredCollectionOrders.length > 0 && (
+            <div className="orders-table-wrapper">
+              <table className="orders-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th>Items</th>
+                    <th>Total Amount</th>
+                    <th>Order Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCollectionOrders.map(order => (
+                    <tr key={order._id}>
+                      <td className="order-id-cell">
+                        <code>{order._id.substring(0, 8)}...</code>
+                      </td>
+                      <td>{order.user?.firstName} {order.user?.lastName}</td>
+                      <td>
+                        <span className={`status-badge status-${order.status?.toLowerCase()?.replace(/_/g, '-')}`}>
+                          {order.status === 'READY_FOR_COLLECTION' ? 'Ready' : order.status || 'PENDING'}
+                        </span>
+                      </td>
+                      <td>{order.items?.length || 0} items</td>
+                      <td>₹{order.totalAmount}</td>
+                      <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+                      <td>
+                        {order.status !== 'READY_FOR_COLLECTION' && order.status !== 'DELIVERED' && (
+                          <button
+                            className="action-btn primary"
+                            onClick={() => handleMarkReadyForCollection(order._id)}
+                            style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                          >
+                            ✓ Mark Ready
+                          </button>
+                        )}
+                        {order.status === 'READY_FOR_COLLECTION' && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <span style={{ color: '#10b981', fontWeight: '600', fontSize: '0.875rem' }}>
+                              OTP Sent ✓
+                            </span>
+                            <button
+                              className="action-btn primary"
+                              onClick={() => navigate(`/collection-verification/${order._id}`)}
+                              style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                            >
+                              🔍 Verify Collection
+                            </button>
+                          </div>
+                        )}
+                        {order.status === 'DELIVERED' && (
+                          <span style={{ color: '#6b7280' }}>
+                            Collected ✓
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

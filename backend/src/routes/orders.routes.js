@@ -3,7 +3,6 @@ import asyncHandler from 'express-async-handler';
 import Order from '../models/Order.js';
 import User from '../models/User.js';
 import Product from '../models/Product.js';
-import Hub from '../models/Hub.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -51,9 +50,10 @@ router.get('/stats', requireAuth, asyncHandler(async (req, res) => {
   });
 }));
 
-// Get user's orders
+// Get user's orders (or hub collection orders for hub managers)
 router.get('/', requireAuth, asyncHandler(async (req, res) => {
   const firebaseUid = req.user.uid;
+  const { deliveryType, collectionHub } = req.query;
   
   // Get user document by Firebase UID to get MongoDB _id
   const user = await User.findOne({ firebaseUid });
@@ -61,6 +61,26 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
     return res.status(404).json({ message: 'User not found' });
   }
   
+  // If requesting hub collection orders (for hub managers)
+  if (deliveryType === 'HUB_COLLECTION' && collectionHub) {
+    // Verify user is hub manager
+    if (user.role !== 'hubmanager' && user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    
+    const orders = await Order.find({ 
+      deliveryType: 'HUB_COLLECTION',
+      collectionHub: collectionHub
+    })
+      .populate('items.product', 'name image price')
+      .populate('user', 'firstName lastName email phone')
+      .populate('collectionHub', 'name district')
+      .sort({ createdAt: -1 });
+    
+    return res.status(200).json(orders);
+  }
+  
+  // Regular user orders
   const orders = await Order.find({ user: user._id })
     .populate('items.product', 'name image')
     .populate('deliveryBoy', 'firstName lastName phone')

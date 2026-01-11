@@ -336,6 +336,7 @@ export default function Dashboard() {
       { id: 'admin-users', label: 'User Management', icon: User },
       { id: 'admin-products', label: 'Product Management', icon: Package },
       { id: 'admin-stock', label: 'Stock Management', icon: Package2 },
+      { id: 'admin-hub-inventory', label: 'Hub Inventory', icon: Package2 },
       { id: 'admin-demand-predictions', label: 'Demand Predictions', icon: Sparkles },
       { id: 'admin-customer-segmentation', label: 'Customer Segmentation', icon: Target },
       { id: 'admin-customer-reviews', label: 'Customer Reviews', icon: Sparkles },
@@ -1143,28 +1144,75 @@ export default function Dashboard() {
                 {/* Cart Total */}
                 <div style={{
                   borderTop: '2px solid #e5e7eb',
-                  paddingTop: '1rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
+                  paddingTop: '1rem'
                 }}>
-                  <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#1f2937' }}>
-                    Total: ₹{cart.total || 0}
-                  </h3>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '1rem'
+                  }}>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#1f2937' }}>
+                      Total: ₹{cart.total || 0}
+                    </h3>
+                  </div>
+
+                  {/* Delivery Method Info Box */}
+                  <div style={{ 
+                    background: '#f0fdf4', 
+                    border: '1px solid #86efac', 
+                    borderRadius: '8px', 
+                    padding: '1rem', 
+                    marginBottom: '1rem',
+                    fontSize: '0.875rem'
+                  }}>
+                    <div style={{ fontWeight: '600', color: '#065f46', marginBottom: '0.5rem' }}>
+                      Choose Your Delivery Method
+                    </div>
+                    <div style={{ color: '#047857' }}>
+                      • Home Delivery - Direct to your doorstep<br/>
+                      • Hub Collection - Collect from nearest hub
+                    </div>
+                  </div>
+
+                  {/* Delivery Method Buttons */}
                   <button
                     onClick={() => navigate('/checkout')}
+                    disabled={cart.items.length === 0}
                     style={{
+                      width: '100%',
                       padding: '0.75rem 2rem',
                       backgroundColor: '#10b981',
                       color: 'white',
                       border: 'none',
                       borderRadius: '8px',
-                      cursor: 'pointer',
+                      cursor: cart.items.length === 0 ? 'not-allowed' : 'pointer',
                       fontSize: '1rem',
-                      fontWeight: '600'
+                      fontWeight: '600',
+                      marginBottom: '0.75rem',
+                      opacity: cart.items.length === 0 ? 0.5 : 1
                     }}
                   >
-                    Checkout
+                    🏠 Home Delivery
+                  </button>
+
+                  <button
+                    onClick={() => navigate('/hub-selection', { state: { cartItems: cart.items } })}
+                    disabled={cart.items.length === 0}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 2rem',
+                      backgroundColor: '#2563eb',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: cart.items.length === 0 ? 'not-allowed' : 'pointer',
+                      fontSize: '1rem',
+                      fontWeight: '600',
+                      opacity: cart.items.length === 0 ? 0.5 : 1
+                    }}
+                  >
+                    📍 Hub Collection
                   </button>
                 </div>
               </div>
@@ -1430,6 +1478,8 @@ export default function Dashboard() {
                     navigate('/orders');
                   } else if (item.id === 'admin-stock') {
                     navigate('/admin-stock');
+                  } else if (item.id === 'admin-hub-inventory') {
+                    navigate('/admin-hub-inventory');
                   } else if (item.id === 'admin-users') {
                     navigate('/admin-users');
                   } else if (item.id === 'admin-products') {

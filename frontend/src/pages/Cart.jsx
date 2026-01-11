@@ -105,6 +105,14 @@ const Cart = () => {
     navigate('/checkout');
   };
 
+  const proceedToHubCollection = () => {
+    if (cart.items.length === 0) {
+      setError('Your cart is empty');
+      return;
+    }
+    navigate('/hub-selection', { state: { cartItems: cart.items } });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -234,12 +242,37 @@ const Cart = () => {
                   </div>
                 </div>
 
+                <div style={{ 
+                  background: '#f0fdf4', 
+                  border: '1px solid #86efac', 
+                  borderRadius: '8px', 
+                  padding: '1rem', 
+                  marginBottom: '1rem',
+                  fontSize: '0.875rem'
+                }}>
+                  <div style={{ fontWeight: '600', color: '#065f46', marginBottom: '0.5rem' }}>
+                    Choose Your Delivery Method
+                  </div>
+                  <div style={{ color: '#047857' }}>
+                    • Home Delivery - Direct to your doorstep<br/>
+                    • Hub Collection - Collect from nearest hub
+                  </div>
+                </div>
+
                 <button
                   onClick={proceedToCheckout}
                   disabled={cart.items.length === 0}
-                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-3"
                 >
-                  Proceed to Checkout
+                  🏠 Home Delivery
+                </button>
+
+                <button
+                  onClick={proceedToHubCollection}
+                  disabled={cart.items.length === 0}
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  📍 Hub Collection
                 </button>
 
                 <button

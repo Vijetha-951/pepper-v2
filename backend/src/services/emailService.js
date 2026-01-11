@@ -525,9 +525,158 @@ export const sendHubArrivalEmail = async ({ to, userName, order, hub, arrivedAt 
   }
 };
 
+/**
+ * Send collection OTP email to user for hub collection
+ * @param {Object} options - Email options
+ * @param {string} options.to - Recipient email
+ * @param {string} options.userName - User's name
+ * @param {Object} options.order - Order details
+ * @param {string} options.otp - Collection OTP
+ * @param {string} options.hubName - Hub name for collection
+ */
+export const sendCollectionOtpEmail = async ({ to, userName, order, otp, hubName }) => {
+  const emailTransporter = initializeTransporter();
+  
+  if (!emailTransporter) {
+    console.warn('⚠️ Email service not available. Skipping email notification.');
+    return { success: false, message: 'Email service not configured' };
+  }
+
+  try {
+    const orderItems = order.items
+      .map(item => `
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${item.name || 'Product'}</td>
+          <td style="padding: 10px; text-align: center; border-bottom: 1px solid #e5e7eb;">${item.quantity}</td>
+          <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e5e7eb;">₹${item.priceAtOrder.toFixed(2)}</td>
+          <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e5e7eb;">₹${(item.priceAtOrder * item.quantity).toFixed(2)}</td>
+        </tr>
+      `).join('');
+
+    const mailOptions = {
+      from: `"PEPPER Store" <${process.env.EMAIL_USER}>`,
+      to: to,
+      subject: `Your Order is Ready for Collection! - Order #${order._id.toString().slice(-6).toUpperCase()}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f3f4f6;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px;">🎉 Order Ready for Collection!</h1>
+            </div>
+            
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <p style="font-size: 18px; color: #111827; margin-bottom: 10px;">
+                Hello ${userName},
+              </p>
+              
+              <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
+                Great news! Your order is ready for collection at <strong>${hubName}</strong>.
+              </p>
+              
+              <!-- OTP Section -->
+              <div style="background-color: #f0fdf4; border: 2px dashed #10b981; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center;">
+                <p style="margin: 0 0 10px 0; color: #065f46; font-weight: bold; font-size: 16px;">Your Collection OTP</p>
+                <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #059669; margin: 10px 0;">
+                  ${otp}
+                </div>
+                <p style="margin: 10px 0 0 0; font-size: 12px; color: #065f46;">
+                  Please present this OTP at ${hubName} to collect your order.
+                </p>
+                <p style="margin: 5px 0 0 0; font-size: 11px; color: #6b7280;">
+                  This OTP is valid for 24 hours.
+                </p>
+              </div>
+              
+              <!-- Order Details -->
+              <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                <h2 style="color: #059669; font-size: 20px; margin-top: 0;">Order Details</h2>
+                <p style="margin: 5px 0;"><strong>Order ID:</strong> #${order._id.toString().slice(-6).toUpperCase()}</p>
+                <p style="margin: 5px 0;"><strong>Collection Hub:</strong> ${hubName}</p>
+                <p style="margin: 5px 0;"><strong>Payment Method:</strong> ${order.payment?.method || 'Cash on Collection'}</p>
+              </div>
+              
+              <!-- Order Items -->
+              <h3 style="color: #059669; font-size: 18px; margin-bottom: 15px;">Order Items</h3>
+              <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                <thead>
+                  <tr style="background-color: #f3f4f6;">
+                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e5e7eb;">Product</th>
+                    <th style="padding: 10px; text-align: center; border-bottom: 2px solid #e5e7eb;">Qty</th>
+                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #e5e7eb;">Price</th>
+                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #e5e7eb;">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${orderItems}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="3" style="padding: 15px; text-align: right; font-weight: bold; border-top: 2px solid #e5e7eb;">Total Amount:</td>
+                    <td style="padding: 15px; text-align: right; font-weight: bold; font-size: 18px; color: #059669; border-top: 2px solid #e5e7eb;">₹${order.totalAmount.toFixed(2)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+              
+              <!-- Collection Instructions -->
+              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin-bottom: 20px;">
+                <h3 style="color: #92400e; font-size: 16px; margin-top: 0;">📍 Collection Instructions</h3>
+                <ol style="margin: 10px 0; padding-left: 20px; color: #92400e;">
+                  <li>Visit <strong>${hubName}</strong> during business hours</li>
+                  <li>Present your Collection OTP: <strong>${otp}</strong></li>
+                  <li>Verify your identity with a valid ID</li>
+                  <li>Complete payment (if Cash on Collection)</li>
+                  <li>Collect your order</li>
+                </ol>
+                <p style="margin: 10px 0 0 0; font-size: 12px; color: #92400e;">
+                  ⏰ Please collect your order within 24 hours.
+                </p>
+              </div>
+              
+              <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+                If you have any questions, please contact our support team.
+              </p>
+              
+              <p style="font-size: 14px; color: #374151; margin-top: 20px;">
+                Thank you for shopping with PEPPER Store!
+              </p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background-color: #f3f4f6; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 5px 0; color: #6b7280; font-size: 14px;">
+                PEPPER Store - Premium Pepper Products
+              </p>
+              <p style="margin: 5px 0; color: #6b7280; font-size: 12px;">
+                This is an automated email. Please do not reply to this message.
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const info = await emailTransporter.sendMail(mailOptions);
+    console.log(`✅ Collection OTP email sent to ${to}:`, info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('❌ Failed to send collection OTP email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 export default {
   sendPaymentSuccessEmail,
   sendOrderConfirmationEmail,
   sendDeliveryOtpEmail,
-  sendHubArrivalEmail
+  sendHubArrivalEmail,
+  sendCollectionOtpEmail
 };

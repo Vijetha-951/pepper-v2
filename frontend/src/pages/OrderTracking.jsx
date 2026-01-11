@@ -220,138 +220,106 @@ const OrderTracking = () => {
               </div>
             </div>
 
-            {/* Hub-Based Tracking (New Orders) */}
-            {useHubTracking && routeData && routeData.route && routeData.route.length > 0 && (
-              <div className="hub-tracking-section" style={{ marginTop: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '1rem', color: '#1f2937' }}>
-                  Hub Transit Route
+            {/* Hub Collection Information */}
+            {order.deliveryType === 'HUB_COLLECTION' && order.collectionHub && (
+              <div style={{ 
+                marginTop: '1.5rem', 
+                padding: '1rem', 
+                background: '#f0f9ff', 
+                border: '1px solid #0ea5e9',
+                borderRadius: '0.5rem' 
+              }}>
+                <h3 style={{ 
+                  fontSize: '1rem', 
+                  fontWeight: '600', 
+                  color: '#0c4a6e', 
+                  marginBottom: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <MapPin size={20} />
+                  Hub Collection Order
                 </h3>
-                <div style={{ marginBottom: '0.75rem', fontWeight: '600', color: '#10b981', fontSize: '0.95rem' }}>
-                  📍 Destination: {routeData.route[routeData.route.length - 1]?.name || 'Unknown'}
-                </div>
-
-                <div className="hub-route-timeline" style={{ marginTop: '1rem' }}>
-                  {routeData.route.map((hub, index) => {
-                    const isCurrent = routeData.currentHub && routeData.currentHub._id === hub._id;
-                    const isPassed = routeData.currentHubIndex > index;
-                    
-                    return (
-                      <div key={hub._id} style={{ 
-                        display: 'flex', 
-                        gap: '1rem', 
-                        paddingBottom: '1.5rem', 
-                        position: 'relative' 
-                      }}>
-                        {/* Connector Line */}
-                        {index < routeData.route.length - 1 && (
-                          <div style={{
-                            position: 'absolute',
-                            left: '0.6rem',
-                            top: '1.75rem',
-                            bottom: 0,
-                            width: '2px',
-                            background: isPassed ? '#10b981' : '#e2e8f0'
-                          }}></div>
-                        )}
-
-                        {/* Icon */}
-                        <div style={{ zIndex: 1 }}>
-                          {isPassed ? (
-                            <div style={{
-                              width: '1.5rem',
-                              height: '1.5rem',
-                              borderRadius: '50%',
-                              background: '#10b981',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: 'white'
-                            }}>
-                              <CheckCircle size={16} />
-                            </div>
-                          ) : isCurrent ? (
-                            <div style={{
-                              width: '1.5rem',
-                              height: '1.5rem',
-                              borderRadius: '50%',
-                              background: '#3b82f6',
-                              boxShadow: '0 0 0 4px #dbeafe',
-                              animation: 'pulse 2s ease-in-out infinite'
-                            }}></div>
-                          ) : (
-                            <div style={{
-                              width: '1.5rem',
-                              height: '1.5rem',
-                              borderRadius: '50%',
-                              border: '2px solid #cbd5e1',
-                              background: 'white'
-                            }}></div>
-                          )}
-                        </div>
-
-                        {/* Hub Details */}
-                        <div style={{ flex: 1 }}>
-                          <div style={{ 
-                            fontWeight: '600', 
-                            color: isCurrent ? '#3b82f6' : isPassed ? '#10b981' : '#6b7280',
-                            fontSize: '0.95rem'
-                          }}>
-                            {hub.name}
-                            {isCurrent && <span style={{ 
-                              marginLeft: '0.5rem', 
-                              fontSize: '0.75rem',
-                              background: '#dbeafe',
-                              color: '#1e40af',
-                              padding: '0.125rem 0.5rem',
-                              borderRadius: '0.375rem',
-                              fontWeight: '600'
-                            }}>Current</span>}
-                          </div>
-                          <div style={{ 
-                            fontSize: '0.875rem', 
-                            color: '#6b7280',
-                            marginTop: '0.25rem'
-                          }}>
-                            {hub.district}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Tracking Timeline Events */}
-                {order.trackingTimeline && order.trackingTimeline.length > 0 && (
-                  <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e5e7eb' }}>
-                    <h4 style={{ fontSize: '0.95rem', fontWeight: '600', marginBottom: '1rem', color: '#1f2937' }}>
-                      Tracking History
-                    </h4>
-                    {order.trackingTimeline.map((event, index) => (
-                      <div key={index} style={{
-                        padding: '0.75rem',
-                        background: '#f9fafb',
-                        borderRadius: '0.5rem',
-                        marginBottom: '0.5rem'
-                      }}>
-                        <div style={{ fontWeight: '600', fontSize: '0.875rem', color: '#374151' }}>
-                          {event.status}
-                        </div>
-                        <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
-                          {event.location} {event.description && `- ${event.description}`}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.25rem' }}>
-                          {new Date(event.timestamp).toLocaleString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </div>
-                      </div>
-                    ))}
+                <div style={{ fontSize: '0.875rem', color: '#334155', lineHeight: '1.6' }}>
+                  <p style={{ marginBottom: '0.5rem' }}>
+                    <strong>Collection Hub:</strong> {order.collectionHub?.name || 'N/A'}
+                  </p>
+                  <p style={{ marginBottom: '0.5rem' }}>
+                    <strong>Hub District:</strong> {order.collectionHub?.district || 'N/A'}
+                  </p>
+                  {order.collectionHub?.address && (
+                    <p style={{ marginBottom: '0.5rem' }}>
+                      <strong>Hub Address:</strong> {order.collectionHub.address}
+                    </p>
+                  )}
+                  <div style={{ 
+                    marginTop: '0.75rem', 
+                    padding: '0.75rem', 
+                    background: '#e0f2fe',
+                    borderRadius: '0.375rem',
+                    borderLeft: '3px solid #0ea5e9'
+                  }}>
+                    <p style={{ fontWeight: '600', color: '#0c4a6e', marginBottom: '0.25rem' }}>
+                      📧 Collection Process:
+                    </p>
+                    <ul style={{ margin: '0.5rem 0 0 1.25rem', color: '#475569' }}>
+                      <li>You will receive an OTP email when your order is ready for collection</li>
+                      <li>Visit the hub with your OTP code to collect your order</li>
+                      <li>Show the OTP to the hub manager for verification</li>
+                    </ul>
                   </div>
-                )}
+                  {order.collectionOtp && order.collectionOtp.code && (
+                    <div style={{
+                      marginTop: '0.75rem',
+                      padding: '0.75rem',
+                      background: '#dcfce7',
+                      border: '2px solid #22c55e',
+                      borderRadius: '0.375rem',
+                      textAlign: 'center'
+                    }}>
+                      <p style={{ fontWeight: '600', color: '#166534', marginBottom: '0.25rem' }}>
+                        ✅ Your order is ready for collection!
+                      </p>
+                      <p style={{ fontSize: '0.875rem', color: '#15803d', marginTop: '0.5rem' }}>
+                        Check your email for the OTP code to collect your order.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Tracking Timeline Events - Removed Hub Transit Route display for customers */}
+            {useHubTracking && order.trackingTimeline && order.trackingTimeline.length > 0 && (
+              <div style={{ marginTop: '1.5rem' }}>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: '600', marginBottom: '1rem', color: '#1f2937' }}>
+                  Tracking History
+                </h4>
+                {order.trackingTimeline.map((event, index) => (
+                  <div key={index} style={{
+                    padding: '0.75rem',
+                    background: '#f9fafb',
+                    borderRadius: '0.5rem',
+                    marginBottom: '0.5rem'
+                  }}>
+                    <div style={{ fontWeight: '600', fontSize: '0.875rem', color: '#374151' }}>
+                      {event.status}
+                    </div>
+                    <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                      {event.location} {event.description && `- ${event.description}`}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.25rem' }}>
+                      {new Date(event.timestamp).toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
