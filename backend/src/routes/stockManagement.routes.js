@@ -3,6 +3,8 @@ import asyncHandler from 'express-async-handler';
 import Product from '../models/Product.js';
 import Order from '../models/Order.js';
 import User from '../models/User.js';
+import Hub from '../models/Hub.js';
+import HubInventory from '../models/HubInventory.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -359,6 +361,36 @@ router.put('/products/restock/:id', requireAuth, requireAdmin, asyncHandler(asyn
     product.stock = product.available_stock; // Keep legacy field in sync
 
     const updatedProduct = await product.save();
+
+    // Sync with Kottayam Hub (Main Hub)
+    try {
+      const kottayamHub = await Hub.findOne({ district: 'Kottayam' });
+      if (kottayamHub) {
+        let kottayamInventory = await HubInventory.findOne({
+          hub: kottayamHub._id,
+          product: productId
+        });
+
+        if (kottayamInventory) {
+          // Update existing inventory
+          kottayamInventory.quantity = updatedProduct.available_stock;
+          await kottayamInventory.save();
+          console.log(`✅ Synced ${product.name} inventory to Kottayam Hub: ${updatedProduct.available_stock}`);
+        } else {
+          // Create new inventory record
+          await HubInventory.create({
+            hub: kottayamHub._id,
+            product: productId,
+            quantity: updatedProduct.available_stock,
+            reservedQuantity: 0
+          });
+          console.log(`✅ Created ${product.name} inventory in Kottayam Hub: ${updatedProduct.available_stock}`);
+        }
+      }
+    } catch (hubSyncError) {
+      console.error('⚠️ Failed to sync with Kottayam Hub:', hubSyncError);
+      // Don't fail the whole operation if hub sync fails
+    }
 
     // Log restock activity (in a real app, you might want to store this in a separate audit table)
     console.log(`Product Restocked: ${product.name} (ID: ${productId})`, {

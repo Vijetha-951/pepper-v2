@@ -6,6 +6,7 @@ import User from '../models/User.js';
 import { requireAuth } from '../middleware/auth.js';
 import { generateRoute } from '../services/routeGenerationService.js';
 import { sendDeliveryOtpEmail, sendHubArrivalEmail } from '../services/emailService.js';
+import { createOrderArrivedNotification } from '../services/notificationService.js';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -410,6 +411,11 @@ router.post('/scan-in', requireHubManager, asyncHandler(async (req, res) => {
       // Don't fail the request if email fails
     });
   }
+
+  // Create notification for other hub managers when order arrives (non-blocking)
+  createOrderArrivedNotification(populatedOrder, hub).catch(err => {
+    console.error('Failed to create hub arrival notification:', err);
+  });
   
   res.json(populatedOrder);
 }));

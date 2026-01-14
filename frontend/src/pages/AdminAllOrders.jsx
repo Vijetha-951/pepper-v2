@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Eye, Package, DollarSign, Clock, RefreshCw, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Search, Eye, Package, DollarSign, Clock, RefreshCw, ChevronLeft, ChevronRight, ArrowLeft, MapPin, Home, Building2, Key } from 'lucide-react';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import './AdminAllOrders.css';
@@ -14,6 +14,7 @@ const AdminAllOrders = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
+  const [deliveryTypeFilter, setDeliveryTypeFilter] = useState('');
   const [dateRangeFilter, setDateRangeFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [ordersPerPage] = useState(10);
@@ -42,7 +43,7 @@ const AdminAllOrders = () => {
   useEffect(() => {
     filterOrders();
     calculateSummary();
-  }, [orders, searchTerm, orderStatusFilter, paymentStatusFilter, dateRangeFilter]);
+  }, [orders, searchTerm, orderStatusFilter, paymentStatusFilter, deliveryTypeFilter, dateRangeFilter]);
 
   const fetchOrders = async (firebaseUser = user) => {
     try {
@@ -142,6 +143,11 @@ const AdminAllOrders = () => {
       filtered = filtered.filter(order => order.payment?.status === paymentStatusFilter);
     }
 
+    // Delivery type filter
+    if (deliveryTypeFilter) {
+      filtered = filtered.filter(order => order.deliveryType === deliveryTypeFilter);
+    }
+
     // Date range filter
     if (dateRangeFilter !== 'all') {
       const now = new Date();
@@ -173,6 +179,8 @@ const AdminAllOrders = () => {
         return 'status-processing';
       case 'OUT_FOR_DELIVERY':
         return 'status-shipped';
+      case 'READY_FOR_COLLECTION':
+        return 'status-ready';
       case 'DELIVERED':
         return 'status-delivered';
       case 'CANCELLED':
@@ -346,6 +354,7 @@ const AdminAllOrders = () => {
               <option value="PENDING">Pending</option>
               <option value="APPROVED">Approved</option>
               <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+              <option value="READY_FOR_COLLECTION">Ready for Collection</option>
               <option value="DELIVERED">Delivered</option>
               <option value="CANCELLED">Cancelled</option>
             </select>
@@ -361,6 +370,18 @@ const AdminAllOrders = () => {
               <option value="PAID">Paid</option>
               <option value="PENDING">Pending</option>
               <option value="FAILED">Failed</option>
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label>Delivery Type</label>
+            <select
+              value={deliveryTypeFilter}
+              onChange={(e) => setDeliveryTypeFilter(e.target.value)}
+            >
+              <option value="">All</option>
+              <option value="HOME_DELIVERY">Home Delivery</option>
+              <option value="HUB_COLLECTION">Hub Collection</option>
             </select>
           </div>
 
@@ -400,6 +421,8 @@ const AdminAllOrders = () => {
               <th>Order ID</th>
               <th>Customer Name</th>
               <th>Order Date</th>
+              <th>Delivery Type</th>
+              <th>Hub / Address</th>
               <th>Order Total</th>
               <th>Payment Status</th>
               <th>Order Status</th>
@@ -409,7 +432,7 @@ const AdminAllOrders = () => {
           <tbody>
             {currentOrders.length === 0 ? (
               <tr>
-                <td colSpan="8" className="no-orders">
+                <td colSpan="10" className="no-orders">
                   <Package size={48} />
                   <p>No orders found</p>
                 </td>
@@ -438,6 +461,41 @@ const AdminAllOrders = () => {
                     }
                   </td>
                   <td>{formatDate(order.createdAt)}</td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {order.deliveryType === 'HUB_COLLECTION' ? (
+                        <>
+                          <Building2 size={16} color="#059669" />
+                          <span style={{ color: '#059669', fontWeight: '500' }}>Hub Collection</span>
+                        </>
+                      ) : (
+                        <>
+                          <Home size={16} color="#2563eb" />
+                          <span style={{ color: '#2563eb', fontWeight: '500' }}>Home Delivery</span>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    {order.deliveryType === 'HUB_COLLECTION' ? (
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                          <MapPin size={14} color="#059669" />
+                          <span style={{ fontWeight: '500' }}>{order.collectionHub?.name || 'N/A'}</span>
+                        </div>
+                        {order.collectionOtp && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#6b7280' }}>
+                            <Key size={12} />
+                            <span>OTP: {order.collectionOtp}</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                        {order.address?.destinationDistrict || order.address?.district || 'N/A'}
+                      </div>
+                    )}
+                  </td>
                   <td className="order-total">₹{order.totalAmount.toLocaleString()}</td>
                   <td>
                     <span className={`badge ${getPaymentBadgeClass(order.payment?.status)}`}>
@@ -448,6 +506,7 @@ const AdminAllOrders = () => {
                     <span className={`badge ${getStatusBadgeClass(order.status)}`}>
                       {order.status === 'OUT_FOR_DELIVERY' ? 'Shipped' :
                         order.status === 'APPROVED' ? 'Processing' :
+                          order.status === 'READY_FOR_COLLECTION' ? 'Ready for Collection' :
                           order.status}
                     </span>
                   </td>

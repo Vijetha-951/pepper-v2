@@ -125,8 +125,9 @@ router.get('/:order_id/tracking', requireAuth, asyncHandler(async (req, res) => 
   }
 
   const order = await Order.findOne({ _id: order_id, user: user._id })
-    .populate('route', 'name district order type')
-    .populate('currentHub', 'name district order type')
+    .populate('route', 'name district order type location')
+    .populate('currentHub', 'name district order type location')
+    .populate('collectionHub', 'name district order type location')
     .populate({
       path: 'trackingTimeline.hub',
       select: 'name district type'
@@ -159,6 +160,8 @@ router.get('/:order_id/tracking', requireAuth, asyncHandler(async (req, res) => 
     totalAmount: order.totalAmount,
     shippingAddress: order.shippingAddress,
     currentHub: order.currentHub,
+    collectionHub: order.collectionHub,
+    deliveryType: order.deliveryType,
     route: routeProgress,
     trackingTimeline: order.trackingTimeline,
     deliveryBoy: order.deliveryBoy,

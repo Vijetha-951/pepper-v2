@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Truck, MapPin, Clock, Search, RefreshCw, X, AlertCircle, CheckCircle, ScanLine } from 'lucide-react';
+import { Package, Truck, MapPin, Clock, Search, RefreshCw, X, AlertCircle, CheckCircle, ScanLine, Bell } from 'lucide-react';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import './HubManagerDashboard.css';
@@ -19,9 +19,15 @@ const HubManagerDashboard = () => {
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
   const [manualOrderId, setManualOrderId] = useState(''); // New state for manual input
-  const [activeTab, setActiveTab] = useState('active'); // 'active', 'dispatched', or 'hub-collection'
+  const [activeTab, setActiveTab] = useState('active'); // 'active', 'dispatched', 'hub-collection', or 'inventory'
   const [collectionOrders, setCollectionOrders] = useState([]);
   const [filteredCollectionOrders, setFilteredCollectionOrders] = useState([]);
+  const [hubInventory, setHubInventory] = useState([]);
+  
+  // Notification state
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const [modals, setModals] = useState({
     scanIn: { isOpen: false, orderId: null, loading: false },
@@ -71,6 +77,7 @@ const HubManagerDashboard = () => {
       if (firebaseUser) {
         setUser(firebaseUser);
         fetchHubAndOrders(firebaseUser);
+        fetchNotifications(firebaseUser);
       } else {
         setLoading(false);
         setError('Please sign in to view hub details');
@@ -125,6 +132,15 @@ const HubManagerDashboard = () => {
           const collectionData = await collectionResponse.json();
           console.log('🔍 Hub Manager - Hub collection orders fetched:', collectionData.length);
           setCollectionOrders(collectionData);
+        }
+
+        // Fetch hub inventory
+        const inventoryResponse = await fetch(`/api/hub-inventory/hubs/${hubData._id}/inventory`, { headers });
+
+        if (inventoryResponse.ok) {
+          const inventoryData = await inventoryResponse.json();
+          console.log('🔍 Hub Manager - Hub inventory fetched:', inventoryData.inventory?.length || 0);
+          setHubInventory(inventoryData.inventory || []);
         }
       } else {
         setError('Failed to fetch hub details');
@@ -237,6 +253,138 @@ const HubManagerDashboard = () => {
       inTransit: inTransitCount,
       recentArrivals: recentArrivalsCount
     });
+  };
+
+  // Fetch notifications
+  const fetchNotifications = async (firebaseUser) => {
+    try {
+      const token = await firebaseUser.getIdToken();
+      const response = await fetch('/api/notifications?limit=10', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data);
+      }
+
+      // Fetch unread count
+      const countResponse = await fetch('/api/notifications/unread-count', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (countResponse.ok) {
+        const countData = await countResponse.json();
+        setUnreadCount(countData.count);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  // Handle notification click
+  const handleNotificationClick = async (notification) => {
+    try {
+      if (!notification.isRead) {
+        const token = await user.getIdToken();
+        await fetch(`/api/notifications/${notification._id}/read`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        // Remove notification from list after clicking
+        setNotifications(prev => prev.filter(n => n._id !== notification._id));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      } else {
+        // If already read, still remove it when clicked
+        setNotifications(prev => prev.filter(n => n._id !== notification._id));
+      }
+
+      // Navigate to the respective district hub manager dashboard
+      if (notification.metadata?.district) {
+        sessionStorage.setItem('selectedDistrict', notification.metadata.district);
+        if (notification.hub) {
+          sessionStorage.setItem('selectedHub', JSON.stringify(notification.hub));
+        }
+        
+        // Close notification panel
+        setShowNotifications(false);
+        
+        // Refresh the dashboard to load the selected district's data
+        if (user) {
+          fetchHubAndOrders(user);
+        }
+      }
+    } catch (error) {
+      console.error('Error handling notification:', error);
+    }
+  };
+
+  // Dismiss notification without navigating
+  const handleDismissNotification = async (e, notificationId) => {
+    e.stopPropagation(); // Prevent triggering the notification click
+    try {
+      console.log('🗑️ Attempting to delete notification:', notificationId);
+      const token = await user.getIdToken();
+      
+      // Delete the notification permanently
+      const response = await fetch(`/api/notifications/${notificationId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('🗑️ Delete response status:', response.status);
+      
+      if (response.ok) {
+        console.log('✅ Notification deleted successfully');
+        // Remove from list immediately
+        setNotifications(prev => {
+          const notification = prev.find(n => n._id === notificationId);
+          if (notification && !notification.isRead) {
+            setUnreadCount(count => Math.max(0, count - 1));
+          }
+          return prev.filter(n => n._id !== notificationId);
+        });
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to delete notification:', response.status, errorData);
+        alert('Failed to delete notification. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ Error dismissing notification:', error);
+      alert('Error dismissing notification. Please try again.');
+    }
+  };
+
+  // Mark all notifications as read
+  const handleMarkAllAsRead = async () => {
+    try {
+      const token = await user.getIdToken();
+      await fetch('/api/notifications/read-all', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
   };
 
   const handleScanIn = async (orderIdToScan) => {
@@ -539,6 +687,17 @@ const HubManagerDashboard = () => {
             </button>
           )}
           <button
+            className="hub-action-btn notification-btn"
+            onClick={() => setShowNotifications(!showNotifications)}
+            title="Notifications"
+            style={{ position: 'relative' }}
+          >
+            <Bell size={18} />
+            {unreadCount > 0 && (
+              <span className="notification-badge">{unreadCount}</span>
+            )}
+          </button>
+          <button
             className="hub-action-btn primary"
             onClick={() => {
               setManualOrderId('');
@@ -548,12 +707,104 @@ const HubManagerDashboard = () => {
             <ScanLine size={18} />
             Scan New Package
           </button>
-          <button className="hub-refresh-btn" onClick={() => fetchHubAndOrders(user)}>
+          <button className="hub-refresh-btn" onClick={() => {
+            fetchHubAndOrders(user);
+            fetchNotifications(user);
+          }}>
             <RefreshCw size={18} />
             Refresh
           </button>
         </div>
       </div>
+
+      {/* Notification Panel */}
+      {showNotifications && (
+        <div className="notification-panel">
+          <div className="notification-header">
+            <h3>Notifications</h3>
+            <div className="notification-header-actions">
+              {unreadCount > 0 && (
+                <button 
+                  className="mark-all-read-btn" 
+                  onClick={handleMarkAllAsRead}
+                  title="Mark all as read"
+                >
+                  Mark all as read
+                </button>
+              )}
+              <button 
+                className="close-notification-btn" 
+                onClick={() => setShowNotifications(false)}
+                title="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+          <div className="notification-list">
+            {notifications.length === 0 ? (
+              <div className="no-notifications">
+                <Bell size={40} />
+                <p>No notifications yet</p>
+              </div>
+            ) : (
+              notifications.map(notification => (
+                <div
+                  key={notification._id}
+                  className={`notification-item ${notification.isRead ? 'read' : 'unread'}`}
+                  onClick={() => handleNotificationClick(notification)}
+                  style={{ cursor: 'pointer', position: 'relative' }}
+                >
+                  <div className="notification-icon">
+                    {notification.type === 'ORDER_PLACED' && <Package size={20} />}
+                    {notification.type === 'ORDER_ARRIVED' && <Truck size={20} />}
+                    {notification.type === 'ORDER_DISPATCHED' && <CheckCircle size={20} />}
+                  </div>
+                  <div className="notification-content">
+                    <h4 className="notification-title">{notification.title}</h4>
+                    <p className="notification-message">{notification.message}</p>
+                    <span className="notification-time">
+                      {new Date(notification.createdAt).toLocaleString()}
+                    </span>
+                  </div>
+                  <button
+                    onClick={(e) => handleDismissNotification(e, notification._id)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '12px',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      borderRadius: '4px',
+                      color: '#9ca3af',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#f3f4f6';
+                      e.currentTarget.style.color = '#ef4444';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = '#9ca3af';
+                    }}
+                    title="Dismiss notification"
+                  >
+                    <X size={16} />
+                  </button>
+                  {!notification.isRead && (
+                    <div className="notification-unread-dot"></div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="hub-summary">
         <div className="summary-card">
@@ -615,6 +866,12 @@ const HubManagerDashboard = () => {
                 onClick={() => setActiveTab('hub-collection')}
               >
                 📍 Hub Collection ({filteredCollectionOrders.length})
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'inventory' ? 'active' : ''}`}
+                onClick={() => setActiveTab('inventory')}
+              >
+                📦 Hub Inventory ({hubInventory.length})
               </button>
             </div>
             <div className="search-box">
@@ -839,6 +1096,59 @@ const HubManagerDashboard = () => {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Hub Inventory Tab */}
+          {activeTab === 'inventory' && (
+            <div className="orders-table-wrapper">
+              <table className="orders-table">
+                <thead>
+                  <tr>
+                    <th>Product Name</th>
+                    <th>Total Quantity</th>
+                    <th>Reserved</th>
+                    <th>Available</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {hubInventory.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                        No inventory items found
+                      </td>
+                    </tr>
+                  ) : (
+                    hubInventory.map((item) => {
+                      const available = item.quantity - item.reservedQuantity;
+                      const statusColor = available > 10 ? '#10b981' : available > 5 ? '#f59e0b' : '#ef4444';
+                      const statusText = available > 10 ? 'Good' : available > 5 ? 'Low' : 'Critical';
+                      
+                      return (
+                        <tr key={item._id}>
+                          <td style={{ fontWeight: '600' }}>{item.product?.name || 'Unknown Product'}</td>
+                          <td>{item.quantity}</td>
+                          <td style={{ color: '#ef4444' }}>{item.reservedQuantity}</td>
+                          <td style={{ fontWeight: '600', color: statusColor }}>{available}</td>
+                          <td>
+                            <span style={{
+                              padding: '0.25rem 0.75rem',
+                              background: `${statusColor}20`,
+                              color: statusColor,
+                              borderRadius: '12px',
+                              fontSize: '0.75rem',
+                              fontWeight: '600'
+                            }}>
+                              {statusText}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>

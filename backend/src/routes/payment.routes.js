@@ -10,6 +10,7 @@ import User from '../models/User.js';
 import { requireAuth } from '../middleware/auth.js';
 import { sendPaymentSuccessEmail } from '../services/emailService.js';
 import { planRoute } from '../services/logisticsService.js';
+import { createOrderPlacedNotification } from '../services/notificationService.js';
 
 const router = express.Router();
 
@@ -284,6 +285,14 @@ router.post('/verify', requireAuth, asyncHandler(async (req, res) => {
         console.error('Failed to send payment success email:', err);
         // Don't fail the request if email fails
       });
+
+      // Create notification for hub manager (non-blocking)
+      if (initialHub) {
+        const populatedOrder = await Order.findById(order._id).populate('user', 'firstName lastName email');
+        createOrderPlacedNotification(populatedOrder, initialHub).catch(err => {
+          console.error('Failed to create hub notification:', err);
+        });
+      }
 
       res.status(200).json({
         message: 'Payment verified and order created successfully',

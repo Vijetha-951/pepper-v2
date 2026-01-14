@@ -8,6 +8,7 @@ import Product from '../models/Product.js';
 import User from '../models/User.js';
 import { requireAuth } from '../middleware/auth.js';
 import { sendCollectionOtpEmail } from '../services/emailService.js';
+import { createOrderPlacedNotification } from '../services/notificationService.js';
 
 const router = express.Router();
 
@@ -173,7 +174,15 @@ router.post('/orders/hub-collection', requireAuth, asyncHandler(async (req, res)
   
   const populatedOrder = await Order.findById(order._id)
     .populate('items.product', 'name price image')
-    .populate('collectionHub', 'name district location');
+    .populate('collectionHub', 'name district location')
+    .populate('user', 'firstName lastName email');
+  
+  // Create notification for hub manager (non-blocking)
+  if (collectionHub) {
+    createOrderPlacedNotification(populatedOrder, collectionHub).catch(err => {
+      console.error('Failed to create hub notification:', err);
+    });
+  }
   
   // Customer-friendly message - don't expose internal restock details
   res.status(201).json({ 
@@ -353,6 +362,8 @@ router.post('/orders/:orderId/verify-collection', requireAuth, asyncHandler(asyn
   
   // Fulfill order - reduce inventory
   const collectionHubId = order.collectionHub._id;
+  const isKottayamHub = order.collectionHub.district === 'Kottayam';
+  
   for (const item of order.items) {
     const hubInventory = await HubInventory.findOne({
       hub: collectionHubId,
@@ -361,6 +372,22 @@ router.post('/orders/:orderId/verify-collection', requireAuth, asyncHandler(asyn
     
     if (hubInventory) {
       await hubInventory.fulfillOrder(item.quantity);
+      
+      // Sync Product stock with Kottayam Hub (Main Hub)
+      if (isKottayamHub) {
+        try {
+          const product = await Product.findById(item.product._id);
+          if (product) {
+            product.available_stock = hubInventory.quantity;
+            product.total_stock = hubInventory.quantity;
+            product.stock = hubInventory.quantity;
+            await product.save();
+            console.log(`✅ Synced Product ${product.name} stock to match Kottayam Hub: ${hubInventory.quantity}`);
+          }
+        } catch (productSyncError) {
+          console.error('⚠️ Failed to sync Product stock:', productSyncError);
+        }
+      }
     }
   }
   

@@ -412,6 +412,12 @@
   border: 1px solid #93c5fd;
 }
 
+.status-ready {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
 .status-delivered {
   background: #d1fae5;
   color: #065f46;

@@ -7,6 +7,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { sendOrderConfirmationEmail } from '../services/emailService.js';
 import { processOrderRefund } from '../services/refundService.js';
 import { planRoute } from '../services/logisticsService.js';
+import { createOrderPlacedNotification } from '../services/notificationService.js';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -278,6 +279,14 @@ router.post('/orders', requireCustomer, asyncHandler(async (req, res) => {
     }).catch(err => {
       console.error('Failed to send order confirmation email:', err);
       // Don't fail the request if email fails
+    });
+  }
+
+  // Create notification for hub manager (non-blocking)
+  if (initialHub) {
+    const populatedOrder = await Order.findById(order._id).populate('user', 'firstName lastName email');
+    createOrderPlacedNotification(populatedOrder, initialHub).catch(err => {
+      console.error('Failed to create hub notification:', err);
     });
   }
 

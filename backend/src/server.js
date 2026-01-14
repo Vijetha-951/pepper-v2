@@ -17,6 +17,7 @@ import reviewsRouter from './routes/reviews.routes.js';
 import hubRouter from './routes/hub.routes.js';
 import hubInventoryRouter from './routes/hubInventory.routes.js';
 import hubCollectionRouter from './routes/hubCollection.routes.js';
+import notificationRouter from './routes/notification.routes.js';
 
 // Debug environment variables
 console.log('Environment variables loaded:');
@@ -51,6 +52,7 @@ app.use('/api/reviews', reviewsRouter);
 app.use('/api/hub', hubRouter);
 app.use('/api/hub-inventory', hubInventoryRouter);
 app.use('/api/hub-collection', hubCollectionRouter);
+app.use('/api/notifications', notificationRouter);
 app.use('/api', stockRouter);
 
 // ====== Global Error Handler ======

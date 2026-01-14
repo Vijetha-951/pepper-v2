@@ -325,6 +325,7 @@ router.get('/orders', asyncHandler(async (req, res) => {
   const orders = await Order.find(filter)
     .populate('user', 'firstName lastName email phone')
     .populate('deliveryBoy', 'firstName lastName phone')
+    .populate('collectionHub', 'name district address')
     .sort({ createdAt: -1 });
   res.json(orders);
 }));
@@ -355,7 +356,8 @@ router.patch('/orders/:id/cancel', asyncHandler(async (req, res) => {
 router.get('/orders/:id', asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id)
     .populate('user', 'firstName lastName email phone')
-    .populate('deliveryBoy', 'firstName lastName phone deliveryStatus assignedAreas');
+    .populate('deliveryBoy', 'firstName lastName phone deliveryStatus assignedAreas')
+    .populate('collectionHub', 'name district address');
   
   if (!order) {
     return res.status(404).json({ success: false, message: 'Order not found' });

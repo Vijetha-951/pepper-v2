@@ -328,6 +328,22 @@ router.patch('/admin/restock-requests/:requestId', requireAuth, requireAdmin, as
     mainHubInventory.quantity -= request.requestedQuantity;
     await mainHubInventory.save();
     
+    // Sync Product stock with Kottayam Hub (Main Hub)
+    if (mainHub.district === 'Kottayam') {
+      try {
+        const product = await Product.findById(request.product._id);
+        if (product) {
+          product.available_stock = mainHubInventory.quantity;
+          product.total_stock = mainHubInventory.quantity;
+          product.stock = mainHubInventory.quantity;
+          await product.save();
+          console.log(`✅ Synced Product ${product.name} stock to match Kottayam Hub: ${mainHubInventory.quantity}`);
+        }
+      } catch (productSyncError) {
+        console.error('⚠️ Failed to sync Product stock:', productSyncError);
+      }
+    }
+    
     // Add to requesting hub
     let requestingHubInventory = await HubInventory.findOne({
       hub: request.requestingHub._id,

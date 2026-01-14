@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, CheckCircle, XCircle, Truck, Package, AlertCircle, Cog } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, CheckCircle, XCircle, Truck, Package, AlertCircle, Cog, User, Phone, Mail, CreditCard, ShoppingBag } from 'lucide-react';
 import { HUB_LAUNCH_DATE } from '../config/constants';
+import OrderTrackingMap from '../components/OrderTrackingMap';
 import './OrderTracking.css';
 
 const OrderTracking = () => {
@@ -187,391 +188,531 @@ const OrderTracking = () => {
   const useHubTracking = isHubBasedOrder(order);
 
   return (
-    <div className="order-tracking-container">
-      {/* Header */}
-      <div className="tracking-header">
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #f5f7fa 0%, #e8f5e9 100%)',
+      padding: '2rem 1rem'
+    }}>
+      {/* Header with Back Button */}
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto 2rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem'
+      }}>
         <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            navigate(-1);
+          onClick={() => navigate(-1)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.75rem 1.5rem',
+            background: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: '10px',
+            color: '#6b7280',
+            fontWeight: '600',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            transition: 'all 0.3s',
+            fontSize: '0.9rem'
           }}
-          className="back-button"
-          title="Back to Orders"
-          type="button"
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.15)';
+            e.currentTarget.style.borderColor = '#10b981';
+            e.currentTarget.style.color = '#10b981';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+            e.currentTarget.style.borderColor = '#e5e7eb';
+            e.currentTarget.style.color = '#6b7280';
+          }}
         >
           <ArrowLeft size={20} />
-          Back
+          Back to Orders
         </button>
-        <h1>Order Tracking Details</h1>
-        <div className="header-spacer"></div>
       </div>
 
-      <div className="tracking-content">
-        {/* Main Content - Tracking Timeline */}
-        <div className="tracking-main">
-          <div className="tracking-card">
-            {/* Title and Order Info */}
-            <h2 className="tracking-title">Order Tracking Details</h2>
-            <div className="order-info-header">
-              <div>
-                <p className="order-number">#{order._id?.slice(-6).toUpperCase()}</p>
-                <p className="order-placed">Placed on {new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+      {/* Main Container */}
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        background: 'white',
+        borderRadius: '12px',
+        boxShadow: '0 8px 30px rgba(16, 185, 129, 0.08)',
+        overflow: 'hidden',
+        border: '1px solid #e5e7eb'
+      }}>
+        {/* Header Section */}
+        <div style={{
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          color: 'white',
+          padding: '2rem',
+          borderBottom: '4px solid #34d399'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <h1 style={{ margin: 0, fontSize: '1.875rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+                Order Details
+              </h1>
+              <p style={{ margin: 0, opacity: 0.95, fontSize: '1rem', fontWeight: '500' }}>
+                Order ID: <span style={{ fontWeight: '600', letterSpacing: '1px', background: 'rgba(255,255,255,0.2)', padding: '0.25rem 0.75rem', borderRadius: '6px' }}>#{order._id?.slice(-8).toUpperCase()}</span>
+              </p>
+            </div>
+            <div style={{
+              background: 'rgba(255,255,255,0.25)',
+              backdropFilter: 'blur(10px)',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '50px',
+              border: '2px solid rgba(255,255,255,0.4)',
+              fontWeight: '600'
+            }}>
+              {getStatusColor(order.status).label}
+            </div>
+          </div>
+          <div style={{ marginTop: '1rem', display: 'flex', gap: '2rem', flexWrap: 'wrap', fontSize: '0.875rem', opacity: 0.95 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Clock size={16} />
+              Placed: {new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </div>
+            {order.updatedAt && order.updatedAt !== order.createdAt && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Clock size={16} />
+                Updated: {new Date(order.updatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Interactive Map Section */}
+        {useHubTracking && (
+          <div style={{ padding: '0 2rem 2rem' }}>
+            <div style={{
+              background: '#f9fafb',
+              border: '1px solid #e5e7eb',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              marginBottom: '2rem'
+            }}>
+              <h3 style={{ 
+                margin: '0 0 1rem 0', 
+                fontSize: '1.25rem', 
+                fontWeight: '700', 
+                color: '#1f2937',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <MapPin size={24} color="#10b981" />
+                Live Tracking Map
+              </h3>
+              <div style={{ height: '400px', borderRadius: '8px', overflow: 'hidden' }}>
+                <OrderTrackingMap order={order} routeData={routeData} />
               </div>
             </div>
+          </div>
+        )}
 
-            {/* Hub Collection Information */}
-            {order.deliveryType === 'HUB_COLLECTION' && order.collectionHub && (
-              <div style={{ 
-                marginTop: '1.5rem', 
-                padding: '1rem', 
-                background: '#f0f9ff', 
-                border: '1px solid #0ea5e9',
-                borderRadius: '0.5rem' 
+        {/* Content Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', padding: '2rem' }}>
+          
+          {/* Order Items Section */}
+          <div style={{ gridColumn: order.deliveryType === 'HUB_COLLECTION' ? 'span 1' : 'span 2' }}>
+            <div style={{
+              background: '#f9fafb',
+              border: '1px solid #e5e7eb',
+              borderRadius: '12px',
+              padding: '1.5rem'
+            }}>
+              <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.25rem', fontWeight: '700', color: '#1f2937', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <ShoppingBag size={24} color="#10b981" />
+                Order Items ({order.items?.length || 0})
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {order.items && order.items.length > 0 ? (
+                  order.items.map((item, index) => (
+                    <div key={index} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '1rem',
+                      background: 'white',
+                      borderRadius: '10px',
+                      border: '1px solid #e5e7eb',
+                      transition: 'all 0.2s'
+                    }}>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: 0, fontWeight: '600', color: '#1f2937', fontSize: '1rem' }}>
+                          {item.name || item.product?.name || 'Product'}
+                        </p>
+                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#6b7280' }}>
+                          Quantity: {item.quantity} × ₹{item.priceAtOrder?.toFixed(2) || '0.00'}
+                        </p>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <p style={{ margin: 0, fontWeight: '700', color: '#10b981', fontSize: '1.125rem' }}>
+                          ₹{((item.quantity || 0) * (item.priceAtOrder || 0)).toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p style={{ color: '#6b7280', textAlign: 'center', padding: '1rem' }}>No items found</p>
+                )}
+              </div>
+
+              {/* Total Amount */}
+              <div style={{
+                marginTop: '1.5rem',
+                paddingTop: '1rem',
+                borderTop: '2px solid #e5e7eb',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
               }}>
-                <h3 style={{ 
-                  fontSize: '1rem', 
-                  fontWeight: '600', 
-                  color: '#0c4a6e', 
-                  marginBottom: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <MapPin size={20} />
-                  Hub Collection Order
+                <span style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1f2937' }}>Total Amount:</span>
+                <span style={{ fontSize: '1.5rem', fontWeight: '800', color: '#10b981' }}>
+                  {formatCurrency(order.totalAmount || 0)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Delivery Address / Hub Collection Info */}
+          {order.deliveryType === 'HUB_COLLECTION' && order.collectionHub ? (
+            <div>
+              <div style={{
+                background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+                border: '2px solid #10b981',
+                borderRadius: '12px',
+                padding: '1.5rem'
+              }}>
+                <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', fontWeight: '700', color: '#065f46', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <MapPin size={24} color="#10b981" />
+                  Hub Collection
                 </h3>
-                <div style={{ fontSize: '0.875rem', color: '#334155', lineHeight: '1.6' }}>
-                  <p style={{ marginBottom: '0.5rem' }}>
-                    <strong>Collection Hub:</strong> {order.collectionHub?.name || 'N/A'}
-                  </p>
-                  <p style={{ marginBottom: '0.5rem' }}>
-                    <strong>Hub District:</strong> {order.collectionHub?.district || 'N/A'}
-                  </p>
-                  {order.collectionHub?.address && (
-                    <p style={{ marginBottom: '0.5rem' }}>
-                      <strong>Hub Address:</strong> {order.collectionHub.address}
+                <div style={{ fontSize: '0.9375rem', lineHeight: '1.7', color: '#374151' }}>
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <p style={{ margin: 0, fontWeight: '600', color: '#065f46' }}>{order.collectionHub.name}</p>
+                    {order.collectionHub.address && (
+                      <p style={{ margin: '0.25rem 0 0 0', color: '#047857' }}>{order.collectionHub.address}</p>
+                    )}
+                    <p style={{ margin: '0.25rem 0 0 0', color: '#047857' }}>
+                      {order.collectionHub.district}, Kerala
                     </p>
-                  )}
-                  <div style={{ 
-                    marginTop: '0.75rem', 
-                    padding: '0.75rem', 
-                    background: '#e0f2fe',
-                    borderRadius: '0.375rem',
-                    borderLeft: '3px solid #0ea5e9'
+                    {order.collectionHub.phone && (
+                      <p style={{ margin: '0.5rem 0 0 0' }}>
+                        <a href={`tel:${order.collectionHub.phone}`} style={{ color: '#10b981', textDecoration: 'none', fontWeight: '600' }}>
+                          <Phone size={14} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                          {order.collectionHub.phone}
+                        </a>
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div style={{
+                    marginTop: '1rem',
+                    padding: '1rem',
+                    background: 'white',
+                    borderRadius: '10px',
+                    border: '1px solid #10b981'
                   }}>
-                    <p style={{ fontWeight: '600', color: '#0c4a6e', marginBottom: '0.25rem' }}>
-                      📧 Collection Process:
-                    </p>
-                    <ul style={{ margin: '0.5rem 0 0 1.25rem', color: '#475569' }}>
-                      <li>You will receive an OTP email when your order is ready for collection</li>
-                      <li>Visit the hub with your OTP code to collect your order</li>
-                      <li>Show the OTP to the hub manager for verification</li>
+                    <p style={{ margin: '0 0 0.5rem 0', fontWeight: '600', color: '#065f46' }}>📧 Collection Instructions:</p>
+                    <ul style={{ margin: '0.5rem 0 0 1.25rem', paddingLeft: 0, color: '#047857', fontSize: '0.875rem' }}>
+                      <li>Check your email for the OTP code</li>
+                      <li>Visit the hub when order is ready</li>
+                      <li>Present OTP to hub manager</li>
+                      <li>Collect your order after verification</li>
                     </ul>
                   </div>
-                  {order.collectionOtp && order.collectionOtp.code && (
+
+                  {order.status === 'READY_FOR_COLLECTION' && (
                     <div style={{
-                      marginTop: '0.75rem',
-                      padding: '0.75rem',
+                      marginTop: '1rem',
+                      padding: '1rem',
                       background: '#dcfce7',
-                      border: '2px solid #22c55e',
-                      borderRadius: '0.375rem',
+                      border: '2px dashed #22c55e',
+                      borderRadius: '10px',
                       textAlign: 'center'
                     }}>
-                      <p style={{ fontWeight: '600', color: '#166534', marginBottom: '0.25rem' }}>
-                        ✅ Your order is ready for collection!
+                      <p style={{ margin: 0, fontWeight: '700', color: '#166534', fontSize: '1.125rem' }}>
+                        ✅ Ready for Collection!
                       </p>
-                      <p style={{ fontSize: '0.875rem', color: '#15803d', marginTop: '0.5rem' }}>
-                        Check your email for the OTP code to collect your order.
+                      <p style={{ margin: '0.5rem 0 0 0', color: '#15803d', fontSize: '0.875rem' }}>
+                        Check your email for the OTP
                       </p>
                     </div>
                   )}
                 </div>
               </div>
-            )}
-
-            {/* Tracking Timeline Events - Removed Hub Transit Route display for customers */}
-            {useHubTracking && order.trackingTimeline && order.trackingTimeline.length > 0 && (
-              <div style={{ marginTop: '1.5rem' }}>
-                <h4 style={{ fontSize: '0.95rem', fontWeight: '600', marginBottom: '1rem', color: '#1f2937' }}>
-                  Tracking History
-                </h4>
-                {order.trackingTimeline.map((event, index) => (
-                  <div key={index} style={{
-                    padding: '0.75rem',
-                    background: '#f9fafb',
-                    borderRadius: '0.5rem',
-                    marginBottom: '0.5rem'
-                  }}>
-                    <div style={{ fontWeight: '600', fontSize: '0.875rem', color: '#374151' }}>
-                      {event.status}
-                    </div>
-                    <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
-                      {event.location} {event.description && `- ${event.description}`}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.25rem' }}>
-                      {new Date(event.timestamp).toLocaleString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </div>
-                  </div>
-                ))}
+            </div>
+          ) : order.shippingAddress && (
+            <div>
+              <div style={{
+                background: '#f9fafb',
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                padding: '1.5rem'
+              }}>
+                <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', fontWeight: '700', color: '#1f2937', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <MapPin size={24} color="#10b981" />
+                  Delivery Address
+                </h3>
+                <div style={{ fontSize: '0.9375rem', lineHeight: '1.8', color: '#374151' }}>
+                  <p style={{ margin: 0, fontWeight: '600' }}>{order.shippingAddress.line1}</p>
+                  {order.shippingAddress.line2 && (
+                    <p style={{ margin: '0.25rem 0 0 0' }}>{order.shippingAddress.line2}</p>
+                  )}
+                  <p style={{ margin: '0.25rem 0 0 0' }}>
+                    {order.shippingAddress.district}, {order.shippingAddress.state}
+                  </p>
+                  <p style={{ margin: '0.25rem 0 0 0', fontWeight: '600' }}>
+                    PIN: {order.shippingAddress.pincode}
+                  </p>
+                </div>
               </div>
-            )}
 
-            {/* Legacy Tracking (Old Orders) */}
-            {!useHubTracking && (
-              <>
-                {/* Delivery & Real-Time Tracking Section */}
-                {order.deliveryBoy && (typeof order.deliveryBoy === 'object') && (
-              <div className="delivery-tracking-section">
-                <h3 className="tracking-section-title">Delivery & Real-Time Tracking</h3>
-                
-                {/* Assigned Delivery Boy Card */}
-                <div className="delivery-boy-card">
-                  <label className="card-label">ASSIGNED DELIVERY BOY</label>
-                  <div className="delivery-boy-card-content">
-                    <div className="delivery-boy-details">
-                      <p className="delivery-boy-name">
-                        {order.deliveryBoy.firstName && order.deliveryBoy.lastName 
-                          ? `${order.deliveryBoy.firstName} ${order.deliveryBoy.lastName}`
-                          : 'Delivery Partner'
-                        }
-                      </p>
-                      {order.deliveryBoy.phone && (
-                        <a href={`tel:${order.deliveryBoy.phone}`} className="delivery-boy-phone">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                          </svg>
+              {/* Delivery Boy Info */}
+              {order.deliveryBoy && typeof order.deliveryBoy === 'object' && (
+                <div style={{
+                  background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                  border: '1px solid #0ea5e9',
+                  borderRadius: '12px',
+                  padding: '1.5rem',
+                  marginTop: '1rem'
+                }}>
+                  <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', fontWeight: '700', color: '#0c4a6e', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <User size={24} color="#0ea5e9" />
+                    Delivery Partner
+                  </h3>
+                  <div style={{ fontSize: '0.9375rem', lineHeight: '1.8', color: '#374151' }}>
+                    <p style={{ margin: 0, fontWeight: '600', fontSize: '1.0625rem', color: '#0c4a6e' }}>
+                      {order.deliveryBoy.firstName && order.deliveryBoy.lastName 
+                        ? `${order.deliveryBoy.firstName} ${order.deliveryBoy.lastName}`
+                        : 'Delivery Partner'
+                      }
+                    </p>
+                    {order.deliveryBoy.phone && (
+                      <p style={{ margin: '0.5rem 0 0 0' }}>
+                        <a href={`tel:${order.deliveryBoy.phone}`} style={{ color: '#0ea5e9', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <Phone size={16} />
                           {order.deliveryBoy.phone}
                         </a>
-                      )}
-                    </div>
+                      </p>
+                    )}
                   </div>
                 </div>
+              )}
+            </div>
+          )}
 
-                {/* Live Status */}
-                <div className="live-status-section">
-                  <label className="card-label">LIVE STATUS</label>
-                  <div className="live-status-badge">
-                    <span className="status-dot"></span>
-                    {order.status === 'APPROVED' ? 'ASSIGNED' : 
-                     order.status === 'OUT_FOR_DELIVERY' ? 'OUT FOR DELIVERY' :
-                     order.status === 'DELIVERED' ? 'DELIVERED' :
-                     order.status}
-                  </div>
+          {/* Payment Information */}
+          <div>
+            <div style={{
+              background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+              border: '2px solid #f59e0b',
+              borderRadius: '12px',
+              padding: '1.5rem'
+            }}>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', fontWeight: '700', color: '#92400e', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <CreditCard size={24} color="#f59e0b" />
+                Payment Details
+              </h3>
+              <div style={{ fontSize: '0.9375rem', lineHeight: '2', color: '#78350f' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span style={{ fontWeight: '600' }}>Method:</span>
+                  <span style={{
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    fontSize: '0.875rem',
+                    background: order.payment?.method === 'COD' ? '#fee2e2' : '#dcfce7',
+                    color: order.payment?.method === 'COD' ? '#991b1b' : '#065f46',
+                    border: `1px solid ${order.payment?.method === 'COD' ? '#fecaca' : '#a7f3d0'}`
+                  }}>
+                    {order.payment?.method === 'COD' ? 'Cash on Delivery' : 'Online Payment'}
+                  </span>
                 </div>
-
-                {/* Assigned Areas */}
-                <div className="assigned-areas-section">
-                  <label className="card-label">ASSIGNED AREAS</label>
-                  <div className="assigned-areas-content">
-                    <p className="assigned-area-item">
-                      {order.shippingAddress?.district || 'District'}, {order.shippingAddress?.state || 'State'}
-                    </p>
-                  </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span style={{ fontWeight: '600' }}>Status:</span>
+                  <span style={{
+                    fontWeight: '700',
+                    color: order.payment?.status === 'PAID' || order.payment?.status === 'REFUNDED' ? '#10b981' : '#f59e0b'
+                  }}>
+                    {order.payment?.status || 'PENDING'}
+                  </span>
                 </div>
+                {order.payment?.refundStatus && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontWeight: '600' }}>Refund:</span>
+                    <span style={{
+                      fontWeight: '700',
+                      color: order.payment.refundStatus === 'PROCESSED' ? '#10b981' : '#f59e0b'
+                    }}>
+                      {order.payment.refundStatus}
+                    </span>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+          </div>
 
-                {order.status === 'CANCELLED' ? (
-                  // Cancelled State
-                  <div className="cancelled-state">
-                    <XCircle size={48} color="#ef4444" />
-                    <h2>Order Cancelled</h2>
-                    <p>Order cancelled by customer</p>
+          {/* Order Status Timeline - Full Width */}
+          <div style={{ gridColumn: '1 / -1' }}>
+            <div style={{
+              background: '#f9fafb',
+              border: '1px solid #e5e7eb',
+              borderRadius: '12px',
+              padding: '2rem'
+            }}>
+              <h3 style={{ margin: '0 0 2rem 0', fontSize: '1.5rem', fontWeight: '700', color: '#1f2937', textAlign: 'center' }}>
+                Order Status Timeline
+              </h3>
+              
+              {order.deliveryType === 'HUB_COLLECTION' && order.trackingTimeline && order.trackingTimeline.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {order.trackingTimeline.map((event, index) => (
+                    <div key={index} style={{
+                      display: 'flex',
+                      gap: '1rem',
+                      padding: '1.25rem',
+                      background: 'white',
+                      borderRadius: '10px',
+                      border: '1px solid #e5e7eb',
+                      transition: 'all 0.2s'
+                    }}>
+                      <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontWeight: '700',
+                        flexShrink: 0,
+                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)'
+                      }}>
+                        {index + 1}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: '0 0 0.25rem 0', fontWeight: '700', fontSize: '1.0625rem', color: '#1f2937' }}>
+                          {event.status}
+                        </p>
+                        <p style={{ margin: '0 0 0.5rem 0', color: '#6b7280', fontSize: '0.9375rem' }}>
+                          {event.location} {event.description && `- ${event.description}`}
+                        </p>
+                        <p style={{ margin: 0, fontSize: '0.875rem', color: '#9ca3af', fontWeight: '500' }}>
+                          {new Date(event.timestamp).toLocaleString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  position: 'relative',
+                  padding: '2rem 0'
+                }}>
+                  {/* Progress Line */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '48px',
+                    left: '10%',
+                    right: '10%',
+                    height: '4px',
+                    background: '#e5e7eb',
+                    zIndex: 0,
+                    borderRadius: '2px'
+                  }}>
+                    <div style={{
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
+                      width: order.status === 'DELIVERED' ? '100%' : order.status === 'OUT_FOR_DELIVERY' ? '66%' : order.status === 'APPROVED' ? '33%' : '0%',
+                      transition: 'width 0.5s ease',
+                      borderRadius: '2px'
+                    }}></div>
                   </div>
-                ) : (
-                  <>
-                    {/* Timeline - Horizontal */}
-                    <div className="timeline-horizontal">
+
                   {timeline.map((step, index) => {
                     const StepIcon = step.icon;
                     const isCompleted = step.completed;
                     const isActive = !isCompleted && (index === 0 || timeline[index - 1]?.completed);
 
                     return (
-                      <div key={step.id} className="timeline-item-horizontal">
-                        <div
-                          className={`timeline-icon-horizontal ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}`}
-                          title={step.label}
-                        >
-                          {isCompleted ? (
-                            <CheckCircle size={28} />
-                          ) : isActive ? (
-                            <Cog size={28} />
-                          ) : (
-                            <div className="circle-outline"></div>
-                          )}
+                      <div key={step.id} style={{
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        position: 'relative',
+                        zIndex: 1
+                      }}>
+                        <div style={{
+                          width: '80px',
+                          height: '80px',
+                          borderRadius: '50%',
+                          background: isCompleted ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : isActive ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' : 'white',
+                          border: isCompleted || isActive ? 'none' : '3px solid #e5e7eb',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: isCompleted || isActive ? 'white' : '#9ca3af',
+                          boxShadow: isCompleted ? '0 6px 20px rgba(16, 185, 129, 0.3)' : isActive ? '0 6px 20px rgba(251, 191, 36, 0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
+                          marginBottom: '1rem',
+                          transition: 'all 0.3s'
+                        }}>
+                          <StepIcon size={36} strokeWidth={2.5} />
                         </div>
-                        {index < timeline.length - 1 && (
-                          <div
-                            className={`timeline-line-horizontal ${isCompleted ? 'completed' : ''}`}
-                          ></div>
+                        <p style={{
+                          margin: '0 0 0.5rem 0',
+                          fontWeight: '700',
+                          fontSize: '1rem',
+                          color: isCompleted || isActive ? '#1f2937' : '#9ca3af',
+                          textAlign: 'center'
+                        }}>
+                          {step.label}
+                        </p>
+                        <p style={{
+                          margin: 0,
+                          fontSize: '0.875rem',
+                          color: '#6b7280',
+                          textAlign: 'center',
+                          maxWidth: '150px'
+                        }}>
+                          {step.description}
+                        </p>
+                        {isCompleted && step.date && (
+                          <p style={{
+                            margin: '0.5rem 0 0 0',
+                            fontSize: '0.8125rem',
+                            color: '#9ca3af',
+                            textAlign: 'center'
+                          }}>
+                            {formatDate(step.date)}
+                          </p>
                         )}
                       </div>
                     );
                   })}
                 </div>
-
-                    {/* Status Details */}
-                    <div className="status-details">
-                      <div className="status-section">
-                        <div className={`status-icon ${order.status === 'PENDING' ? 'active' : 'completed'}`}>
-                          <Package size={24} />
-                        </div>
-                        <div>
-                          <h3>Pending</h3>
-                          <p>Order just placed. Awaiting confirmation.</p>
-                        </div>
-                      </div>
-
-                      <div className="status-section">
-                        <div className={`status-icon ${order.status === 'APPROVED' ? 'active' : order.status === 'PENDING' ? 'pending' : 'completed'}`}>
-                          <Cog size={24} />
-                        </div>
-                        <div>
-                          <h3>Delivery boy confirmed!</h3>
-                          <p>Preparing for dispatch</p>
-                        </div>
-                      </div>
-
-                      <div className="status-section">
-                        <div className={`status-icon ${order.status === 'OUT_FOR_DELIVERY' ? 'active' : ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(order.status) ? 'completed' : 'pending'}`}>
-                          <Truck size={24} />
-                        </div>
-                        <div>
-                          <h3>Out for Delivery</h3>
-                          <p>{order.status === 'OUT_FOR_DELIVERY' ? 'Estimated arrival: 1 hour' : 'On the way'}</p>
-                        </div>
-                      </div>
-
-                      <div className="status-section">
-                        {order.status === 'DELIVERED' && (
-                          <>
-                            <div className="status-icon completed">
-                              <CheckCircle size={24} />
-                            </div>
-                            <div>
-                              <h3>Order completed</h3>
-                              <p>on {formatDate(order.updatedAt).split(',')[0]}</p>
-                            </div>
-                          </>
-                        )}
-                        {order.status === 'CANCELLED' && (
-                          <>
-                            <div className="status-icon cancelled">
-                              <XCircle size={24} />
-                            </div>
-                            <div>
-                              <h3>Cancelled</h3>
-                              <p>Order cancelled by customer</p>
-                            </div>
-                          </>
-                        )}
-                        {!['DELIVERED', 'CANCELLED'].includes(order.status) && (
-                          <>
-                            <div className="status-icon pending">
-                              <div className="circle-outline"></div>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Map Placeholder */}
-                    {order.status === 'OUT_FOR_DELIVERY' && (
-                      <div className="map-container">
-                        <div className="map-placeholder">
-                          <div className="map-marker-delivery"></div>
-                          <div className="map-marker-destination"></div>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </>
-            )}
-
-            {/* Shipping Address */}
-            {order.shippingAddress && (
-              <div className="address-section-bottom">
-                <h4>Delivery Address</h4>
-                <p>{order.shippingAddress.line1}</p>
-                {order.shippingAddress.line2 && <p>{order.shippingAddress.line2}</p>}
-                <p>{order.shippingAddress.district}, {order.shippingAddress.state}</p>
-                <p className="pincode">Pin: {order.shippingAddress.pincode}</p>
-              </div>
-            )}
-
-            {/* Delivery Boy Info */}
-            {order.deliveryBoy && (typeof order.deliveryBoy === 'object') && (
-              <div className="delivery-boy-section">
-                <h4>Delivery Boy Details</h4>
-                <div className="delivery-boy-info">
-                  <div className="info-row">
-                    <span className="info-label">Name:</span>
-                    <span className="info-value">
-                      {order.deliveryBoy.firstName && order.deliveryBoy.lastName 
-                        ? `${order.deliveryBoy.firstName} ${order.deliveryBoy.lastName}`
-                        : 'Not Available'
-                      }
-                    </span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Phone:</span>
-                    <span className="info-value">
-                      {order.deliveryBoy.phone ? (
-                        <a href={`tel:${order.deliveryBoy.phone}`} style={{ color: '#10b981', textDecoration: 'none' }}>
-                          {order.deliveryBoy.phone}
-                        </a>
-                      ) : (
-                        'Not Available'
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Payment Info */}
-            <div className="payment-info-section">
-              <h4>Payment Information</h4>
-              <div className="payment-row">
-                <span>Method:</span>
-                <span className="method-badge" style={{
-                  backgroundColor: order.payment?.method === 'COD' ? '#fee2e2' : '#d1fae5',
-                  color: order.payment?.method === 'COD' ? '#991b1b' : '#065f46'
-                }}>
-                  {order.payment?.method === 'COD' ? 'Cash on Delivery' : 'Online Payment'}
-                </span>
-              </div>
-              <div className="payment-row">
-                <span>Status:</span>
-                <span style={{
-                  color: order.payment?.status === 'PAID' || order.payment?.status === 'REFUNDED' ? '#10b981' : '#f59e0b',
-                  fontWeight: '600'
-                }}>
-                  {order.payment?.status || 'PENDING'}
-                </span>
-              </div>
-              {order.payment?.refundStatus && (
-                <div className="payment-row">
-                  <span>Refund Status:</span>
-                  <span style={{
-                    color: order.payment.refundStatus === 'PROCESSED' ? '#10b981' : '#f59e0b',
-                    fontWeight: '600'
-                  }}>
-                    {order.payment.refundStatus}
-                  </span>
-                </div>
               )}
             </div>
           </div>
+
         </div>
       </div>
     </div>

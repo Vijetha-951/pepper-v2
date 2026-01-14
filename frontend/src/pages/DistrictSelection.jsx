@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Building2, Loader, ArrowRight, LogOut } from 'lucide-react';
+import { MapPin, Building2, Loader, ArrowRight, LogOut, Bell, Package, Truck, CheckCircle, X } from 'lucide-react';
 import { auth } from '../config/firebase';
 import { signOut } from 'firebase/auth';
 import './DistrictSelection.css';
@@ -12,9 +12,15 @@ const DistrictSelection = () => {
   const [error, setError] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [selecting, setSelecting] = useState(false);
+  
+  // Notification state
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     fetchDistricts();
+    fetchNotifications();
   }, []);
 
   const fetchDistricts = async () => {
@@ -99,6 +105,86 @@ const DistrictSelection = () => {
     }
   };
 
+  const fetchNotifications = async () => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) return;
+
+      const response = await fetch('/api/notifications?limit=10', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data);
+      }
+
+      // Fetch unread count
+      const countResponse = await fetch('/api/notifications/unread-count', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (countResponse.ok) {
+        const countData = await countResponse.json();
+        setUnreadCount(countData.count);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const handleNotificationClick = async (notification) => {
+    try {
+      if (!notification.isRead) {
+        const token = await auth.currentUser?.getIdToken();
+        await fetch(`/api/notifications/${notification._id}/read`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        setNotifications(prev => 
+          prev.map(n => n._id === notification._id ? { ...n, isRead: true } : n)
+        );
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+
+      // Navigate to the district
+      if (notification.metadata?.district) {
+        setShowNotifications(false);
+        await handleDistrictSelect(notification.metadata.district);
+      }
+    } catch (error) {
+      console.error('Error handling notification:', error);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      await fetch('/api/notifications/read-all', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -130,11 +216,81 @@ const DistrictSelection = () => {
             <p>Choose a district to manage hub operations</p>
           </div>
         </div>
-        <button onClick={handleLogout} className="logout-btn">
-          <LogOut size={20} />
-          Logout
-        </button>
+        <div className="header-actions">
+          <button 
+            onClick={() => setShowNotifications(!showNotifications)} 
+            className="notification-btn"
+            style={{ position: 'relative' }}
+          >
+            <Bell size={20} />
+            {unreadCount > 0 && (
+              <span className="notification-badge">{unreadCount}</span>
+            )}
+          </button>
+          <button onClick={handleLogout} className="logout-btn">
+            <LogOut size={20} />
+            Logout
+          </button>
+        </div>
       </div>
+
+      {/* Notification Panel */}
+      {showNotifications && (
+        <div className="notification-panel">
+          <div className="notification-header">
+            <h3>Notifications</h3>
+            <div className="notification-header-actions">
+              {unreadCount > 0 && (
+                <button 
+                  className="mark-all-read-btn" 
+                  onClick={handleMarkAllAsRead}
+                >
+                  Mark all as read
+                </button>
+              )}
+              <button 
+                className="close-notification-btn" 
+                onClick={() => setShowNotifications(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+          <div className="notification-list">
+            {notifications.length === 0 ? (
+              <div className="no-notifications">
+                <Bell size={40} />
+                <p>No notifications yet</p>
+              </div>
+            ) : (
+              notifications.map(notification => (
+                <div
+                  key={notification._id}
+                  className={`notification-item ${notification.isRead ? 'read' : 'unread'}`}
+                  onClick={() => handleNotificationClick(notification)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="notification-icon">
+                    {notification.type === 'ORDER_PLACED' && <Package size={20} />}
+                    {notification.type === 'ORDER_ARRIVED' && <Truck size={20} />}
+                    {notification.type === 'ORDER_DISPATCHED' && <CheckCircle size={20} />}
+                  </div>
+                  <div className="notification-content">
+                    <h4 className="notification-title">{notification.title}</h4>
+                    <p className="notification-message">{notification.message}</p>
+                    <span className="notification-time">
+                      {new Date(notification.createdAt).toLocaleString()}
+                    </span>
+                  </div>
+                  {!notification.isRead && (
+                    <div className="notification-unread-dot"></div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="error-banner">

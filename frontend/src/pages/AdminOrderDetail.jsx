@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Truck, Package, CheckCircle, Clock, AlertCircle, User, Phone, Mail, MapPin, DollarSign, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Truck, Package, CheckCircle, Clock, AlertCircle, User, Phone, Mail, MapPin, DollarSign, RefreshCw, Building2, Key, Home } from 'lucide-react';
 import authService from '../services/authService';
 import { apiFetch } from '../services/api';
 import './AdminOrderDetail.css';
@@ -111,6 +111,7 @@ export default function AdminOrderDetail() {
       'PENDING': '#f59e0b',
       'APPROVED': '#3b82f6',
       'OUT_FOR_DELIVERY': '#8b5cf6',
+      'READY_FOR_COLLECTION': '#10b981',
       'DELIVERED': '#10b981',
       'CANCELLED': '#ef4444'
     };
@@ -122,6 +123,7 @@ export default function AdminOrderDetail() {
       'PENDING': Clock,
       'APPROVED': CheckCircle,
       'OUT_FOR_DELIVERY': Truck,
+      'READY_FOR_COLLECTION': Package,
       'DELIVERED': CheckCircle,
       'CANCELLED': AlertCircle
     };
@@ -188,9 +190,70 @@ export default function AdminOrderDetail() {
         {/* Left Column */}
         <div>
           {/* Order Status Management & Timeline */}
-          {/* Hub Transit Route Visualization */}
-          <div className="admin-order-detail-card">
-            <h2 className="card-title">Hub Transit Route</h2>
+          {/* Hub Transit Route or Hub Collection Info */}
+          {order.deliveryType === 'HUB_COLLECTION' ? (
+            <div className="admin-order-detail-card">
+              <h2 className="card-title">Hub Collection Information</h2>
+              
+              <div style={{ padding: '1rem', background: '#f0fdf4', borderRadius: '8px', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <Building2 size={24} color="#059669" />
+                  <div>
+                    <div style={{ fontWeight: '600', fontSize: '1.125rem', color: '#065f46' }}>
+                      {order.collectionHub?.name || 'Hub Not Selected'}
+                    </div>
+                    <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                      {order.collectionHub?.district || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+
+                {order.collectionHub?.address && (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                    <MapPin size={16} color="#6b7280" style={{ marginTop: '0.25rem' }} />
+                    <div style={{ fontSize: '0.875rem', color: '#4b5563' }}>
+                      {order.collectionHub.address.line1}
+                      {order.collectionHub.address.line2 && `, ${order.collectionHub.address.line2}`}
+                    </div>
+                  </div>
+                )}
+
+                {order.collectionOtp && (
+                  <div style={{ marginTop: '1rem', padding: '1rem', background: 'white', borderRadius: '8px', border: '2px dashed #10b981' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <Key size={18} color="#059669" />
+                      <span style={{ fontWeight: '600', color: '#065f46' }}>Collection OTP</span>
+                    </div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#059669', letterSpacing: '0.25rem' }}>
+                      {order.collectionOtp}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.5rem' }}>
+                      Generated: {formatDate(order.collectionOtpGeneratedAt)}
+                    </div>
+                  </div>
+                )}
+
+                {order.collectedAt && (
+                  <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#dcfce7', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <CheckCircle size={16} color="#15803d" />
+                      <span style={{ fontSize: '0.875rem', color: '#15803d', fontWeight: '500' }}>
+                        Collected at: {formatDate(order.collectedAt)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ padding: '1rem', background: '#fffbeb', borderRadius: '8px', border: '1px solid #fcd34d' }}>
+                <div style={{ fontSize: '0.875rem', color: '#78350f' }}>
+                  <strong>Note:</strong> Customer will collect this order from the hub using the OTP provided above.
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="admin-order-detail-card">
+              <h2 className="card-title">Hub Transit Route</h2>
 
             {routeData && routeData.route && routeData.route.length > 0 ? (
               <div className="hub-route-timeline">
@@ -295,6 +358,7 @@ export default function AdminOrderDetail() {
               </div>
             )}
           </div>
+          )}
 
           {/* Customer Information */}
           <div className="admin-order-detail-card">
