@@ -341,14 +341,22 @@ router.post('/verify', requireAuth, asyncHandler(async (req, res) => {
 
       // If all items available, reserve them
       if (unavailableItems.length === 0) {
+        // Group items by product to avoid saving same document multiple times
+        const productQuantities = {};
         for (const item of orderItems) {
+          const productId = item.product.toString();
+          productQuantities[productId] = (productQuantities[productId] || 0) + item.quantity;
+        }
+        
+        // Reserve inventory for each unique product
+        for (const [productId, totalQuantity] of Object.entries(productQuantities)) {
           const hubInventory = await HubInventory.findOne({
             hub: collectionHubId,
-            product: item.product
+            product: productId
           });
           
           if (hubInventory) {
-            await hubInventory.reserveQuantity(item.quantity);
+            await hubInventory.reserveQuantity(totalQuantity);
           }
         }
       } else {

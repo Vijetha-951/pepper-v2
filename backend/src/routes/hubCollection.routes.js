@@ -148,14 +148,22 @@ router.post('/orders/hub-collection', requireAuth, asyncHandler(async (req, res)
   
   // If all items available, reserve them
   if (unavailableItems.length === 0) {
+    // Group items by product to avoid saving same document multiple times
+    const productQuantities = {};
     for (const item of orderItems) {
+      const productId = item.product.toString();
+      productQuantities[productId] = (productQuantities[productId] || 0) + item.quantity;
+    }
+    
+    // Reserve inventory for each unique product
+    for (const [productId, totalQuantity] of Object.entries(productQuantities)) {
       const hubInventory = await HubInventory.findOne({
         hub: collectionHubId,
-        product: item.product
+        product: productId
       });
       
       if (hubInventory) {
-        await hubInventory.reserveQuantity(item.quantity);
+        await hubInventory.reserveQuantity(totalQuantity);
       }
     }
   } else {
@@ -268,8 +276,7 @@ router.patch('/orders/:orderId/arrived-at-hub', requireAuth, asyncHandler(async 
     
     if (hubInventory.reservedQuantity > 0) {
       const toRelease = Math.min(item.quantity, hubInventory.reservedQuantity);
-      hubInventory.releaseQuantity(toRelease);
-      await hubInventory.save();
+      await hubInventory.releaseQuantity(toRelease);
     }
   }
   
@@ -643,8 +650,7 @@ router.post('/orders/:orderId/release-reservation', requireAuth, asyncHandler(as
       
       // Release the quantity (up to what's needed for this order)
       const toRelease = Math.min(item.quantity, hubInventory.reservedQuantity);
-      hubInventory.releaseQuantity(toRelease);
-      await hubInventory.save();
+      await hubInventory.releaseQuantity(toRelease);
       
       const afterReserved = hubInventory.reservedQuantity;
       const afterAvailable = hubInventory.getAvailableQuantity();

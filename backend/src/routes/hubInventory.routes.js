@@ -168,13 +168,13 @@ router.put('/admin/hubs/:hubId/inventory/:productId', requireAuth, requireAdmin,
     // Update quantity based on action
     if (action === 'SET') {
       inventory.quantity = quantity;
+      await inventory.save();
     } else if (action === 'ADD') {
       await inventory.restock(quantity, 'ADMIN', notes || 'Admin adjustment');
     } else if (action === 'SUBTRACT') {
       inventory.quantity = Math.max(0, inventory.quantity - quantity);
+      await inventory.save();
     }
-    
-    await inventory.save();
   }
   
   res.json({ 

@@ -117,14 +117,22 @@ const HubManagerDashboard = () => {
       setLoading(true);
       const headers = await getApiHeaders(firebaseUser);
 
+      // First, fetch hub details
       const hubResponse = await fetch('/api/hub/my-hub', { headers });
 
       if (hubResponse.ok) {
         const hubData = await hubResponse.json();
         setHub(hubData);
 
-        const ordersResponse = await fetch('/api/hub/orders', { headers });
+        // Fetch all other data in parallel for better performance
+        const [ordersResponse, dispatchedResponse, collectionResponse, inventoryResponse] = await Promise.all([
+          fetch('/api/hub/orders', { headers }),
+          fetch('/api/hub/dispatched-orders', { headers }),
+          fetch(`/api/orders?deliveryType=HUB_COLLECTION&collectionHub=${hubData._id}`, { headers }),
+          fetch(`/api/hub-inventory/hubs/${hubData._id}/inventory`, { headers })
+        ]);
 
+        // Process orders
         if (ordersResponse.ok) {
           const ordersData = await ordersResponse.json();
           console.log('🔍 Hub Manager - Orders fetched:', ordersData.length);
@@ -134,27 +142,21 @@ const HubManagerDashboard = () => {
           setError('Failed to fetch orders');
         }
 
-        // Fetch dispatched orders
-        const dispatchedResponse = await fetch('/api/hub/dispatched-orders', { headers });
-
+        // Process dispatched orders
         if (dispatchedResponse.ok) {
           const dispatchedData = await dispatchedResponse.json();
           console.log('🔍 Hub Manager - Dispatched orders fetched:', dispatchedData.length);
           setDispatchedOrders(dispatchedData);
         }
 
-        // Fetch hub collection orders
-        const collectionResponse = await fetch(`/api/orders?deliveryType=HUB_COLLECTION&collectionHub=${hubData._id}`, { headers });
-
+        // Process hub collection orders
         if (collectionResponse.ok) {
           const collectionData = await collectionResponse.json();
           console.log('🔍 Hub Manager - Hub collection orders fetched:', collectionData.length);
           setCollectionOrders(collectionData);
         }
 
-        // Fetch hub inventory
-        const inventoryResponse = await fetch(`/api/hub-inventory/hubs/${hubData._id}/inventory`, { headers });
-
+        // Process hub inventory
         if (inventoryResponse.ok) {
           const inventoryData = await inventoryResponse.json();
           console.log('🔍 Hub Manager - Hub inventory fetched:', inventoryData.inventory?.length || 0);

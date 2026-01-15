@@ -44,8 +44,7 @@ async function releaseOrderReservation() {
         
         // Release the quantity (up to what's needed for this order)
         const toRelease = Math.min(item.quantity, hubInventory.reservedQuantity);
-        hubInventory.releaseQuantity(toRelease);
-        await hubInventory.save();
+        await hubInventory.releaseQuantity(toRelease);
         
         const afterReserved = hubInventory.reservedQuantity;
         const afterAvailable = hubInventory.getAvailableQuantity();
