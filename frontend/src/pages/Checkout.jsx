@@ -243,8 +243,8 @@ const Checkout = () => {
     try {
       const token = await user.getIdToken();
 
-      // Hub Collection Order Flow
-      if (isHubCollection && hubCollectionData.collectionHub) {
+      // Hub Collection Order Flow - COD
+      if (isHubCollection && hubCollectionData.collectionHub && paymentMethod === 'COD') {
         const createRes = await fetch('/api/hub-collection/orders/hub-collection', {
           method: 'POST',
           headers: {
@@ -281,7 +281,109 @@ const Checkout = () => {
         return;
       }
 
-      // COD flow: directly create order via /api/user/orders
+      // Hub Collection Order Flow - Online Payment
+      if (isHubCollection && hubCollectionData.collectionHub && paymentMethod === 'ONLINE') {
+        // Load Razorpay script
+        const scriptLoaded = await loadRazorpayScript();
+        if (!scriptLoaded) {
+          throw new Error('Failed to load payment gateway');
+        }
+
+        // Create order on backend with hub collection flag
+        const orderResponse = await fetch('/api/payment/create-order', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            isHubCollection: true,
+            collectionHubId: hubCollectionData.collectionHub._id,
+            items: (hubCollectionData.cartItems || [])
+              .filter(i => i && i.product && i.product._id)
+              .map(i => ({ productId: i.product._id, quantity: i.quantity }))
+          })
+        });
+
+        if (!orderResponse.ok) {
+          const errorData = await orderResponse.json();
+          console.error('Order creation failed:', errorData);
+          const errorMsg = errorData.error 
+            ? `${errorData.message}: ${errorData.error}` 
+            : errorData.message || 'Failed to create order';
+          throw new Error(errorMsg);
+        }
+
+        const { order_id, amount, currency, key } = await orderResponse.json();
+
+        // Configure Razorpay options
+        const options = {
+          key: key,
+          amount: amount,
+          currency: currency,
+          name: 'PEPPER Store',
+          description: 'Hub Collection Order',
+          order_id: order_id,
+          handler: async (response) => {
+            try {
+              // Verify payment on backend with hub collection info
+              const verifyResponse = await fetch('/api/payment/verify', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_signature: response.razorpay_signature,
+                  isHubCollection: true,
+                  collectionHubId: hubCollectionData.collectionHub._id
+                })
+              });
+
+              if (verifyResponse.ok) {
+                const verifyData = await verifyResponse.json();
+                setSuccess('Payment successful! Hub collection order placed.');
+                
+                // Clear cart
+                await fetch(`/api/cart/${user.uid}`, {
+                  method: 'DELETE',
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                });
+                
+                setTimeout(() => {
+                  navigate('/payment-success', { state: { order: verifyData.order } });
+                }, 2000);
+              } else {
+                const errorData = await verifyResponse.json();
+                throw new Error(errorData.message || 'Payment verification failed');
+              }
+            } catch (error) {
+              console.error('Payment verification error:', error);
+              setError('Payment verification failed. Please contact support.');
+              setProcessing(false);
+            }
+          },
+          prefill: {
+            name: user.displayName || `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
+            email: user.email,
+            contact: user.phoneNumber || ''
+          },
+          theme: { color: '#2c5f2d' },
+          modal: {
+            ondismiss: () => { setProcessing(false); }
+          }
+        };
+
+        const paymentObject = new window.Razorpay(options);
+        paymentObject.open();
+        return;
+      }
+
+      // Regular Home Delivery - COD flow
       if (paymentMethod === 'COD') {
         const createRes = await fetch('/api/user/orders', {
           method: 'POST',

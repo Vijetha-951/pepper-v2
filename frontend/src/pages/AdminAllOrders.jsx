@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Eye, Package, DollarSign, Clock, RefreshCw, ChevronLeft, ChevronRight, ArrowLeft, MapPin, Home, Building2, Key } from 'lucide-react';
+import { Search, Eye, Package, DollarSign, Clock, RefreshCw, ChevronLeft, ChevronRight, ArrowLeft, MapPin, Home, Building2, Key, Trash2 } from 'lucide-react';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import './AdminAllOrders.css';
@@ -214,6 +214,40 @@ const AdminAllOrders = () => {
 
   const handleViewDetails = (orderId) => {
     navigate(`/admin/orders/${orderId}`);
+  };
+
+  const handleDeleteOrder = async (orderId, orderNumber) => {
+    if (!window.confirm(`Are you sure you want to permanently delete order ${orderNumber}? This action cannot be undone and will remove all related data (notifications, restock requests, etc.)`)) {
+      return;
+    }
+
+    try {
+      if (!user) {
+        alert('Not authenticated');
+        return;
+      }
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/hub-collection/orders/${orderId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(`✅ ${data.message}\n\nDeleted:\n- Order\n- ${data.deleted.notifications} notification(s)\n- ${data.deleted.restockRequests} restock request(s)`);
+        // Refresh the orders list
+        fetchOrders(user);
+      } else {
+        const errorData = await response.json();
+        alert(`❌ Failed to delete order: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      alert('Failed to delete order');
+    }
   };
 
   const handleUpdateStatus = async (orderId, newStatus) => {
@@ -519,6 +553,26 @@ const AdminAllOrders = () => {
                       >
                         <Eye size={16} />
                         View
+                      </button>
+                      <button
+                        className="delete-order-btn"
+                        onClick={() => handleDeleteOrder(order._id, order.orderNumber)}
+                        title="Delete order permanently"
+                        style={{ 
+                          marginLeft: '8px',
+                          backgroundColor: '#dc3545',
+                          color: 'white',
+                          border: 'none',
+                          padding: '8px 12px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <Trash2 size={16} />
+                        Delete
                       </button>
                     </div>
                   </td>

@@ -71,6 +71,7 @@ export default function CollectionVerification() {
       if (response.ok) {
         setSuccess(true);
         setTimeout(() => {
+          // Redirect back to dashboard (RoleBasedDashboard will route to correct dashboard)
           navigate('/dashboard');
         }, 3000);
       } else {

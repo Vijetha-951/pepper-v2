@@ -19,7 +19,7 @@ const HubManagerDashboard = () => {
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
   const [manualOrderId, setManualOrderId] = useState(''); // New state for manual input
-  const [activeTab, setActiveTab] = useState('active'); // 'active', 'dispatched', 'hub-collection', or 'inventory'
+  const [activeTab, setActiveTab] = useState('hub-collection'); // 'hub-collection' or 'inventory'
   const [collectionOrders, setCollectionOrders] = useState([]);
   const [filteredCollectionOrders, setFilteredCollectionOrders] = useState([]);
   const [hubInventory, setHubInventory] = useState([]);
@@ -45,6 +45,24 @@ const HubManagerDashboard = () => {
     trackingDetail: {
       isOpen: false,
       order: null
+    },
+    confirmMarkReady: {
+      isOpen: false,
+      orderId: null,
+      loading: false,
+      error: ''
+    },
+    confirmArrived: {
+      isOpen: false,
+      orderId: null,
+      loading: false,
+      error: ''
+    },
+    verifyOtp: {
+      isOpen: false,
+      orderId: null,
+      otp: '',
+      loading: false
     }
   });
 
@@ -156,7 +174,8 @@ const HubManagerDashboard = () => {
   const filterOrders = () => {
     let filtered = orders;
     let filteredDispatched = dispatchedOrders;
-    let filteredCollection = collectionOrders;
+    // Filter out delivered orders from collection orders
+    let filteredCollection = collectionOrders.filter(order => order.status !== 'DELIVERED');
 
     if (searchTerm) {
       filtered = filtered.filter(order => {
@@ -268,7 +287,41 @@ const HubManagerDashboard = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setNotifications(data);
+        
+        // Filter out notifications for collected/delivered orders
+        const activeNotifications = [];
+        for (const notification of data) {
+          // If notification has an orderId, check if the order is still active
+          if (notification.metadata?.orderId) {
+            try {
+              const orderResponse = await fetch(`/api/hub-collection/orders/${notification.metadata.orderId}/details`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+              
+              if (orderResponse.ok) {
+                const order = await orderResponse.json();
+                // Only keep notifications for orders that aren't delivered
+                if (order.status !== 'DELIVERED') {
+                  activeNotifications.push(notification);
+                }
+              } else {
+                // If order not found or error, keep the notification
+                activeNotifications.push(notification);
+              }
+            } catch (error) {
+              // On error, keep the notification
+              activeNotifications.push(notification);
+            }
+          } else {
+            // If no orderId, keep the notification
+            activeNotifications.push(notification);
+          }
+        }
+        
+        setNotifications(activeNotifications);
       }
 
       // Fetch unread count
@@ -604,12 +657,79 @@ const HubManagerDashboard = () => {
     }));
   };
 
-  const handleMarkReadyForCollection = async (orderId) => {
-    if (!window.confirm('Mark this order as ready for collection? An OTP will be generated and emailed to the customer.')) {
-      return;
-    }
+  const openArrivedConfirmation = (orderId) => {
+    setModals(prev => ({
+      ...prev,
+      confirmArrived: { isOpen: true, orderId, loading: false, error: '' }
+    }));
+  };
+
+  const handleMarkArrived = async () => {
+    const orderId = modals.confirmArrived.orderId;
+    if (!orderId) return;
 
     try {
+      setModals(prev => ({
+        ...prev,
+        confirmArrived: { ...prev.confirmArrived, loading: true }
+      }));
+      setActionError('');
+      setActionSuccess('');
+
+      const headers = await getApiHeaders(user);
+      const response = await fetch(`/api/hub-collection/orders/${orderId}/arrived-at-hub`, {
+        method: 'PATCH',
+        headers
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        closeModal('confirmArrived');
+        setActionSuccess(`Customer notified! Package arrival email sent.`);
+        
+        // Refresh collection orders and notifications
+        fetchHubAndOrders(user);
+        fetchNotifications(user);
+      } else {
+        const errorData = await response.json();
+        setModals(prev => ({
+          ...prev,
+          confirmArrived: { 
+            ...prev.confirmArrived, 
+            loading: false,
+            error: errorData.message || 'Failed to mark order as arrived'
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Error marking order arrived:', error);
+      setModals(prev => ({
+        ...prev,
+        confirmArrived: { 
+          ...prev.confirmArrived, 
+          loading: false,
+          error: error.message || 'Failed to mark order as arrived at hub'
+        }
+      }));
+    }
+  };
+
+  const openMarkReadyConfirmation = (orderId) => {
+    setModals(prev => ({
+      ...prev,
+      confirmMarkReady: { isOpen: true, orderId, loading: false, error: '' }
+    }));
+  };
+
+  const handleMarkReadyForCollection = async () => {
+    const orderId = modals.confirmMarkReady.orderId;
+    if (!orderId) return;
+
+    try {
+      setModals(prev => ({
+        ...prev,
+        confirmMarkReady: { ...prev.confirmMarkReady, loading: true }
+      }));
       setActionError('');
       setActionSuccess('');
 
@@ -621,17 +741,33 @@ const HubManagerDashboard = () => {
 
       if (response.ok) {
         const data = await response.json();
+        closeModal('confirmMarkReady');
         setActionSuccess(`Order marked as ready! OTP sent to customer: ${data.order.user.email}`);
         
-        // Refresh collection orders
+        // Refresh collection orders and notifications
         fetchHubAndOrders(user);
+        fetchNotifications(user);
       } else {
         const errorData = await response.json();
-        setActionError(errorData.message || 'Failed to mark order as ready');
+        setModals(prev => ({
+          ...prev,
+          confirmMarkReady: { 
+            ...prev.confirmMarkReady, 
+            loading: false,
+            error: errorData.message || 'Failed to mark order as ready'
+          }
+        }));
       }
     } catch (error) {
       console.error('Error marking order ready:', error);
-      setActionError('Failed to mark order as ready for collection');
+      setModals(prev => ({
+        ...prev,
+        confirmMarkReady: { 
+          ...prev.confirmMarkReady, 
+          loading: false,
+          error: error.message || 'Failed to mark order as ready for collection'
+        }
+      }));
     }
   };
 
@@ -850,18 +986,6 @@ const HubManagerDashboard = () => {
           <div className="section-header">
             <div className="tabs-container">
               <button 
-                className={`tab-btn ${activeTab === 'active' ? 'active' : ''}`}
-                onClick={() => setActiveTab('active')}
-              >
-                Active Orders ({filteredOrders.length})
-              </button>
-              <button 
-                className={`tab-btn ${activeTab === 'dispatched' ? 'active' : ''}`}
-                onClick={() => setActiveTab('dispatched')}
-              >
-                Dispatched Orders ({filteredDispatchedOrders.length})
-              </button>
-              <button 
                 className={`tab-btn ${activeTab === 'hub-collection' ? 'active' : ''}`}
                 onClick={() => setActiveTab('hub-collection')}
               >
@@ -885,149 +1009,6 @@ const HubManagerDashboard = () => {
             </div>
           </div>
 
-          {activeTab === 'active' && filteredOrders.length === 0 && (
-            <div className="no-orders">
-              <Package size={48} />
-              <p>No active packages at this hub</p>
-            </div>
-          )}
-
-          {activeTab === 'dispatched' && filteredDispatchedOrders.length === 0 && (
-            <div className="no-orders">
-              <Truck size={48} />
-              <p>No dispatched packages from this hub</p>
-            </div>
-          )}
-
-          {activeTab === 'active' && filteredOrders.length > 0 && (
-            <div className="orders-table-wrapper">
-              <table className="orders-table">
-                <thead>
-                  <tr>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Status</th>
-                    <th>Items</th>
-                    <th>Destination</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredOrders.map(order => (
-                    <tr key={order._id}>
-                      <td className="order-id-cell">
-                        <code>{order._id.substring(0, 8)}...</code>
-                      </td>
-                      <td>{order.user?.name || `${order.user?.firstName || ''} ${order.user?.lastName || ''}`.trim() || 'Unknown'}</td>
-                      <td>
-                        <span className={`status-badge status-${order.status?.toLowerCase()}`}>
-                          {order.status || 'PENDING'}
-                        </span>
-                      </td>
-                      <td>{order.items?.length || 0} items</td>
-                      <td>
-                        {order.shippingAddress?.district}, {order.shippingAddress?.state}
-                      </td>
-                      <td className="actions-cell">
-                        <button
-                          className="action-btn view-btn"
-                          onClick={() => openTrackingDetail(order)}
-                          title="View tracking"
-                        >
-                          View
-                        </button>
-                        {order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && (
-                          <>
-                            {order.status === 'IN_TRANSIT' && (
-                              <button
-                                className="action-btn scan-btn"
-                                onClick={() => setModals(prev => ({
-                                  ...prev,
-                                  scanIn: { isOpen: true, orderId: order._id, loading: false }
-                                }))}
-                                title="Scan in package"
-                              >
-                                Scan In
-                              </button>
-                            )}
-
-                            {(order.status === 'APPROVED' && order.currentHub?._id === hub?._id) && (
-                              <button
-                                className="action-btn dispatch-btn"
-                                onClick={() => loadDispatchOptions(order._id)}
-                                title="Dispatch package"
-                              >
-                                Dispatch
-                              </button>
-                            )}
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {activeTab === 'dispatched' && filteredDispatchedOrders.length > 0 && (
-            <div className="orders-table-wrapper">
-              <table className="orders-table">
-                <thead>
-                  <tr>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Status</th>
-                    <th>Items</th>
-                    <th>Destination</th>
-                    <th>Dispatch Time</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredDispatchedOrders.map(order => {
-                    // Get dispatch event from this hub
-                    const dispatchEvent = order.trackingTimeline?.find(
-                      entry => (entry.status === 'IN_TRANSIT' || entry.status === 'OUT_FOR_DELIVERY') &&
-                      entry.hub && (typeof entry.hub === 'object' ? entry.hub._id : entry.hub) === hub?._id
-                    );
-                    
-                    return (
-                      <tr key={order._id}>
-                        <td className="order-id-cell">
-                          <code>{order._id.substring(0, 8)}...</code>
-                        </td>
-                        <td>{order.user?.name || `${order.user?.firstName || ''} ${order.user?.lastName || ''}`.trim() || 'Unknown'}</td>
-                        <td>
-                          <span className={`status-badge status-${order.status?.toLowerCase()}`}>
-                            {order.status || 'IN_TRANSIT'}
-                          </span>
-                        </td>
-                        <td>{order.items?.length || 0} items</td>
-                        <td>
-                          {order.shippingAddress?.district}, {order.shippingAddress?.state}
-                        </td>
-                        <td>
-                          {dispatchEvent ? new Date(dispatchEvent.timestamp || dispatchEvent.createdAt).toLocaleString() : 'N/A'}
-                        </td>
-                        <td className="actions-cell">
-                          <button
-                            className="action-btn view-btn"
-                            onClick={() => openTrackingDetail(order)}
-                            title="View tracking"
-                          >
-                            View
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Hub Collection Orders Tab */}
           {activeTab === 'hub-collection' && filteredCollectionOrders.length === 0 && (
             <div className="empty-state">
               <Package size={48} color="#9ca3af" />
@@ -1035,6 +1016,7 @@ const HubManagerDashboard = () => {
             </div>
           )}
 
+          {/* Hub Collection Orders Tab - NO MORE ACTIVE OR DISPATCHED TABS */}
           {activeTab === 'hub-collection' && filteredCollectionOrders.length > 0 && (
             <div className="orders-table-wrapper">
               <table className="orders-table">
@@ -1058,22 +1040,52 @@ const HubManagerDashboard = () => {
                       <td>{order.user?.firstName} {order.user?.lastName}</td>
                       <td>
                         <span className={`status-badge status-${order.status?.toLowerCase()?.replace(/_/g, '-')}`}>
-                          {order.status === 'READY_FOR_COLLECTION' ? 'Ready' : order.status || 'PENDING'}
+                          {order.status === 'READY_FOR_COLLECTION' ? 'Ready' : 
+                           order.status === 'ARRIVED_AT_HUB' ? 'Arrived' :
+                           order.status === 'PENDING' ? 'Pending Restock' :
+                           order.status === 'APPROVED' ? 'Confirmed' :
+                           order.status || 'PENDING'}
                         </span>
                       </td>
                       <td>{order.items?.length || 0} items</td>
                       <td>₹{order.totalAmount}</td>
                       <td>{new Date(order.createdAt).toLocaleDateString()}</td>
                       <td>
-                        {order.status !== 'READY_FOR_COLLECTION' && order.status !== 'DELIVERED' && (
+                        {/* Pending Restock */}
+                        {order.status === 'PENDING' && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start' }}>
+                            <span style={{ color: '#f59e0b', fontWeight: '600', fontSize: '0.875rem' }}>
+                              ⏳ Awaiting Restock
+                            </span>
+                            <span style={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                              Admin approval needed
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Step 1: Mark as Arrived at Hub (for APPROVED orders only) */}
+                        {order.status === 'APPROVED' && (
                           <button
                             className="action-btn primary"
-                            onClick={() => handleMarkReadyForCollection(order._id)}
-                            style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                            onClick={() => openArrivedConfirmation(order._id)}
+                            style={{ fontSize: '0.875rem', padding: '0.5rem 1rem', backgroundColor: '#8b5cf6' }}
                           >
-                            ✓ Mark Ready
+                            📦 Mark Arrived
                           </button>
                         )}
+                        
+                        {/* Step 2: Generate OTP (for ARRIVED_AT_HUB orders) */}
+                        {order.status === 'ARRIVED_AT_HUB' && (
+                          <button
+                            className="action-btn primary"
+                            onClick={() => openMarkReadyConfirmation(order._id)}
+                            style={{ fontSize: '0.875rem', padding: '0.5rem 1rem', backgroundColor: '#10b981' }}
+                          >
+                            ✓ Generate OTP
+                          </button>
+                        )}
+                        
+                        {/* Step 3: Verify Collection (for READY_FOR_COLLECTION orders) */}
                         {order.status === 'READY_FOR_COLLECTION' && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             <span style={{ color: '#10b981', fontWeight: '600', fontSize: '0.875rem' }}>
@@ -1088,6 +1100,8 @@ const HubManagerDashboard = () => {
                             </button>
                           </div>
                         )}
+                        
+                        {/* Completed */}
                         {order.status === 'DELIVERED' && (
                           <span style={{ color: '#6b7280' }}>
                             Collected ✓
@@ -1365,6 +1379,130 @@ const HubManagerDashboard = () => {
                 onClick={() => closeModal('trackingDetail')}
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Arrived at Hub (Step 1) */}
+      {modals.confirmArrived.isOpen && (
+        <div className="hub-modal-overlay" onClick={() => closeModal('confirmArrived')}>
+          <div className="hub-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Confirm Package Arrival</h3>
+              <button className="close-btn" onClick={() => closeModal('confirmArrived')}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-content">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <Package size={24} color="#8b5cf6" />
+                <p style={{ margin: 0, fontSize: '1rem', fontWeight: '500' }}>
+                  Confirm that this package has arrived at the hub?
+                </p>
+              </div>
+              <p style={{ marginLeft: '36px', color: '#6b7280', marginBottom: '8px' }}>
+                The customer will receive an email notification that their package has arrived and is being prepared for collection.
+              </p>
+              <p style={{ marginLeft: '36px', color: '#6b7280', fontSize: '0.875rem', fontStyle: 'italic' }}>
+                Note: After confirming, you'll need to generate an OTP when the package is ready for collection.
+              </p>
+              {modals.confirmArrived.error && (
+                <div style={{ 
+                  marginTop: '12px',
+                  padding: '12px',
+                  background: '#fee2e2',
+                  border: '1px solid #fca5a5',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '8px'
+                }}>
+                  <AlertCircle size={18} color="#dc2626" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <span style={{ color: '#991b1b', fontSize: '0.875rem', lineHeight: '1.4' }}>
+                    {modals.confirmArrived.error}
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="modal-actions">
+              <button
+                className="btn btn-secondary"
+                onClick={() => closeModal('confirmArrived')}
+                disabled={modals.confirmArrived.loading}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleMarkArrived}
+                disabled={modals.confirmArrived.loading}
+                style={{ backgroundColor: '#8b5cf6' }}
+              >
+                {modals.confirmArrived.loading ? 'Processing...' : 'Confirm Arrival'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Generate OTP (Step 2) */}
+      {modals.confirmMarkReady.isOpen && (
+        <div className="hub-modal-overlay" onClick={() => closeModal('confirmMarkReady')}>
+          <div className="hub-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Generate Collection OTP</h3>
+              <button className="close-btn" onClick={() => closeModal('confirmMarkReady')}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-content">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <CheckCircle size={24} color="#10b981" />
+                <p style={{ margin: 0, fontSize: '1rem', fontWeight: '500' }}>
+                  Generate OTP and mark as ready for collection?
+                </p>
+              </div>
+              <p style={{ marginLeft: '36px', color: '#6b7280', marginBottom: '8px' }}>
+                A One-Time Password (OTP) will be generated and sent to the customer via email.
+              </p>
+              <p style={{ marginLeft: '36px', color: '#6b7280', fontSize: '0.875rem', fontStyle: 'italic' }}>
+                The customer will need to provide this OTP to collect their order.
+              </p>
+              {modals.confirmMarkReady.error && (
+                <div style={{ 
+                  marginTop: '12px',
+                  padding: '12px',
+                  background: '#fee2e2',
+                  border: '1px solid #fca5a5',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '8px'
+                }}>
+                  <AlertCircle size={18} color="#dc2626" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <span style={{ color: '#991b1b', fontSize: '0.875rem', lineHeight: '1.4' }}>
+                    {modals.confirmMarkReady.error}
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="modal-actions">
+              <button
+                className="btn btn-secondary"
+                onClick={() => closeModal('confirmMarkReady')}
+                disabled={modals.confirmMarkReady.loading}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleMarkReadyForCollection}
+                disabled={modals.confirmMarkReady.loading}
+                style={{ backgroundColor: '#10b981' }}
+              >
+                {modals.confirmMarkReady.loading ? 'Generating...' : 'Generate OTP'}
               </button>
             </div>
           </div>

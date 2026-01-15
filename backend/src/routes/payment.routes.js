@@ -7,10 +7,13 @@ import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
 import Order from '../models/Order.js';
 import User from '../models/User.js';
+import Hub from '../models/Hub.js';
+import HubInventory from '../models/HubInventory.js';
+import RestockRequest from '../models/RestockRequest.js';
 import { requireAuth } from '../middleware/auth.js';
 import { sendPaymentSuccessEmail } from '../services/emailService.js';
 import { planRoute } from '../services/logisticsService.js';
-import { createOrderPlacedNotification } from '../services/notificationService.js';
+import { createOrderPlacedNotification, createRestockRequestNotification } from '../services/notificationService.js';
 
 const router = express.Router();
 
@@ -54,61 +57,91 @@ router.post('/create-order', requireAuth, asyncHandler(async (req, res) => {
   }
   
   const userId = req.user.uid;
+  const { isHubCollection, collectionHubId, items: hubCollectionItems } = req.body;
 
-  // Get user's cart
-  const cart = await Cart.findOne({ user: userId }).populate('items.product');
-  
-  console.log('📦 Cart found:', !!cart);
-  console.log('📦 Cart items count:', cart?.items?.length || 0);
-  console.log('📦 Cart items:', JSON.stringify(cart?.items, null, 2));
-  
-  if (!cart || cart.items.length === 0) {
-    return res.status(400).json({ message: 'Cart is empty' });
-  }
+  let totalAmount = 0;
+  let cart = null;
 
-  // Filter out items where product no longer exists (was deleted)
-  const validItems = cart.items.filter(item => item.product !== null);
-  const removedItemsCount = cart.items.length - validItems.length;
-  
-  // If some products were removed, clean up the cart
-  if (removedItemsCount > 0) {
-    cart.items = validItems;
-    await cart.save();
+  // Hub Collection flow
+  if (isHubCollection && collectionHubId && hubCollectionItems) {
+    console.log('📍 Hub Collection order creation');
     
-    if (validItems.length === 0) {
-      return res.status(400).json({ 
-        message: 'All products in your cart have been removed from the store. Please add new products.' 
-      });
+    // Validate and calculate total for hub collection items
+    for (const item of hubCollectionItems) {
+      const product = await Product.findById(item.productId);
+      if (!product) {
+        return res.status(400).json({ 
+          message: `Product not found: ${item.productId}` 
+        });
+      }
+      
+      const availableStock = product.available_stock !== undefined 
+        ? product.available_stock 
+        : product.stock;
+      
+      if (availableStock < item.quantity) {
+        return res.status(400).json({
+          message: `Not enough stock for ${product.name}. Available: ${availableStock}, Required: ${item.quantity}`
+        });
+      }
+      
+      totalAmount += product.price * item.quantity;
     }
-    
-    // Continue with valid items but inform user
-    console.log(`⚠️ Removed ${removedItemsCount} invalid items from cart`);
-  }
-
-  // Verify stock for each valid product
-  for (const item of validItems) {
-    console.log('🔍 Checking item:', item);
-    console.log('🔍 Product exists:', !!item.product);
-    
-    const availableStock = item.product.available_stock !== undefined 
-      ? item.product.available_stock 
-      : item.product.stock;
-    
-    if (availableStock < item.quantity) {
-      return res.status(400).json({
-        message: `Not enough stock for ${item.product.name}. Available: ${availableStock}, Required: ${item.quantity}`
-      });
+  } else {
+    // Regular order flow - Get user's cart
+    cart = await Cart.findOne({ user: userId }).populate('items.product');
+  
+    console.log('📦 Cart found:', !!cart);
+    console.log('📦 Cart items count:', cart?.items?.length || 0);
+    console.log('📦 Cart items:', JSON.stringify(cart?.items, null, 2));
+  
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({ message: 'Cart is empty' });
     }
-  }
 
-  // Calculate total amount
-  let totalAmount;
-  try {
-    totalAmount = await cart.getCartTotal();
-    console.log('💰 Total amount calculated:', totalAmount);
-  } catch (error) {
-    console.error('❌ Error calculating cart total:', error);
-    return res.status(500).json({ message: 'Failed to calculate cart total' });
+    // Filter out items where product no longer exists (was deleted)
+    const validItems = cart.items.filter(item => item.product !== null);
+    const removedItemsCount = cart.items.length - validItems.length;
+  
+    // If some products were removed, clean up the cart
+    if (removedItemsCount > 0) {
+      cart.items = validItems;
+      await cart.save();
+    
+      if (validItems.length === 0) {
+        return res.status(400).json({ 
+          message: 'All products in your cart have been removed from the store. Please add new products.' 
+        });
+      }
+    
+      // Continue with valid items but inform user
+      console.log(`⚠️ Removed ${removedItemsCount} invalid items from cart`);
+    }
+
+    // Verify stock for each valid product
+    for (const item of validItems) {
+      console.log('🔍 Checking item:', item);
+      console.log('🔍 Product exists:', !!item.product);
+    
+      const availableStock = item.product.available_stock !== undefined 
+        ? item.product.available_stock 
+        : item.product.stock;
+    
+      if (availableStock < item.quantity) {
+        return res.status(400).json({
+          message: `Not enough stock for ${item.product.name}. Available: ${availableStock}, Required: ${item.quantity}`
+        });
+      }
+    }
+
+    // Calculate total amount
+    try {
+      totalAmount = await cart.getCartTotal();
+      console.log('💰 Total amount calculated:', totalAmount);
+    } catch (error) {
+      console.error('❌ Error calculating cart total:', error);
+      return res.status(500).json({ message: 'Failed to calculate cart total' });
+    }
   }
 
   if (!totalAmount || totalAmount <= 0) {
@@ -169,7 +202,9 @@ router.post('/verify', requireAuth, asyncHandler(async (req, res) => {
     razorpay_payment_id, 
     razorpay_order_id, 
     razorpay_signature, 
-    shippingAddress 
+    shippingAddress,
+    isHubCollection,
+    collectionHubId
   } = req.body;
   const userId = req.user.uid;
 
@@ -191,6 +226,183 @@ router.post('/verify', requireAuth, asyncHandler(async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Hub Collection Order Flow
+    if (isHubCollection && collectionHubId) {
+      console.log('📍 Processing hub collection order payment verification');
+      
+      // Get user's cart for hub collection items
+      const cart = await Cart.findOne({ user: userId }).populate('items.product');
+      if (!cart || cart.items.length === 0) {
+        return res.status(400).json({ message: 'Cart is empty' });
+      }
+
+      // Get hub
+      const collectionHub = await Hub.findById(collectionHubId);
+      if (!collectionHub) {
+        return res.status(404).json({ message: 'Collection hub not found' });
+      }
+
+      // Check hub inventory and create order items
+      const orderItems = [];
+      const unavailableItems = [];
+      const restockNeeded = [];
+      let totalAmount = 0;
+
+      for (const item of cart.items) {
+        const product = item.product;
+        
+        // Check hub inventory
+        let hubInventory = await HubInventory.findOne({
+          hub: collectionHubId,
+          product: product._id
+        });
+        
+        if (!hubInventory) {
+          // Product not in hub inventory - create entry and mark for restock
+          hubInventory = await HubInventory.create({
+            hub: collectionHubId,
+            product: product._id,
+            quantity: 0,
+            reservedQuantity: 0
+          });
+          
+          unavailableItems.push({
+            productId: product._id,
+            productName: product.name,
+            requestedQuantity: item.quantity,
+            availableQuantity: 0
+          });
+          
+          restockNeeded.push({
+            product: product._id,
+            quantity: item.quantity,
+            hubInventory
+          });
+        } else {
+          const availableQty = hubInventory.getAvailableQuantity();
+          
+          if (availableQty < item.quantity) {
+            unavailableItems.push({
+              productId: product._id,
+              productName: product.name,
+              requestedQuantity: item.quantity,
+              availableQuantity: availableQty
+            });
+            
+            restockNeeded.push({
+              product: product._id,
+              quantity: item.quantity - availableQty,
+              hubInventory
+            });
+          }
+        }
+        
+        orderItems.push({
+          product: product._id,
+          name: product.name,
+          priceAtOrder: product.price,
+          quantity: item.quantity
+        });
+        
+        totalAmount += product.price * item.quantity;
+      }
+
+      // Create hub collection order
+      const order = new Order({
+        user: user._id,
+        items: orderItems,
+        totalAmount,
+        status: unavailableItems.length > 0 ? 'PENDING' : 'APPROVED',
+        deliveryType: 'HUB_COLLECTION',
+        collectionHub: collectionHubId,
+        currentHub: collectionHubId,
+        shippingAddress: {
+          line1: collectionHub.location?.address || '',
+          district: collectionHub.district,
+          state: collectionHub.location?.state || 'Kerala',
+          pincode: collectionHub.location?.pincode || ''
+        },
+        payment: {
+          method: 'ONLINE',
+          status: 'PAID',
+          transactionId: razorpay_payment_id
+        },
+        notes: '',
+        trackingTimeline: [{
+          status: 'ORDER_PLACED',
+          location: collectionHub.name,
+          hub: collectionHub._id,
+          timestamp: new Date(),
+          description: `Order placed for collection at ${collectionHub.name}`
+        }]
+      });
+
+      await order.save();
+
+      // If all items available, reserve them
+      if (unavailableItems.length === 0) {
+        for (const item of orderItems) {
+          const hubInventory = await HubInventory.findOne({
+            hub: collectionHubId,
+            product: item.product
+          });
+          
+          if (hubInventory) {
+            await hubInventory.reserveQuantity(item.quantity);
+          }
+        }
+      } else {
+        // Create restock requests for unavailable items
+        for (const restock of restockNeeded) {
+          const restockRequest = await RestockRequest.create({
+            requestingHub: collectionHubId,
+            product: restock.product,
+            requestedQuantity: restock.quantity,
+            requestedBy: user._id,
+            reason: `Order #${order._id} - Stock unavailable (Online Payment)`,
+            priority: 'HIGH',
+            status: 'PENDING'
+          });
+          
+          // Notify admins about restock request
+          const product = await Product.findById(restock.product);
+          if (product) {
+            createRestockRequestNotification(restockRequest, collectionHub, product).catch(err => {
+              console.error('Failed to create restock notification:', err);
+            });
+          }
+        }
+      }
+
+      await order.populate('collectionHub', 'name district');
+      await order.populate('items.product', 'name image price');
+
+      // Clear the cart
+      await cart.clearCart();
+
+      // Send notification to hub manager (non-blocking)
+      if (collectionHub) {
+        createOrderPlacedNotification(order, collectionHub).catch(err => {
+          console.error('Failed to create hub notification:', err);
+        });
+      }
+
+      // Send payment success email
+      sendPaymentSuccessEmail({
+        to: user.email,
+        userName: user.name || `${user.firstName} ${user.lastName}`,
+        order: order,
+        paymentId: razorpay_payment_id
+      }).catch(err => console.error('Email sending failed:', err));
+
+      return res.status(200).json({
+        success: true,
+        message: 'Hub collection order placed successfully',
+        order
+      });
+    }
+
+    // Regular Home Delivery Order Flow
     // Get user's cart
     const cart = await Cart.findOne({ user: userId }).populate('items.product');
     if (!cart || cart.items.length === 0) {

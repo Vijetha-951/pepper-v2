@@ -6,9 +6,10 @@ import RestockRequest from '../models/RestockRequest.js';
 import Hub from '../models/Hub.js';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 import { requireAuth } from '../middleware/auth.js';
-import { sendCollectionOtpEmail } from '../services/emailService.js';
-import { createOrderPlacedNotification } from '../services/notificationService.js';
+import { sendCollectionOtpEmail, sendHubArrivedForCollectionEmail } from '../services/emailService.js';
+import { createOrderPlacedNotification, createRestockRequestNotification } from '../services/notificationService.js';
 
 const router = express.Router();
 
@@ -160,7 +161,7 @@ router.post('/orders/hub-collection', requireAuth, asyncHandler(async (req, res)
   } else {
     // Create restock requests for unavailable items
     for (const restock of restockNeeded) {
-      await RestockRequest.create({
+      const restockRequest = await RestockRequest.create({
         requestingHub: collectionHubId,
         product: restock.product,
         requestedQuantity: restock.quantity,
@@ -169,6 +170,14 @@ router.post('/orders/hub-collection', requireAuth, asyncHandler(async (req, res)
         priority: 'HIGH',
         status: 'PENDING'
       });
+      
+      // Notify admins about restock request
+      const product = await Product.findById(restock.product);
+      if (product) {
+        createRestockRequestNotification(restockRequest, collectionHub, product).catch(err => {
+          console.error('Failed to create restock notification:', err);
+        });
+      }
     }
   }
   
@@ -197,7 +206,130 @@ router.post('/orders/hub-collection', requireAuth, asyncHandler(async (req, res)
   });
 }));
 
-// Mark order as ready for collection and generate OTP (Hub Manager/Admin)
+// Mark order as arrived at hub (Step 1: Notify customer) (Hub Manager/Admin)
+router.patch('/orders/:orderId/arrived-at-hub', requireAuth, asyncHandler(async (req, res) => {
+  const { orderId } = req.params;
+  
+  const order = await Order.findById(orderId)
+    .populate('user', 'firstName lastName email')
+    .populate('collectionHub', 'name district')
+    .populate('items.product', 'name price');
+  
+  if (!order) {
+    return res.status(404).json({ success: false, message: 'Order not found' });
+  }
+  
+  if (order.deliveryType !== 'HUB_COLLECTION') {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'This order is not for hub collection' 
+    });
+  }
+  
+  if (order.status === 'ARRIVED_AT_HUB' || order.status === 'READY_FOR_COLLECTION') {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Order has already been marked as arrived' 
+    });
+  }
+  
+  // Check if order is PENDING (needs restocking)
+  if (order.status === 'PENDING') {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Order is pending restock approval. Please wait for admin to fulfill restock requests before marking as arrived.' 
+    });
+  }
+  
+  // Only APPROVED orders can be marked as arrived
+  if (order.status !== 'APPROVED') {
+    return res.status(400).json({ 
+      success: false, 
+      message: `Cannot mark order as arrived. Current status: ${order.status}` 
+    });
+  }
+  
+  // Process inventory: release old reservations, check availability, and reserve stock
+  const collectionHubId = order.collectionHub._id;
+  
+  // Step 1: Release old reservations (if any)
+  for (const item of order.items) {
+    const hubInventory = await HubInventory.findOne({
+      hub: collectionHubId,
+      product: item.product._id
+    });
+    
+    if (!hubInventory) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `No inventory record found for ${item.name} at this hub.`
+      });
+    }
+    
+    if (hubInventory.reservedQuantity > 0) {
+      const toRelease = Math.min(item.quantity, hubInventory.reservedQuantity);
+      hubInventory.releaseQuantity(toRelease);
+      await hubInventory.save();
+    }
+  }
+  
+  // Step 2: Check availability (fetch fresh data)
+  for (const item of order.items) {
+    const hubInventory = await HubInventory.findOne({
+      hub: collectionHubId,
+      product: item.product._id
+    });
+    
+    const availableQty = hubInventory.getAvailableQuantity();
+    if (availableQty < item.quantity) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Insufficient stock for ${item.name}. Available: ${availableQty}, Required: ${item.quantity}. Please wait for restock.`
+      });
+    }
+  }
+  
+  // Step 3: Reserve stock (fetch fresh data)
+  for (const item of order.items) {
+    const hubInventory = await HubInventory.findOne({
+      hub: collectionHubId,
+      product: item.product._id
+    });
+    
+    await hubInventory.reserveQuantity(item.quantity);
+  }
+  
+  // Update status to ARRIVED_AT_HUB
+  order.status = 'ARRIVED_AT_HUB';
+  
+  order.trackingTimeline.push({
+    status: 'ARRIVED_AT_HUB',
+    location: order.collectionHub.name,
+    hub: order.collectionHub._id,
+    timestamp: new Date(),
+    description: `Package arrived at ${order.collectionHub.name}. Customer notified.`
+  });
+  
+  await order.save();
+  
+  // Send arrival notification email to customer
+  if (order.user && order.user.email) {
+    await sendHubArrivedForCollectionEmail({
+      to: order.user.email,
+      userName: order.user.firstName,
+      order: order,
+      hubName: order.collectionHub.name
+    });
+  }
+  
+  res.json({ 
+    success: true, 
+    message: 'Order marked as arrived at hub. Customer notified via email.',
+    order 
+  });
+}));
+
+// Mark order as ready for collection and generate OTP (Step 2: Generate OTP) (Hub Manager/Admin)
 router.patch('/orders/:orderId/ready-for-collection', requireAuth, asyncHandler(async (req, res) => {
   const { orderId } = req.params;
   
@@ -224,7 +356,15 @@ router.patch('/orders/:orderId/ready-for-collection', requireAuth, asyncHandler(
     });
   }
   
-  // Check if all items are available in hub inventory
+  if (order.status !== 'ARRIVED_AT_HUB') {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Order must be marked as arrived at hub first. Please mark it as arrived before generating OTP.' 
+    });
+  }
+  
+  // Stock was already checked and reserved when order was marked as ARRIVED_AT_HUB
+  // No need to check available quantity again, just verify reserved quantity exists
   const collectionHubId = order.collectionHub._id;
   for (const item of order.items) {
     const hubInventory = await HubInventory.findOne({
@@ -232,26 +372,25 @@ router.patch('/orders/:orderId/ready-for-collection', requireAuth, asyncHandler(
       product: item.product._id
     });
     
-    if (!hubInventory || hubInventory.getAvailableQuantity() < item.quantity) {
+    if (!hubInventory) {
       return res.status(400).json({ 
         success: false, 
-        message: `Insufficient stock for ${item.name}. Please fulfill restock requests first.`,
+        message: `No inventory record found for ${item.name}.`,
+        product: item.name
+      });
+    }
+    
+    // Check if we have enough total quantity (reserved + available)
+    if (hubInventory.quantity < item.quantity) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Insufficient total stock for ${item.name}. Hub has ${hubInventory.quantity} units but order needs ${item.quantity}.`,
         product: item.name
       });
     }
   }
   
-  // Reserve inventory for this order
-  for (const item of order.items) {
-    const hubInventory = await HubInventory.findOne({
-      hub: collectionHubId,
-      product: item.product._id
-    });
-    
-    if (hubInventory) {
-      await hubInventory.reserveQuantity(item.quantity);
-    }
-  }
+  // No need to reserve again - stock is already reserved from ARRIVED_AT_HUB step
   
   // Generate OTP
   const otp = generateOTP();
@@ -406,6 +545,17 @@ router.post('/orders/:orderId/verify-collection', requireAuth, asyncHandler(asyn
   
   await order.save();
   
+  // Delete all notifications related to this order
+  try {
+    const deletedNotifications = await Notification.deleteMany({
+      'metadata.orderId': orderId
+    });
+    console.log(`🗑️ Deleted ${deletedNotifications.deletedCount} notifications for collected order ${orderId}`);
+  } catch (notifError) {
+    console.error('⚠️ Failed to delete notifications:', notifError);
+    // Don't fail the request if notification deletion fails
+  }
+  
   res.json({ 
     success: true, 
     message: 'Order collected successfully',
@@ -454,6 +604,115 @@ router.get('/hub/:hubId/collection-orders', requireAuth, asyncHandler(async (req
   res.json({ 
     success: true, 
     orders 
+  });
+}));
+
+// Release reserved stock for an order (admin only)
+router.post('/orders/:orderId/release-reservation', requireAuth, asyncHandler(async (req, res) => {
+  const { orderId } = req.params;
+  
+  // Get user and verify admin
+  const user = await User.findOne({ firebaseUid: req.user.uid });
+  if (!user || user.role !== 'admin') {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Only admins can release reservations' 
+    });
+  }
+  
+  const order = await Order.findById(orderId)
+    .populate('collectionHub')
+    .populate('items.product');
+    
+  if (!order) {
+    return res.status(404).json({ success: false, message: 'Order not found' });
+  }
+  
+  const releasedItems = [];
+  
+  // Release any reserved stock for this order
+  for (const item of order.items) {
+    const hubInventory = await HubInventory.findOne({
+      hub: order.collectionHub._id,
+      product: item.product._id
+    });
+
+    if (hubInventory && hubInventory.reservedQuantity > 0) {
+      const beforeReserved = hubInventory.reservedQuantity;
+      const beforeAvailable = hubInventory.getAvailableQuantity();
+      
+      // Release the quantity (up to what's needed for this order)
+      const toRelease = Math.min(item.quantity, hubInventory.reservedQuantity);
+      hubInventory.releaseQuantity(toRelease);
+      await hubInventory.save();
+      
+      const afterReserved = hubInventory.reservedQuantity;
+      const afterAvailable = hubInventory.getAvailableQuantity();
+      
+      releasedItems.push({
+        productName: item.name,
+        released: toRelease,
+        reservedBefore: beforeReserved,
+        reservedAfter: afterReserved,
+        availableBefore: beforeAvailable,
+        availableAfter: afterAvailable
+      });
+    }
+  }
+  
+  res.json({ 
+    success: true, 
+    message: releasedItems.length > 0 
+      ? `Released reservations for ${releasedItems.length} item(s)` 
+      : 'No reservations found to release',
+    releasedItems,
+    order: {
+      id: order._id,
+      status: order.status
+    }
+  });
+}));
+
+// Delete an order completely (admin only)
+router.delete('/orders/:orderId', requireAuth, asyncHandler(async (req, res) => {
+  const { orderId } = req.params;
+  
+  // Get user and verify admin
+  const user = await User.findOne({ firebaseUid: req.user.uid });
+  if (!user || user.role !== 'admin') {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Only admins can delete orders' 
+    });
+  }
+  
+  const order = await Order.findById(orderId);
+    
+  if (!order) {
+    return res.status(404).json({ success: false, message: 'Order not found' });
+  }
+  
+  // Delete related notifications
+  const deletedNotifications = await Notification.deleteMany({
+    'metadata.orderId': orderId
+  });
+  
+  // Delete related restock requests
+  const deletedRestockRequests = await RestockRequest.deleteMany({
+    'orderDetails.orderId': orderId
+  });
+  
+  // Delete the order itself
+  await Order.findByIdAndDelete(orderId);
+  
+  res.json({ 
+    success: true, 
+    message: 'Order completely deleted from system',
+    deleted: {
+      order: true,
+      notifications: deletedNotifications.deletedCount,
+      restockRequests: deletedRestockRequests.deletedCount
+    }
   });
 }));
 

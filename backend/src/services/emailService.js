@@ -673,10 +673,141 @@ export const sendCollectionOtpEmail = async ({ to, userName, order, otp, hubName
   }
 };
 
+/**
+ * Send hub arrival notification email
+ * @param {Object} options - Email options
+ * @param {string} options.to - Recipient email
+ * @param {string} options.userName - User's name
+ * @param {Object} options.order - Order details
+ * @param {string} options.hubName - Hub name where package arrived
+ */
+export const sendHubArrivedForCollectionEmail = async ({ to, userName, order, hubName }) => {
+  const emailTransporter = initializeTransporter();
+  
+  if (!emailTransporter) {
+    console.warn('⚠️ Email service not available. Skipping email notification.');
+    return { success: false, message: 'Email service not configured' };
+  }
+
+  try {
+    const orderItems = order.items
+      .map(item => `
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${item.name || 'Product'}</td>
+          <td style="padding: 10px; text-align: center; border-bottom: 1px solid #e5e7eb;">${item.quantity}</td>
+          <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e5e7eb;">₹${item.priceAtOrder.toFixed(2)}</td>
+        </tr>
+      `).join('');
+
+    const mailOptions = {
+      from: `"PEPPER Store" <${process.env.EMAIL_USER}>`,
+      to: to,
+      subject: `Your Order Has Arrived at ${hubName} - Order #${order._id.toString().slice(-6).toUpperCase()}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f3f4f6;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); padding: 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px;">📦 Package Arrived!</h1>
+            </div>
+            
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <p style="font-size: 18px; color: #111827; margin-bottom: 10px;">
+                Hello ${userName},
+              </p>
+              
+              <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
+                Good news! Your order has arrived at <strong>${hubName}</strong> and is being prepared for collection.
+              </p>
+              
+              <!-- Info Box -->
+              <div style="background-color: #f5f3ff; border-left: 4px solid #8b5cf6; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                <h3 style="color: #7c3aed; margin-top: 0; font-size: 18px;">📍 Collection Location</h3>
+                <p style="margin: 5px 0; color: #374151; font-size: 16px; font-weight: bold;">
+                  ${hubName}
+                </p>
+                <p style="margin: 10px 0 0 0; color: #6b7280; font-size: 14px;">
+                  ⏰ We will notify you once your order is ready for collection with an OTP.
+                </p>
+              </div>
+              
+              <!-- Order Details -->
+              <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                <h2 style="color: #7c3aed; font-size: 20px; margin-top: 0;">Order Items</h2>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <thead>
+                    <tr style="background-color: #f3f4f6;">
+                      <th style="padding: 10px; text-align: left; color: #374151; font-size: 14px; border-bottom: 2px solid #e5e7eb;">Item</th>
+                      <th style="padding: 10px; text-align: center; color: #374151; font-size: 14px; border-bottom: 2px solid #e5e7eb;">Qty</th>
+                      <th style="padding: 10px; text-align: right; color: #374151; font-size: 14px; border-bottom: 2px solid #e5e7eb;">Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${orderItems}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colspan="2" style="padding: 15px 10px 10px 10px; text-align: right; font-weight: bold; color: #111827; font-size: 16px; border-top: 2px solid #e5e7eb;">Total:</td>
+                      <td style="padding: 15px 10px 10px 10px; text-align: right; font-weight: bold; color: #7c3aed; font-size: 18px; border-top: 2px solid #e5e7eb;">₹${order.totalAmount.toFixed(2)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+                <p style="margin: 15px 0 5px 0; font-size: 14px; color: #374151;">
+                  <strong>Order ID:</strong> ${order._id.toString().slice(-8).toUpperCase()}
+                </p>
+              </div>
+              
+              <!-- Next Steps -->
+              <div style="background-color: #fff7ed; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                <h3 style="color: #ea580c; margin-top: 0; font-size: 16px;">🔔 What's Next?</h3>
+                <ul style="margin: 10px 0; padding-left: 20px; color: #374151;">
+                  <li style="margin-bottom: 8px;">Your order is being processed at the hub</li>
+                  <li style="margin-bottom: 8px;">You'll receive another email with a collection OTP</li>
+                  <li style="margin-bottom: 8px;">Present the OTP at the hub to collect your order</li>
+                </ul>
+              </div>
+              
+              <p style="font-size: 14px; color: #6b7280; text-align: center;">
+                Thank you for shopping with PEPPER Store!
+              </p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background-color: #f3f4f6; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 5px 0; color: #6b7280; font-size: 14px;">
+                PEPPER Store - Premium Pepper Products
+              </p>
+              <p style="margin: 5px 0; color: #6b7280; font-size: 12px;">
+                This is an automated email. Please do not reply to this message.
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const info = await emailTransporter.sendMail(mailOptions);
+    console.log(`✅ Hub arrival notification email sent to ${to}:`, info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('❌ Failed to send hub arrival email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 export default {
   sendPaymentSuccessEmail,
   sendOrderConfirmationEmail,
   sendDeliveryOtpEmail,
   sendHubArrivalEmail,
-  sendCollectionOtpEmail
+  sendCollectionOtpEmail,
+  sendHubArrivedForCollectionEmail
 };

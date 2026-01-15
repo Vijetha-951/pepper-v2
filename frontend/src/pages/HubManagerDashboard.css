@@ -406,6 +406,16 @@
   color: #991b1b;
 }
 
+.status-badge.status-arrived-at-hub {
+  background-color: #ede9fe;
+  color: #6b21a8;
+}
+
+.status-badge.status-ready-for-collection {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
 .actions-cell {
   display: flex;
   gap: 8px;

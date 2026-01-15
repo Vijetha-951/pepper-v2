@@ -219,6 +219,55 @@ export async function deleteOldNotifications(daysOld = 30) {
 }
 
 /**
+ * Create a notification for admin when restock is needed
+ * @param {Object} restockRequest - The restock request document
+ * @param {Object} hub - The requesting hub
+ * @param {Object} product - The product that needs restocking
+ */
+export async function createRestockRequestNotification(restockRequest, hub, product) {
+  try {
+    // Find all admins
+    const admins = await User.find({ role: 'admin' });
+
+    if (admins.length === 0) {
+      console.log('⚠️ No admins found for restock notification');
+      return [];
+    }
+
+    const notifications = [];
+
+    for (const admin of admins) {
+      const notification = await Notification.create({
+        recipient: admin._id,
+        type: 'RESTOCK_REQUEST',
+        title: `🔴 Restock Request - ${hub.district}`,
+        message: `${hub.name} needs ${restockRequest.requestedQuantity} units of "${product.name}". Priority: ${restockRequest.priority}`,
+        hub: hub._id,
+        isRead: false,
+        metadata: {
+          restockRequestId: restockRequest._id.toString(),
+          hubName: hub.name,
+          district: hub.district,
+          productId: product._id.toString(),
+          productName: product.name,
+          quantity: restockRequest.requestedQuantity,
+          priority: restockRequest.priority,
+          reason: restockRequest.reason
+        }
+      });
+
+      notifications.push(notification);
+    }
+
+    console.log(`✅ Created ${notifications.length} restock request notifications for admins`);
+    return notifications;
+  } catch (error) {
+    console.error('❌ Error creating restock request notification:', error);
+    return [];
+  }
+}
+
+/**
  * Delete a specific notification
  * @param {String} notificationId - The notification ID
  * @param {String} userId - The user's MongoDB _id (for security)

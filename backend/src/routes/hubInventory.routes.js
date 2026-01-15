@@ -374,6 +374,67 @@ router.patch('/admin/restock-requests/:requestId', requireAuth, requireAdmin, as
     request.notes = notes || '';
     await request.save();
     
+    // Check if this restock was for a pending order and update order status
+    // Extract order ID from reason field (format: "Order #<orderId> - Stock unavailable...")
+    const orderIdMatch = request.reason?.match(/Order #([a-f0-9]{24})/i);
+    console.log('🔍 Checking for order ID in reason:', request.reason);
+    console.log('🔍 Order ID match:', orderIdMatch);
+    
+    if (orderIdMatch && orderIdMatch[1]) {
+      const orderId = orderIdMatch[1];
+      const Order = (await import('../models/Order.js')).default;
+      
+      console.log(`📦 Found order ID: ${orderId}, checking restock requests...`);
+      
+      // Check if all restock requests for this order are fulfilled
+      const allRestocksForOrder = await RestockRequest.find({
+        reason: new RegExp(`Order #${orderId}`, 'i')
+      });
+      
+      console.log(`📊 Total restock requests for order: ${allRestocksForOrder.length}`);
+      console.log(`📊 Restock statuses:`, allRestocksForOrder.map(r => ({ id: r._id, status: r.status, product: r.product })));
+      
+      const allFulfilled = allRestocksForOrder.every(r => r.status === 'FULFILLED');
+      console.log(`✅ All restocks fulfilled: ${allFulfilled}`);
+      
+      if (allFulfilled) {
+        // Update order status from PENDING to APPROVED
+        const order = await Order.findById(orderId).populate('collectionHub', 'name');
+        if (order && order.status === 'PENDING') {
+          console.log(`🔄 Updating order status from PENDING to APPROVED`);
+          
+          order.status = 'APPROVED';
+          order.trackingTimeline.push({
+            status: 'APPROVED',
+            location: order.collectionHub?.name || 'Hub',
+            hub: order.collectionHub?._id || request.requestingHub._id,
+            timestamp: new Date(),
+            description: 'All items restocked and available for collection'
+          });
+          await order.save();
+          
+          // Reserve stock for the order now that items are available
+          for (const item of order.items) {
+            const hubInv = await HubInventory.findOne({
+              hub: order.collectionHub._id,
+              product: item.product
+            });
+            
+            if (hubInv && hubInv.getAvailableQuantity() >= item.quantity) {
+              await hubInv.reserveQuantity(item.quantity);
+              console.log(`✅ Reserved ${item.quantity} units of product ${item.product} for order`);
+            }
+          }
+          
+          console.log(`✅ Updated order #${orderId} status from PENDING to APPROVED after restocking`);
+        } else {
+          console.log(`⚠️ Order status is ${order?.status}, not PENDING. Skipping update.`);
+        }
+      }
+    } else {
+      console.log('⚠️ No order ID found in restock request reason');
+    }
+    
     res.json({ 
       success: true, 
       message: 'Restock request approved and fulfilled',
