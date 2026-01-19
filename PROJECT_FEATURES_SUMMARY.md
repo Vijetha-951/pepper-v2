@@ -10,7 +10,13 @@
 - View cart with quantity adjustments
 - Choose delivery method:
   - **Home Delivery** (standard logistics)
-  - **Hub Collection** (select nearest hub)
+  - **Hub Collection** (automatic hub assignment by pincode)
+- **Automatic Hub Assignment:**
+  - Enter 6-digit pincode
+  - System maps pincode to GPS coordinates (180+ Kerala pincodes supported)
+  - Calculates real distance to all hubs using Haversine formula
+  - Automatically assigns the closest hub
+  - Shows distance information (e.g., "3.42 km away")
 - Checkout with payment options:
   - Cash on Delivery (COD)
   - Online Payment (Razorpay integration)
@@ -220,16 +226,21 @@
 
 **Hub Collection Flow:**
 1. Customer selects "Hub Collection" in cart
-2. Choose nearest hub from map
-3. Place order (COD or Online Payment)
-4. Order created with inventory check
-5. If stock unavailable → Restock request created automatically
-6. Admin approves restock → Order auto-updates to APPROVED
-7. Hub Manager marks as "Arrived at Hub"
-8. Hub Manager generates OTP when ready
-9. Customer receives OTP via email
-10. Customer verifies OTP at hub
-11. Order marked as delivered
+2. **Enter pincode (6 digits)**
+3. **System automatically assigns nearest hub** using:
+   - Local pincode-to-GPS coordinates database (180+ Kerala pincodes)
+   - Haversine formula for accurate distance calculation
+   - Real-time distance measurement to all active hubs
+4. View assigned hub details with distance at checkout
+5. Place order (COD or Online Payment)
+6. Order created with inventory check
+7. If stock unavailable → Restock request created automatically
+8. Admin approves restock → Order auto-updates to APPROVED
+9. Hub Manager marks as "Arrived at Hub"
+10. Hub Manager generates OTP when ready
+11. Customer receives OTP via email
+12. Customer verifies OTP at assigned hub
+13. Order marked as delivered
 
 **Payment Verification:**
 - Razorpay payment gateway integration

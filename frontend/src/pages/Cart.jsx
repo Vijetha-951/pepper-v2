@@ -110,7 +110,13 @@ const Cart = () => {
       setError('Your cart is empty');
       return;
     }
-    navigate('/hub-selection', { state: { cartItems: cart.items } });
+    // Navigate directly to checkout with hub collection flag
+    navigate('/checkout', {
+      state: {
+        cartItems: cart.items,
+        deliveryType: 'HUB_COLLECTION'
+      }
+    });
   };
 
   if (loading) {

@@ -253,6 +253,20 @@ export default function Dashboard() {
     }
   };
 
+  const proceedToHubCollection = () => {
+    if (cart.items.length === 0) {
+      setErrorMessage('Your cart is empty');
+      return;
+    }
+    // Navigate directly to checkout with hub collection flag
+    navigate('/checkout', {
+      state: {
+        cartItems: cart.items,
+        deliveryType: 'HUB_COLLECTION'
+      }
+    });
+  };
+
   const handleLogout = async () => {
     // show inline banner and delay redirect
     setSuccessMessage('You have been logged out. Redirecting to login...');
@@ -1197,7 +1211,7 @@ export default function Dashboard() {
                   </button>
 
                   <button
-                    onClick={() => navigate('/hub-selection', { state: { cartItems: cart.items } })}
+                    onClick={proceedToHubCollection}
                     disabled={cart.items.length === 0}
                     style={{
                       width: '100%',

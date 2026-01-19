@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { CreditCard, MapPin, AlertCircle, CheckCircle } from 'lucide-react';
+import { CreditCard, MapPin, AlertCircle, CheckCircle, Store } from 'lucide-react';
 import './Checkout.css';
 
 const Checkout = () => {
@@ -31,6 +31,12 @@ const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState('COD'); // 'COD' | 'ONLINE'
   const [addressBook, setAddressBook] = useState({ addresses: [], primary: null });
   const [selectedAddressId, setSelectedAddressId] = useState('');
+  
+  // Hub collection pincode state
+  const [collectionPincode, setCollectionPincode] = useState('');
+  const [pincodeError, setPincodeError] = useState('');
+  const [findingHub, setFindingHub] = useState(false);
+  const [assignedHub, setAssignedHub] = useState(hubCollectionData.collectionHub || null);
 
   useEffect(() => {
     if (user) {
@@ -176,6 +182,71 @@ const Checkout = () => {
       [field]: v
     }));
   };
+  
+  // Find nearest hub based on pincode for hub collection
+  const findNearestHub = async (pincodeValue) => {
+    const pinToUse = pincodeValue || collectionPincode;
+    
+    // Validate pincode
+    if (!pinToUse || !/^\d{6}$/.test(pinToUse)) {
+      setPincodeError('Please enter a valid 6-digit pincode');
+      return;
+    }
+
+    setFindingHub(true);
+    setPincodeError('');
+    setError('');
+
+    try {
+      const token = await user.getIdToken();
+      
+      // Call the API to find nearest hub
+      const response = await fetch('/api/hub-location/find-nearest-hub', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ pincode: pinToUse })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to find nearest hub');
+      }
+
+      const data = await response.json();
+      
+      if (!data.success || !data.hub) {
+        throw new Error('No hub available for this pincode');
+      }
+
+      // Set the assigned hub with all the metadata
+      setAssignedHub(data.hub);
+      setCollectionPincode(pinToUse);
+      
+      // Update hub collection data
+      Object.assign(hubCollectionData, {
+        collectionHub: data.hub,
+        autoAssigned: true,
+        pincode: pinToUse,
+        matchType: data.matchType,
+        distance: data.distance,
+        distanceFormatted: data.distanceFormatted,
+        pincodeInfo: data.pincodeInfo
+      });
+      
+      setSuccess(`Hub assigned! ${data.hub.name} is ${data.distanceFormatted || `${data.distance.toFixed(2)} km`} away.`);
+      setTimeout(() => setSuccess(''), 3000);
+
+    } catch (err) {
+      console.error('Error finding hub:', err);
+      setPincodeError(err.message || 'Failed to find nearest hub. Please try again.');
+      setAssignedHub(null);
+    } finally {
+      setFindingHub(false);
+    }
+  };
 
   const validateAddress = () => {
     const { line1, district, state, pincode, phone } = shippingAddress;
@@ -229,7 +300,13 @@ const Checkout = () => {
   };
 
   const handlePayment = async () => {
-    if (!validateAddress()) return;
+    // Validate hub assignment for hub collection
+    if (isHubCollection && !assignedHub) {
+      setError('Please enter your pincode to assign a collection hub');
+      return;
+    }
+    
+    if (!isHubCollection && !validateAddress()) return;
 
     setProcessing(true);
     setError('');
@@ -244,7 +321,7 @@ const Checkout = () => {
       const token = await user.getIdToken();
 
       // Hub Collection Order Flow - COD
-      if (isHubCollection && hubCollectionData.collectionHub && paymentMethod === 'COD') {
+      if (isHubCollection && assignedHub && paymentMethod === 'COD') {
         const createRes = await fetch('/api/hub-collection/orders/hub-collection', {
           method: 'POST',
           headers: {
@@ -252,10 +329,10 @@ const Checkout = () => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            items: (hubCollectionData.cartItems || [])
+            items: (hubCollectionData.cartItems || cart.items || [])
               .filter(i => i && i.product && i.product._id)
               .map(i => ({ productId: i.product._id, quantity: i.quantity })),
-            collectionHubId: hubCollectionData.collectionHub._id,
+            collectionHubId: assignedHub._id,
             payment: { method: paymentMethod, status: 'PENDING' },
             notes: ''
           })
@@ -282,7 +359,7 @@ const Checkout = () => {
       }
 
       // Hub Collection Order Flow - Online Payment
-      if (isHubCollection && hubCollectionData.collectionHub && paymentMethod === 'ONLINE') {
+      if (isHubCollection && assignedHub && paymentMethod === 'ONLINE') {
         // Load Razorpay script
         const scriptLoaded = await loadRazorpayScript();
         if (!scriptLoaded) {
@@ -298,8 +375,8 @@ const Checkout = () => {
           },
           body: JSON.stringify({
             isHubCollection: true,
-            collectionHubId: hubCollectionData.collectionHub._id,
-            items: (hubCollectionData.cartItems || [])
+            collectionHubId: assignedHub._id,
+            items: (hubCollectionData.cartItems || cart.items || [])
               .filter(i => i && i.product && i.product._id)
               .map(i => ({ productId: i.product._id, quantity: i.quantity }))
           })
@@ -338,7 +415,7 @@ const Checkout = () => {
                   razorpay_order_id: response.razorpay_order_id,
                   razorpay_signature: response.razorpay_signature,
                   isHubCollection: true,
-                  collectionHubId: hubCollectionData.collectionHub._id
+                  collectionHubId: assignedHub._id
                 })
               });
 
@@ -551,12 +628,103 @@ const Checkout = () => {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 24 }}>
-          {/* Shipping Address */}
+          
+          {/* Hub Collection - Show assigned hub info if available */}
+          {isHubCollection && assignedHub && (
+            <div className="checkout-card" style={{
+              gridColumn: '1 / -1',
+              background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+              border: '2px solid #10b981'
+            }}>
+              <div className="section-header" style={{ marginBottom: '1rem' }}>
+                <Store size={20} color="#10b981" />
+                <h2 className="section-title" style={{ color: '#065f46' }}>📍 Collection Hub (Auto-Assigned)</h2>
+              </div>
+              
+              <div style={{
+                background: 'white',
+                borderRadius: '8px',
+                padding: '1.25rem',
+                border: '1px solid #86efac'
+              }}>
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#065f46', marginBottom: '0.25rem' }}>
+                    {assignedHub.name}
+                  </h3>
+                  <p style={{ color: '#047857', fontSize: '0.875rem', margin: 0 }}>
+                    {assignedHub.district}
+                    {collectionPincode && ` • Pincode: ${collectionPincode}`}
+                    {hubCollectionData.distance && ` • Distance: ${hubCollectionData.distanceFormatted || `${hubCollectionData.distance.toFixed(2)} km`}`}
+                  </p>
+                </div>
+                
+                {assignedHub.location?.address && (
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '0.5rem', 
+                    alignItems: 'flex-start',
+                    padding: '0.75rem',
+                    background: '#f0fdf4',
+                    borderRadius: '6px',
+                    marginTop: '0.75rem'
+                  }}>
+                    <MapPin size={16} color="#059669" style={{ marginTop: '2px', flexShrink: 0 }} />
+                    <div style={{ fontSize: '0.875rem', color: '#065f46' }}>
+                      <div>{assignedHub.location.address}</div>
+                      {assignedHub.location.city && (
+                        <div>{assignedHub.location.city}</div>
+                      )}
+                      {assignedHub.location.pincode && (
+                        <div>Pincode: {assignedHub.location.pincode}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{
+                  marginTop: '0.75rem',
+                  padding: '0.75rem',
+                  background: '#dcfce7',
+                  border: '1px solid #86efac',
+                  borderRadius: '6px',
+                  fontSize: '0.875rem',
+                  color: '#065f46',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.5rem'
+                }}>
+                  <CheckCircle size={16} style={{ marginTop: '2px', flexShrink: 0 }} />
+                  <div>
+                    <strong>✓ Hub Assigned!</strong> This hub was automatically assigned based on your pincode.
+                    {hubCollectionData.matchType === 'exact' && ' This hub explicitly serves your area.'}
+                    {hubCollectionData.matchType === 'distance' && ' This is the nearest hub to your location.'}
+                    {' '}You'll receive an email notification when your order is ready for collection.
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Address Form - Always show full form */}
           <div className="checkout-card">
             <div className="section-header">
               <MapPin size={18} color="#10b981" />
-              <h2 className="section-title">Shipping Address</h2>
+              <h2 className="section-title">{isHubCollection ? 'Your Details for Hub Collection' : 'Shipping Address'}</h2>
             </div>
+
+            {isHubCollection && (
+              <div style={{
+                padding: '1rem',
+                background: '#f0f9ff',
+                border: '1px solid #bae6fd',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                color: '#0c4a6e',
+                marginBottom: '1rem'
+              }}>
+                <strong>📍 Hub Collection:</strong> Enter your pincode below - we'll automatically find the nearest collection hub for you.
+              </div>
+            )}
 
             <div className="space-y-4" style={{ display: 'grid', gap: 16 }}>
               <div>
@@ -577,6 +745,10 @@ const Checkout = () => {
                             const safePrimary = normalizeAddress(primary);
                             setShippingAddress(safePrimary);
                             try { localStorage.setItem('shippingAddress', JSON.stringify(safePrimary)); } catch {}
+                            // If hub collection and has pincode, auto-find hub
+                            if (isHubCollection && safePrimary.pincode && safePrimary.pincode.length === 6) {
+                              findNearestHub(safePrimary.pincode);
+                            }
                           }
                         } catch {}
                       }}
@@ -664,10 +836,41 @@ const Checkout = () => {
                   type="text"
                   id="pincode"
                   value={shippingAddress.pincode ?? ''}
-                  onChange={(e) => handleAddressChange('pincode', e.target.value)}
-                  placeholder="6-digit pincode"
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    handleAddressChange('pincode', value);
+                    // Auto-find hub when 6 digits entered for hub collection
+                    if (isHubCollection) {
+                      if (value.length === 6) {
+                        setCollectionPincode(value);
+                        findNearestHub(value);
+                      } else {
+                        setAssignedHub(null);
+                        setPincodeError('');
+                      }
+                    }
+                  }}
+                  placeholder="Enter 6-digit pincode"
                   maxLength={6}
                 />
+                {isHubCollection && findingHub && (
+                  <p style={{ color: '#3b82f6', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                    🔍 Finding nearest hub...
+                  </p>
+                )}
+                {isHubCollection && pincodeError && (
+                  <p style={{
+                    color: '#ef4444',
+                    fontSize: '0.875rem',
+                    marginTop: '0.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem'
+                  }}>
+                    <AlertCircle size={16} />
+                    {pincodeError}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -684,39 +887,41 @@ const Checkout = () => {
               </div>
 
               {/* Save button: placed below all fields */}
-              <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-                <button
-                  type="button"
-                  className="primary-action"
-                  style={{ padding: '10px 14px' }}
-                  onClick={async () => {
-                    if (!validateAddress()) return;
-                    try {
-                      const token = await user.getIdToken();
-                      const res = await fetch('/api/user/addresses', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify(normalizeAddress(shippingAddress))
-                      });
-                      if (res.ok) {
-                        const data = await res.json();
-                        setAddressBook(prev => ({ ...prev, addresses: data.addresses }));
-                        setSuccess('Address saved to your profile');
-                        setTimeout(() => setSuccess(''), 1500);
-                      } else {
-                        const err = await res.json().catch(() => ({ message: 'Failed to save address' }));
-                        setError(err.message || 'Failed to save address');
+              {!isHubCollection && (
+                <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    className="primary-action"
+                    style={{ padding: '10px 14px' }}
+                    onClick={async () => {
+                      if (!validateAddress()) return;
+                      try {
+                        const token = await user.getIdToken();
+                        const res = await fetch('/api/user/addresses', {
+                          method: 'POST',
+                          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                          body: JSON.stringify(normalizeAddress(shippingAddress))
+                        });
+                        if (res.ok) {
+                          const data = await res.json();
+                          setAddressBook(prev => ({ ...prev, addresses: data.addresses }));
+                          setSuccess('Address saved to your profile');
+                          setTimeout(() => setSuccess(''), 1500);
+                        } else {
+                          const err = await res.json().catch(() => ({ message: 'Failed to save address' }));
+                          setError(err.message || 'Failed to save address');
+                          setTimeout(() => setError(''), 2000);
+                        }
+                      } catch (e) {
+                        setError('Failed to save address');
                         setTimeout(() => setError(''), 2000);
                       }
-                    } catch (e) {
-                      setError('Failed to save address');
-                      setTimeout(() => setError(''), 2000);
-                    }
-                  }}
-                >
-                  Save to address book
-                </button>
-              </div>
+                    }}
+                  >
+                    Save to address book
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
