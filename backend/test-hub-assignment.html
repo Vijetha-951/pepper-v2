@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub Assignment Test - PEPPER</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 2px solid #c3e6cb;
+            color: #155724;
+            display: block;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 2px solid #f5c6cb;
+            color: #721c24;
+            display: block;
+        }
+
+        .result.loading {
+            background: #d1ecf1;
+            border: 2px solid #bee5eb;
+            color: #0c5460;
+            display: block;
+        }
+
+        .hub-info {
+            margin-top: 15px;
+        }
+
+        .hub-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #155724;
+            margin-bottom: 10px;
+        }
+
+        .hub-detail {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .hub-detail strong {
+            display: inline-block;
+            width: 100px;
+        }
+
+        .distance-badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .examples {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .examples h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .example-item {
+            display: inline-block;
+            margin: 5px;
+            padding: 5px 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .example-item:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #0c5460;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏢 Hub Assignment Test</h1>
+        <p class="subtitle">Enter any Kerala pincode to test automatic hub assignment</p>
+
+        <div class="input-group">
+            <label for="pincode">Pincode *</label>
+            <input 
+                type="text" 
+                id="pincode" 
+                placeholder="Enter 6-digit pincode (e.g., 695001)"
+                maxlength="6"
+                inputmode="numeric"
+            >
+        </div>
+
+        <button class="btn" id="testBtn" onclick="testHubAssignment()">
+            Find Nearest Hub
+        </button>
+
+        <div id="result" class="result"></div>
+
+        <div class="examples">
+            <h3>📍 Try these pincodes:</h3>
+            <div class="example-item" onclick="fillPincode('695001')">695001 - Thiruvananthapuram</div>
+            <div class="example-item" onclick="fillPincode('682016')">682016 - Ernakulam</div>
+            <div class="example-item" onclick="fillPincode('686001')">686001 - Kottayam</div>
+            <div class="example-item" onclick="fillPincode('673001')">673001 - Kozhikode</div>
+            <div class="example-item" onclick="fillPincode('680001')">680001 - Thrissur</div>
+            <div class="example-item" onclick="fillPincode('678001')">678001 - Palakkad</div>
+        </div>
+    </div>
+
+    <script>
+        const pincodeInput = document.getElementById('pincode');
+        const resultDiv = document.getElementById('result');
+        const testBtn = document.getElementById('testBtn');
+
+        // Auto-format pincode input
+        pincodeInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+        });
+
+        // Auto-trigger on 6 digits
+        pincodeInput.addEventListener('input', (e) => {
+            if (e.target.value.length === 6) {
+                testHubAssignment();
+            }
+        });
+
+        function fillPincode(pincode) {
+            pincodeInput.value = pincode;
+            testHubAssignment();
+        }
+
+        async function testHubAssignment() {
+            const pincode = pincodeInput.value.trim();
+
+            // Validation
+            if (!pincode || pincode.length !== 6) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '❌ Please enter a valid 6-digit pincode';
+                return;
+            }
+
+            // Show loading
+            resultDiv.className = 'result loading';
+            resultDiv.innerHTML = '<span class="spinner"></span> Finding nearest hub...';
+            testBtn.disabled = true;
+
+            try {
+                // Call the API
+                const response = await fetch('http://localhost:5000/api/hub-location/find-nearest-hub', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Note: In production, you'd need proper authentication
+                        // For testing, the backend should have auth disabled or test mode
+                    },
+                    body: JSON.stringify({ pincode })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Failed to find hub');
+                }
+
+                // Show success result
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    <div style="font-size: 18px; margin-bottom: 15px;">
+                        ✅ Hub Found Successfully!
+                    </div>
+                    <div class="hub-info">
+                        <div class="hub-name">${data.hub.name}</div>
+                        <div class="hub-detail">
+                            <strong>📍 Address:</strong> ${data.hub.location.address}
+                        </div>
+                        <div class="hub-detail">
+                            <strong>🏙️ City:</strong> ${data.hub.location.city}
+                        </div>
+                        <div class="hub-detail">
+                            <strong>📮 Pincode:</strong> ${data.hub.location.pincode}
+                        </div>
+                        ${data.hub.location.landmark ? `
+                        <div class="hub-detail">
+                            <strong>🗺️ Landmark:</strong> ${data.hub.location.landmark}
+                        </div>
+                        ` : ''}
+                        <div class="hub-detail">
+                            <strong>📌 District:</strong> ${data.hub.district}
+                        </div>
+                        <div class="hub-detail">
+                            <strong>🧭 GPS:</strong> ${data.hub.location.coordinates.lat.toFixed(4)}, ${data.hub.location.coordinates.lng.toFixed(4)}
+                        </div>
+                        <div class="distance-badge">
+                            📏 Distance: ${data.distanceFormatted || `${data.distance.toFixed(2)} km`}
+                        </div>
+                        ${data.matchType === 'exact' ? '<div style="margin-top: 10px; font-size: 13px;">✓ This hub explicitly serves your area</div>' : ''}
+                        ${data.matchType === 'distance' ? '<div style="margin-top: 10px; font-size: 13px;">✓ Nearest hub to your location</div>' : ''}
+                    </div>
+                `;
+
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Error: ${error.message}`;
+            } finally {
+                testBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

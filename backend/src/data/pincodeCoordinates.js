@@ -112,6 +112,12 @@ export const pincodeCoordinates = {
   '673004': { lat: 11.2467, lng: 75.7654, district: 'Kozhikode', state: 'Kerala' },
   '673005': { lat: 11.2723, lng: 75.7945, district: 'Kozhikode', state: 'Kerala' },
   '673006': { lat: 11.2543, lng: 75.7765, district: 'Kozhikode', state: 'Kerala' },
+  '673007': { lat: 11.2612, lng: 75.7834, district: 'Kozhikode', state: 'Kerala' },
+  '673008': { lat: 11.2478, lng: 75.7698, district: 'Kozhikode', state: 'Kerala' },
+  '673009': { lat: 11.2689, lng: 75.7912, district: 'Kozhikode', state: 'Kerala' },
+  '673010': { lat: 11.2534, lng: 75.7745, district: 'Kozhikode', state: 'Kerala' },
+  '673011': { lat: 11.2701, lng: 75.7956, district: 'Kozhikode', state: 'Kerala' },
+  '673012': { lat: 11.2456, lng: 75.7632, district: 'Kozhikode', state: 'Kerala' },
   
   // Wayanad District
   '673571': { lat: 11.6854, lng: 76.1320, district: 'Wayanad', state: 'Kerala' },
@@ -119,6 +125,14 @@ export const pincodeCoordinates = {
   '673573': { lat: 11.6923, lng: 76.1387, district: 'Wayanad', state: 'Kerala' },
   '673574': { lat: 11.6712, lng: 76.1198, district: 'Wayanad', state: 'Kerala' },
   '673575': { lat: 11.6987, lng: 76.1456, district: 'Wayanad', state: 'Kerala' },
+  '673591': { lat: 11.6789, lng: 76.2712, district: 'Wayanad', state: 'Kerala' }, // Sulthan Bathery
+  '673592': { lat: 11.6823, lng: 76.2745, district: 'Wayanad', state: 'Kerala' },
+  '673593': { lat: 11.6756, lng: 76.2678, district: 'Wayanad', state: 'Kerala' }, // Sulthan Bathery area
+  '673594': { lat: 11.6891, lng: 76.2801, district: 'Wayanad', state: 'Kerala' },
+  '673595': { lat: 11.6645, lng: 76.2589, district: 'Wayanad', state: 'Kerala' },
+  '673121': { lat: 11.6085, lng: 76.0842, district: 'Wayanad', state: 'Kerala' }, // Kalpetta
+  '673122': { lat: 11.6123, lng: 76.0876, district: 'Wayanad', state: 'Kerala' },
+  '673123': { lat: 11.6045, lng: 76.0798, district: 'Wayanad', state: 'Kerala' },
   
   // Kannur District
   '670001': { lat: 11.8745, lng: 75.3704, district: 'Kannur', state: 'Kerala' },

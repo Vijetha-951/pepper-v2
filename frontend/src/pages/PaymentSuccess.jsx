@@ -216,13 +216,42 @@ const PaymentSuccess = () => {
                 <div className="step-item">
                   <MapPin className="step-icon" size={22} />
                   <div className="step-text">
-                    <h4>Shipping Address:</h4>
-                    <p>
-                      {orderDetails.shippingAddress.line1}
-                      {orderDetails.shippingAddress.line2 && `, ${orderDetails.shippingAddress.line2}`}
-                      <br />
-                      {orderDetails.shippingAddress.district}, {orderDetails.shippingAddress.state} - {orderDetails.shippingAddress.pincode}
-                    </p>
+                    <h4>
+                      {orderDetails.deliveryType === 'HUB_COLLECTION' ? 'Collection Hub:' : 'Shipping Address:'}
+                    </h4>
+                    {orderDetails.deliveryType === 'HUB_COLLECTION' && orderDetails.collectionHub ? (
+                      <p>
+                        <strong>{orderDetails.collectionHub.name}</strong>
+                        <br />
+                        {orderDetails.collectionHub.location?.address && (
+                          <>
+                            {orderDetails.collectionHub.location.address}
+                            <br />
+                          </>
+                        )}
+                        {orderDetails.collectionHub.location?.city && (
+                          <>
+                            {orderDetails.collectionHub.location.city}
+                            {orderDetails.collectionHub.location.pincode && ` - ${orderDetails.collectionHub.location.pincode}`}
+                            <br />
+                          </>
+                        )}
+                        {orderDetails.collectionHub.location?.landmark && (
+                          <>
+                            🗺️ {orderDetails.collectionHub.location.landmark}
+                            <br />
+                          </>
+                        )}
+                        {orderDetails.collectionHub.district}, Kerala
+                      </p>
+                    ) : (
+                      <p>
+                        {orderDetails.shippingAddress.line1}
+                        {orderDetails.shippingAddress.line2 && `, ${orderDetails.shippingAddress.line2}`}
+                        <br />
+                        {orderDetails.shippingAddress.district}, {orderDetails.shippingAddress.state} - {orderDetails.shippingAddress.pincode}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

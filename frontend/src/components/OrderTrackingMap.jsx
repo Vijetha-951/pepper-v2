@@ -129,11 +129,24 @@ const OrderTrackingMap = ({ order, routeData }) => {
         const isCurrent = order.currentHub && order.currentHub._id === hub._id;
         const isPassed = routeData.currentHubIndex !== undefined && index < routeData.currentHubIndex;
         
+        // Build detailed hub info
+        let hubInfo = `${hub.district} - ${hub.type.replace('_', ' ')}`;
+        if (hub.location?.address) {
+          hubInfo = hub.location.address;
+          if (hub.location.city) {
+            hubInfo += `, ${hub.location.city}`;
+          }
+          if (hub.location.pincode) {
+            hubInfo += ` - ${hub.location.pincode}`;
+          }
+        }
+        
         markers.push({
           position,
           type: isCurrent ? 'current' : isPassed ? 'passed' : 'upcoming',
           label: hub.name,
-          info: `${hub.district} - ${hub.type.replace('_', ' ')}`
+          info: hubInfo,
+          fullAddress: hub.location
         });
       });
     } else if (order.currentHub) {
@@ -154,11 +167,24 @@ const OrderTrackingMap = ({ order, routeData }) => {
         position = [10.8505, 76.2711]; // Kerala center
       }
       
+      // Build detailed hub info
+      let hubInfo = hubDistrict || 'Current Location';
+      if (order.currentHub.location?.address) {
+        hubInfo = order.currentHub.location.address;
+        if (order.currentHub.location.city) {
+          hubInfo += `, ${order.currentHub.location.city}`;
+        }
+        if (order.currentHub.location.pincode) {
+          hubInfo += ` - ${order.currentHub.location.pincode}`;
+        }
+      }
+      
       markers.push({
         position,
         type: 'current',
         label: order.currentHub.name || `${hubDistrict} Hub`,
-        info: hubDistrict || 'Current Location'
+        info: hubInfo,
+        fullAddress: order.currentHub.location
       });
       routeCoordinates.push(position);
     }
@@ -201,11 +227,24 @@ const OrderTrackingMap = ({ order, routeData }) => {
       }
       
       if (!markers.find(m => m.label === order.collectionHub.name)) {
+        // Build detailed hub info
+        let hubInfo = `Collection Hub - ${hubDistrict}`;
+        if (order.collectionHub.location?.address) {
+          hubInfo = order.collectionHub.location.address;
+          if (order.collectionHub.location.city) {
+            hubInfo += `, ${order.collectionHub.location.city}`;
+          }
+          if (order.collectionHub.location.pincode) {
+            hubInfo += ` - ${order.collectionHub.location.pincode}`;
+          }
+        }
+        
         markers.push({
           position,
           type: order.status === 'DELIVERED' ? 'delivered' : 'destination',
           label: order.collectionHub.name || `${hubDistrict} Collection Hub`,
-          info: `Collection Hub - ${hubDistrict}`
+          info: hubInfo,
+          fullAddress: order.collectionHub.location
         });
         routeCoordinates.push(position);
       }
@@ -289,7 +328,7 @@ const OrderTrackingMap = ({ order, routeData }) => {
             icon={getMarkerIcon(marker.type)}
           >
             <Popup>
-              <div style={{ padding: '0.5rem' }}>
+              <div style={{ padding: '0.5rem', minWidth: '200px' }}>
                 <h4 style={{ 
                   margin: '0 0 0.5rem 0', 
                   color: getStatusColor(marker.type),
@@ -298,9 +337,14 @@ const OrderTrackingMap = ({ order, routeData }) => {
                 }}>
                   {marker.label}
                 </h4>
-                <p style={{ margin: 0, fontSize: '0.875rem', color: '#6b7280' }}>
+                <p style={{ margin: 0, fontSize: '0.875rem', color: '#6b7280', lineHeight: '1.5' }}>
                   {marker.info}
                 </p>
+                {marker.fullAddress?.landmark && (
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', color: '#6b7280' }}>
+                    🗺️ {marker.fullAddress.landmark}
+                  </p>
+                )}
                 {marker.type === 'current' && (
                   <p style={{ 
                     margin: '0.5rem 0 0 0', 
@@ -310,6 +354,26 @@ const OrderTrackingMap = ({ order, routeData }) => {
                   }}>
                     📦 Current Location
                   </p>
+                )}
+                {(marker.type === 'destination' || marker.type === 'delivered') && marker.fullAddress?.address && (
+                  <a 
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(marker.info)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'inline-block',
+                      marginTop: '0.5rem',
+                      padding: '0.25rem 0.5rem',
+                      background: '#10b981',
+                      color: 'white',
+                      textDecoration: 'none',
+                      borderRadius: '4px',
+                      fontSize: '0.75rem',
+                      fontWeight: '600'
+                    }}
+                  >
+                    📍 View on Google Maps
+                  </a>
                 )}
               </div>
             </Popup>

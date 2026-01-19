@@ -396,9 +396,22 @@ const OrderTracking = () => {
                 </h3>
                 <div style={{ fontSize: '0.9375rem', lineHeight: '1.7', color: '#374151' }}>
                   <div style={{ marginBottom: '0.75rem' }}>
-                    <p style={{ margin: 0, fontWeight: '600', color: '#065f46' }}>{order.collectionHub.name}</p>
-                    {order.collectionHub.address && (
-                      <p style={{ margin: '0.25rem 0 0 0', color: '#047857' }}>{order.collectionHub.address}</p>
+                    <p style={{ margin: 0, fontWeight: '600', color: '#065f46', fontSize: '1.125rem' }}>{order.collectionHub.name}</p>
+                    {order.collectionHub.location?.address && (
+                      <p style={{ margin: '0.25rem 0 0 0', color: '#047857' }}>
+                        {order.collectionHub.location.address}
+                        {order.collectionHub.location.city && `, ${order.collectionHub.location.city}`}
+                      </p>
+                    )}
+                    {order.collectionHub.location?.pincode && (
+                      <p style={{ margin: '0.25rem 0 0 0', color: '#047857' }}>
+                        Pincode: {order.collectionHub.location.pincode}
+                      </p>
+                    )}
+                    {order.collectionHub.location?.landmark && (
+                      <p style={{ margin: '0.25rem 0 0 0', color: '#047857', fontSize: '0.875rem' }}>
+                        🗺️ Landmark: {order.collectionHub.location.landmark}
+                      </p>
                     )}
                     <p style={{ margin: '0.25rem 0 0 0', color: '#047857' }}>
                       {order.collectionHub.district}, Kerala
@@ -410,6 +423,31 @@ const OrderTracking = () => {
                           {order.collectionHub.phone}
                         </a>
                       </p>
+                    )}
+                    {order.collectionHub.location?.address && (
+                      <a 
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                          `${order.collectionHub.location.address}, ${order.collectionHub.location.city || order.collectionHub.district}, Kerala ${order.collectionHub.location.pincode || ''}`
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-block',
+                          marginTop: '0.75rem',
+                          padding: '0.5rem 1rem',
+                          background: '#10b981',
+                          color: 'white',
+                          textDecoration: 'none',
+                          borderRadius: '8px',
+                          fontSize: '0.875rem',
+                          fontWeight: '600',
+                          transition: 'background 0.2s'
+                        }}
+                        onMouseOver={(e) => e.target.style.background = '#059669'}
+                        onMouseOut={(e) => e.target.style.background = '#10b981'}
+                      >
+                        📍 View on Google Maps
+                      </a>
                     )}
                   </div>
                   

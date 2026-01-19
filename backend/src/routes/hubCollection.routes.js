@@ -194,6 +194,18 @@ router.post('/orders/hub-collection', requireAuth, asyncHandler(async (req, res)
     .populate('collectionHub', 'name district location')
     .populate('user', 'firstName lastName email');
   
+  // Send order confirmation email for COD orders (non-blocking)
+  if (payment && payment.method === 'COD') {
+    const { sendOrderConfirmationEmail } = await import('../services/emailService.js');
+    sendOrderConfirmationEmail({
+      to: user.email,
+      userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+      order: populatedOrder
+    }).catch(err => {
+      console.error('Failed to send order confirmation email:', err);
+    });
+  }
+  
   // Create notification for hub manager (non-blocking)
   if (collectionHub) {
     createOrderPlacedNotification(populatedOrder, collectionHub).catch(err => {
