@@ -26,6 +26,7 @@ import ForgotPassword from "./pages/ForgotPassword.jsx";
 
 // Shopping flow pages
 import Cart from "./pages/Cart.jsx";
+import Wishlist from "./pages/Wishlist.jsx";
 import Checkout from "./pages/Checkout.jsx";
 import Orders from "./pages/Orders.jsx";
 import PaymentSuccess from "./pages/PaymentSuccess.jsx";
@@ -54,6 +55,12 @@ function App() {
           <>
             <Navbar />
             <Dashboard />
+          </>
+        } />
+        <Route path="/wishlist" element={
+          <>
+            <Navbar />
+            <Wishlist />
           </>
         } />
         <Route path="/checkout" element={

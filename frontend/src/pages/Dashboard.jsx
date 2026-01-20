@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { User, Package, ShoppingCart, Truck, LogOut, Bell, Search, Plus, Package2, AlertCircle, CheckCircle, Sparkles, Target } from "lucide-react";
+import { User, Package, ShoppingCart, Truck, LogOut, Bell, Search, Plus, Package2, AlertCircle, CheckCircle, Sparkles, Target, Heart } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { auth } from "../config/firebase";
 import authService from "../services/authService";
 import customerProductService from "../services/customerProductService";
 import RecommendedProducts from "../components/RecommendedProducts";
@@ -14,6 +15,8 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'overview');
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState({ items: [], total: 0 });
+  const [wishlist, setWishlist] = useState({ items: [] });
+  const [wishlistLoading, setWishlistLoading] = useState({});
   const [productsLoading, setProductsLoading] = useState(false);
   const [cartLoading, setCartLoading] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
@@ -58,6 +61,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (activeTab === 'products') {
       fetchProducts();
+      fetchWishlist();
     }
   }, [activeTab]);
 
@@ -248,11 +252,82 @@ export default function Dashboard() {
   const removeFromCart = async (productId) => {
     try {
       await customerProductService.removeFromCart(productId);
-      fetchCart(); // Refresh cart
+      fetchCart();
     } catch (error) {
       console.error('Error removing from cart:', error);
-      setErrorMessage("Failed to remove cart item");
+      setErrorMessage("Failed to remove item from cart");
     }
+  };
+
+  const fetchWishlist = async () => {
+    if (!user?.uid || !auth.currentUser) return;
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const response = await fetch(`/api/wishlist/${user.uid}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setWishlist(data);
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist:', error);
+    }
+  };
+
+  const toggleWishlist = async (productId) => {
+    if (!user?.uid || !auth.currentUser) return;
+    
+    setWishlistLoading(prev => ({ ...prev, [productId]: true }));
+    
+    try {
+      const isInWishlist = wishlist.items.some(item => item.product._id === productId);
+      const token = await auth.currentUser.getIdToken();
+      
+      if (isInWishlist) {
+        // Remove from wishlist
+        const response = await fetch(`/api/wishlist/item/${productId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (response.ok) {
+          setSuccessMessage('Removed from wishlist');
+          fetchWishlist();
+        }
+      } else {
+        // Add to wishlist
+        const response = await fetch('/api/wishlist/add', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ productId })
+        });
+        if (response.ok) {
+          setSuccessMessage('Added to wishlist ❤️');
+          fetchWishlist();
+        }
+      }
+      
+      setTimeout(() => setSuccessMessage(''), 2000);
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+      setErrorMessage('Failed to update wishlist');
+      setTimeout(() => setErrorMessage(''), 3000);
+    } finally {
+      setWishlistLoading(prev => ({ ...prev, [productId]: false }));
+    }
+  };
+
+  const isInWishlist = (productId) => {
+    return wishlist.items.some(item => item.product._id === productId);
   };
 
   const proceedToHubCollection = () => {
@@ -344,6 +419,7 @@ export default function Dashboard() {
       { id: 'orders', label: 'My Orders', icon: ShoppingCart },
       { id: 'reviews', label: 'My Reviews', icon: Sparkles },
       { id: 'products', label: 'Products', icon: Package },
+      { id: 'wishlist', label: 'My Wishlist', icon: Heart },
       { id: 'recommendations', label: 'Recommendations', icon: Sparkles },
       { id: 'cart', label: 'My Cart', icon: ShoppingCart },
     ] : []),
@@ -876,6 +952,47 @@ export default function Dashboard() {
                           }}>
                             ⚡ {product.stock > 0 ? 'Available' : 'Sold Out'}
                           </div>
+                          
+                          {/* Wishlist Heart Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleWishlist(product._id);
+                            }}
+                            disabled={wishlistLoading[product._id]}
+                            style={{
+                              position: 'absolute',
+                              top: '10px',
+                              right: '10px',
+                              background: isInWishlist(product._id) ? '#ef4444' : 'rgba(255, 255, 255, 0.95)',
+                              backdropFilter: 'blur(10px)',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '40px',
+                              height: '40px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: wishlistLoading[product._id] ? 'not-allowed' : 'pointer',
+                              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                              transition: 'all 0.3s ease',
+                              opacity: wishlistLoading[product._id] ? 0.6 : 1
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!wishlistLoading[product._id]) {
+                                e.currentTarget.style.transform = 'scale(1.1)';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                            }}
+                          >
+                            <Heart 
+                              size={20} 
+                              color={isInWishlist(product._id) ? 'white' : '#ef4444'}
+                              fill={isInWishlist(product._id) ? 'white' : 'none'}
+                            />
+                          </button>
                         </div>
                       )}
 
@@ -1087,6 +1204,9 @@ export default function Dashboard() {
             )}
           </div>
         );
+      case 'wishlist':
+        navigate('/wishlist');
+        return null;
       case 'cart':
         return (
           <div style={cardStyle}>
