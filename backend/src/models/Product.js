@@ -12,6 +12,11 @@ const productSchema = new mongoose.Schema(
     available_stock: { type: Number, default: function() { return this.stock || 0; } },
     image: { type: String, default: '' },
     isActive: { type: Boolean, default: true },
+    // Product Specifications
+    propagationMethod: { type: String, default: 'Cutting' },
+    maturityDuration: { type: String, default: '1.5 years' },
+    bloomingSeason: { type: String, default: 'All season' },
+    plantAge: { type: String, default: '3 Months' },
   },
   { timestamps: true }
 );
@@ -70,6 +75,51 @@ productSchema.pre('save', function(next) {
   }
   
   next();
+});
+
+// Post-save middleware to sync with Kottayam hub inventory
+productSchema.post('save', async function(doc) {
+  try {
+    // Import models (avoid circular dependency by importing inside hook)
+    const Hub = mongoose.model('Hub');
+    const HubInventory = mongoose.model('HubInventory');
+    
+    // Find Kottayam hub
+    const kottayamHub = await Hub.findOne({ district: 'Kottayam' });
+    if (!kottayamHub) {
+      console.log('⚠️  Kottayam hub not found for auto-sync');
+      return;
+    }
+    
+    // Find or create hub inventory for this product
+    let hubInventory = await HubInventory.findOne({
+      hub: kottayamHub._id,
+      product: doc._id
+    });
+    
+    if (!hubInventory) {
+      // Create new inventory entry
+      hubInventory = new HubInventory({
+        hub: kottayamHub._id,
+        product: doc._id,
+        quantity: doc.available_stock || 0,
+        reservedQuantity: 0
+      });
+      await hubInventory.save();
+      console.log(`✅ Created Kottayam inventory for ${doc.name}: ${doc.available_stock}`);
+    } else {
+      // Update existing inventory to match product stock
+      const oldQuantity = hubInventory.quantity;
+      hubInventory.quantity = doc.available_stock || 0;
+      await hubInventory.save();
+      
+      if (oldQuantity !== hubInventory.quantity) {
+        console.log(`🔄 Synced ${doc.name}: Kottayam hub ${oldQuantity} → ${hubInventory.quantity}`);
+      }
+    }
+  } catch (error) {
+    console.error(`❌ Error syncing ${doc.name} with Kottayam hub:`, error.message);
+  }
 });
 
 export default mongoose.model('Product', productSchema);

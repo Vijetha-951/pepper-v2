@@ -346,13 +346,8 @@ const Checkout = () => {
         const orderData = await createRes.json();
         setSuccess('Hub collection order placed successfully! You will be notified when ready for collection.');
         
-        // Clear cart
-        await fetch(`/api/cart/${user.uid}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        // Refresh cart to reflect backend clearing
+        await fetchCart();
         
         setTimeout(() => navigate('/orders'), 1500);
         return;
@@ -423,13 +418,8 @@ const Checkout = () => {
                 const verifyData = await verifyResponse.json();
                 setSuccess('Payment successful! Hub collection order placed.');
                 
-                // Clear cart
-                await fetch(`/api/cart/${user.uid}`, {
-                  method: 'DELETE',
-                  headers: {
-                    'Authorization': `Bearer ${token}`
-                  }
-                });
+                // Refresh cart to reflect backend clearing
+                await fetchCart();
                 
                 setTimeout(() => {
                   navigate('/payment-success', { state: { order: verifyData.order } });
@@ -482,6 +472,10 @@ const Checkout = () => {
         }
         const orderData = await createRes.json();
         setSuccess('Order placed with Cash on Delivery!');
+        
+        // Refresh cart to reflect backend clearing
+        await fetchCart();
+        
         setTimeout(() => navigate('/payment-success', { state: { order: orderData } }), 1200);
         return;
       }
@@ -541,6 +535,10 @@ const Checkout = () => {
             if (verifyResponse.ok) {
               const verifyData = await verifyResponse.json();
               setSuccess('Payment successful! Order has been placed.');
+              
+              // Refresh cart to reflect backend clearing
+              await fetchCart();
+              
               setTimeout(() => {
                 navigate('/payment-success', { state: { order: verifyData.order } });
               }, 2000);

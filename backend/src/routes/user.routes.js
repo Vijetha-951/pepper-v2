@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler';
 import Product from '../models/Product.js';
 import Order from '../models/Order.js';
 import User from '../models/User.js';
+import Cart from '../models/Cart.js';
 import { requireAuth } from '../middleware/auth.js';
 import { sendOrderConfirmationEmail } from '../services/emailService.js';
 import { processOrderRefund } from '../services/refundService.js';
@@ -288,6 +289,17 @@ router.post('/orders', requireCustomer, asyncHandler(async (req, res) => {
     createOrderPlacedNotification(populatedOrder, initialHub).catch(err => {
       console.error('Failed to create hub notification:', err);
     });
+  }
+
+  // Clear the cart after successful order placement
+  try {
+    const cart = await Cart.findOne({ user: req.user.uid });
+    if (cart) {
+      await cart.clearCart();
+    }
+  } catch (err) {
+    console.error('Failed to clear cart:', err);
+    // Don't fail the order if cart clearing fails
   }
 
   res.status(201).json(order);

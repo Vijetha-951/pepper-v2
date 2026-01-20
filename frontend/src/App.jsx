@@ -53,7 +53,7 @@ function App() {
         <Route path="/cart" element={
           <>
             <Navbar />
-            <Cart />
+            <Dashboard />
           </>
         } />
         <Route path="/checkout" element={

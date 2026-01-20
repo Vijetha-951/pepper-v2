@@ -51,15 +51,18 @@ export default function RecommendedProducts({ onAddToCart, onProductClick }) {
   };
 
   const productCardStyle = {
-    background: 'white',
-    borderRadius: '8px',
-    padding: '1rem',
-    border: '1px solid #e5e7eb',
-    transition: 'all 0.3s ease',
+    background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+    borderRadius: '16px',
+    padding: '0',
+    border: 'none',
+    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.08)',
+    transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
     cursor: 'pointer',
     display: 'flex',
     flexDirection: 'column',
-    height: '100%'
+    height: '100%',
+    overflow: 'hidden',
+    position: 'relative'
   };
 
   return (
@@ -148,18 +151,29 @@ export default function RecommendedProducts({ onAddToCart, onProductClick }) {
               key={product._id}
               style={productCardStyle}
               onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.1)';
-                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 8px 30px rgba(16, 185, 129, 0.25)';
+                e.currentTarget.style.transform = 'translateY(-6px) scale(1.02)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = 'initial';
-                e.currentTarget.style.transform = 'initial';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.08)';
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
               }}
             >
-              {/* Product Image */}
+              {/* Gradient Top Bar */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '3px',
+                background: 'linear-gradient(90deg, #10b981 0%, #059669 100%)'
+              }} />
+
+              <div style={{ padding: '1rem' }}>
+                {/* Product Image */}
               <div style={{
                 width: '100%',
-                height: '150px',
+                height: '180px',
                 background: '#f3f4f6',
                 borderRadius: '8px',
                 marginBottom: '0.75rem',
@@ -176,7 +190,9 @@ export default function RecommendedProducts({ onAddToCart, onProductClick }) {
                       width: '100%',
                       height: '100%',
                       objectFit: 'cover',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      imageRendering: 'high-quality',
+                      WebkitBackfaceVisibility: 'hidden'
                     }}
                     onClick={() => handleProductClick(product)}
                   />
@@ -241,31 +257,41 @@ export default function RecommendedProducts({ onAddToCart, onProductClick }) {
               <button
                 onClick={() => onAddToCart(product._id, product.name)}
                 style={{
-                  background: product.available_stock > 0 ? '#10b981' : '#d1d5db',
+                  background: product.available_stock > 0 
+                    ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                    : '#d1d5db',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '6px',
-                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  padding: '0.625rem 1rem',
                   marginTop: 'auto',
                   cursor: product.available_stock > 0 ? 'pointer' : 'not-allowed',
-                  fontSize: '0.9rem',
-                  fontWeight: '600',
-                  transition: 'background 0.3s ease',
-                  opacity: product.available_stock > 0 ? 1 : 0.6
+                  fontSize: '0.875rem',
+                  fontWeight: '700',
+                  transition: 'all 0.3s ease',
+                  opacity: product.available_stock > 0 ? 1 : 0.6,
+                  boxShadow: product.available_stock > 0 ? '0 4px 12px rgba(16, 185, 129, 0.3)' : 'none',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.3px'
                 }}
                 disabled={product.available_stock <= 0}
                 onMouseEnter={(e) => {
                   if (product.available_stock > 0) {
-                    e.target.style.background = '#059669';
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = product.available_stock > 0 ? '#10b981' : '#d1d5db';
+                  if (product.available_stock > 0) {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                  }
                 }}
               >
                 Add to Cart
               </button>
             </div>
+          </div>
           ))}
         </div>
       )}

@@ -30,6 +30,8 @@ export default function Dashboard() {
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showProductModal, setShowProductModal] = useState(false);
 
   useEffect(() => {
     const initializeUser = async () => {
@@ -769,126 +771,240 @@ export default function Dashboard() {
                   <div 
                     key={product._id} 
                     style={{
-                      background: 'white',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '12px',
-                      padding: '1.5rem',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                      transition: 'all 0.3s ease',
+                      background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                      border: 'none',
+                      borderRadius: '16px',
+                      padding: '0',
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                      transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                       position: 'relative',
-                      overflow: 'hidden'
+                      overflow: 'hidden',
+                      cursor: 'pointer'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-4px)';
-                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
-                      // Track browsing on hover
+                      e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
+                      e.currentTarget.style.boxShadow = '0 12px 40px rgba(5, 150, 105, 0.25)';
                       customerProductService.trackProductBrowsing(product._id).catch(() => {});
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                      e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                      e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.08)';
                     }}
                   >
-                    {/* Product Header */}
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'start', 
-                      marginBottom: '1rem' 
-                    }}>
-                      <h4 style={{ 
-                        margin: 0, 
-                        color: '#1f2937', 
-                        fontSize: '1.1rem',
-                        fontWeight: '600' 
-                      }}>
-                        {product.name}
-                      </h4>
-                      <span style={{
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '16px',
-                        fontSize: '0.75rem',
-                        fontWeight: '500',
-                        backgroundColor: product.type === 'Bush' ? '#fee2e2' : '#dbeafe',
-                        color: product.type === 'Bush' ? '#991b1b' : '#1e40af'
-                      }}>
-                        {product.type}
-                      </span>
-                    </div>
+                    {/* Gradient Top Bar */}
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: '4px',
+                      background: 'linear-gradient(90deg, #10b981 0%, #059669 100%)'
+                    }} />
 
-                    {/* Product Image */}
-                    {product.image && (
-                      <img 
-                        src={product.image} 
-                        alt={product.name} 
+                    <div style={{ padding: '1.5rem' }}>
+                      {/* Product Header */}
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'start', 
+                        marginBottom: '1rem' 
+                      }}>
+                        <h4 style={{ 
+                          margin: 0, 
+                          color: '#1f2937', 
+                          fontSize: '1.125rem',
+                          fontWeight: '700',
+                          letterSpacing: '-0.025em'
+                        }}>
+                          {product.name}
+                        </h4>
+                        <span style={{
+                          padding: '0.375rem 0.875rem',
+                          borderRadius: '20px',
+                          fontSize: '0.75rem',
+                          fontWeight: '600',
+                          background: product.type === 'Bush' 
+                            ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' 
+                            : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                          color: 'white',
+                          boxShadow: product.type === 'Bush'
+                            ? '0 4px 12px rgba(239, 68, 68, 0.3)'
+                            : '0 4px 12px rgba(59, 130, 246, 0.3)',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          {product.type}
+                        </span>
+                      </div>
+
+                      {/* Product Image */}
+                      {product.image && (
+                        <div style={{
+                          position: 'relative',
+                          marginBottom: '1rem',
+                          borderRadius: '12px',
+                          overflow: 'hidden',
+                          boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
+                        }}>
+                          <img 
+                            src={product.image} 
+                            alt={product.name} 
+                            style={{
+                              width: '100%',
+                              height: '220px',
+                              objectFit: 'cover',
+                              transition: 'transform 0.4s ease',
+                              imageRendering: 'high-quality',
+                              WebkitBackfaceVisibility: 'hidden'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                          />
+                          {/* Image Overlay Badge */}
+                          <div style={{
+                            position: 'absolute',
+                            bottom: '10px',
+                            right: '10px',
+                            background: 'rgba(255, 255, 255, 0.95)',
+                            backdropFilter: 'blur(10px)',
+                            padding: '0.375rem 0.75rem',
+                            borderRadius: '8px',
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            color: product.stock > 10 ? '#059669' : product.stock > 0 ? '#d97706' : '#dc2626',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+                          }}>
+                            ⚡ {product.stock > 0 ? 'Available' : 'Sold Out'}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Product Description */}
+                      <p style={{ 
+                        color: '#6b7280', 
+                        fontSize: '0.875rem', 
+                        lineHeight: '1.6',
+                        marginBottom: '1.25rem',
+                        height: '48px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical'
+                      }}>
+                        {product.description}
+                      </p>
+
+                      {/* View Details Button */}
+                      <button
+                        onClick={() => {
+                          setSelectedProduct(product);
+                          setShowProductModal(true);
+                        }}
                         style={{
                           width: '100%',
-                          height: '160px',
-                          objectFit: 'cover',
-                          borderRadius: '8px',
-                          marginBottom: '1rem'
+                          padding: '0.625rem',
+                          marginBottom: '1rem',
+                          background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                          color: '#059669',
+                          border: '2px solid #10b981',
+                          borderRadius: '10px',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem',
+                          fontWeight: '600',
+                          transition: 'all 0.3s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.5rem'
                         }}
-                      />
-                    )}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                          e.currentTarget.style.color = 'white';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(5, 150, 105, 0.3)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)';
+                          e.currentTarget.style.color = '#059669';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}
+                      >
+                        <span style={{ fontSize: '1rem' }}>👁️</span> View Details
+                      </button>
 
-                    {/* Product Description */}
-                    <p style={{ 
-                      color: '#6b7280', 
-                      fontSize: '0.875rem', 
-                      lineHeight: '1.4',
-                      marginBottom: '1rem',
-                      height: '40px',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}>
-                      {product.description}
-                    </p>
-
-                    {/* Price and Stock */}
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center', 
-                      marginBottom: '1rem' 
-                    }}>
-                      <span style={{ 
-                        fontWeight: '700', 
-                        fontSize: '1.5rem', 
-                        color: '#059669' 
-                      }}>
-                        ₹{product.price}
-                      </span>
-                      <span style={{ 
-                        color: product.stock > 10 ? '#059669' : product.stock > 0 ? '#d97706' : '#dc2626',
-                        fontWeight: '600',
-                        fontSize: '0.875rem'
-                      }}>
-                        {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
-                      </span>
-                    </div>
-
-                    {/* Add to Cart Button */}
-                    <button
-                      onClick={() => addToCart(product._id, product.name)}
-                      disabled={product.stock === 0 || cartLoading[product._id]}
-                      style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
+                      {/* Price and Stock */}
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        marginBottom: '1rem',
                         padding: '0.75rem',
-                        backgroundColor: product.stock > 0 ? (cartLoading[product._id] ? '#059669' : '#10b981') : '#9ca3af',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: product.stock > 0 && !cartLoading[product._id] ? 'pointer' : 'not-allowed',
-                        fontWeight: '600',
-                        fontSize: '0.875rem',
-                        transition: 'all 0.2s ease',
-                        position: 'relative'
-                      }}
-                    >
+                        background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
+                        borderRadius: '10px'
+                      }}>
+                        <span style={{ 
+                          fontWeight: '800', 
+                          fontSize: '1.75rem', 
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          letterSpacing: '-0.5px'
+                        }}>
+                          ₹{product.price}
+                        </span>
+                        <span style={{ 
+                          padding: '0.375rem 0.75rem',
+                          borderRadius: '8px',
+                          background: product.stock > 10 ? '#d1fae5' : product.stock > 0 ? '#fef3c7' : '#fee2e2',
+                          color: product.stock > 10 ? '#059669' : product.stock > 0 ? '#d97706' : '#dc2626',
+                          fontWeight: '600',
+                          fontSize: '0.75rem'
+                        }}>
+                          📦 {product.stock} left
+                        </span>
+                      </div>
+
+                      {/* Add to Cart Button */}
+                      <button
+                        onClick={() => addToCart(product._id, product.name)}
+                        disabled={product.stock === 0 || cartLoading[product._id]}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.5rem',
+                          padding: '0.875rem',
+                          background: product.stock > 0 
+                            ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
+                            : '#d1d5db',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '12px',
+                          cursor: product.stock > 0 && !cartLoading[product._id] ? 'pointer' : 'not-allowed',
+                          fontWeight: '700',
+                          fontSize: '0.9375rem',
+                          transition: 'all 0.3s ease',
+                          position: 'relative',
+                          boxShadow: product.stock > 0 ? '0 4px 15px rgba(5, 150, 105, 0.4)' : 'none',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (product.stock > 0 && !cartLoading[product._id]) {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 6px 20px rgba(5, 150, 105, 0.5)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (product.stock > 0) {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(5, 150, 105, 0.4)';
+                          }
+                        }}
+                      >
                       {cartLoading[product._id] ? (
                         <>
                           <div style={{
@@ -964,6 +1080,7 @@ export default function Dashboard() {
                         </button>
                       </div>
                     )}
+                  </div>
                   </div>
                 ))}
               </div>
@@ -1912,10 +2029,529 @@ export default function Dashboard() {
         {renderContent()}
       </div>
 
+      {/* Product Detail Modal */}
+      {showProductModal && selectedProduct && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem',
+            animation: 'fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
+          onClick={() => setShowProductModal(false)}
+        >
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 50%, #ffffff 100%)',
+              borderRadius: '32px',
+              maxWidth: '950px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              position: 'relative',
+              boxShadow: '0 40px 100px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.2)',
+              animation: 'modalSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              transform: 'translateZ(0)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Decorative gradient overlay */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '200px',
+              background: 'linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, transparent 100%)',
+              borderRadius: '32px 32px 0 0',
+              pointerEvents: 'none'
+            }} />
+
+            {/* Close Button */}
+            <button
+              onClick={() => setShowProductModal(false)}
+              style={{
+                position: 'absolute',
+                top: '1.5rem',
+                right: '1.5rem',
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                border: 'none',
+                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                color: 'white',
+                fontSize: '2rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 10,
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: '0 8px 20px rgba(220, 38, 38, 0.5)',
+                fontWeight: '300',
+                lineHeight: '1',
+                animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'rotate(90deg) scale(1.15)';
+                e.currentTarget.style.boxShadow = '0 12px 30px rgba(220, 38, 38, 0.7)';
+                e.currentTarget.style.animation = 'none';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'rotate(0deg) scale(1)';
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(220, 38, 38, 0.5)';
+                e.currentTarget.style.animation = 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite';
+              }}
+            >
+              ×
+            </button>
+
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '2rem', 
+              padding: '2.5rem',
+              position: 'relative'
+            }}>
+              {/* Product Image with enhanced styling */}
+              {selectedProduct.image && (
+                <div style={{
+                  width: '100%',
+                  height: '520px',
+                  borderRadius: '24px',
+                  overflow: 'hidden',
+                  background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
+                  boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15), inset 0 0 0 1px rgba(255, 255, 255, 0.5)',
+                  position: 'relative',
+                  animation: 'imageZoomIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                }}>
+                  {/* Image border glow effect */}
+                  <div style={{
+                    position: 'absolute',
+                    inset: '-2px',
+                    background: 'linear-gradient(135deg, #10b981, #3b82f6, #8b5cf6)',
+                    borderRadius: '24px',
+                    opacity: 0.3,
+                    filter: 'blur(10px)',
+                    zIndex: -1
+                  }} />
+                  
+                  <img
+                    src={selectedProduct.image}
+                    alt={selectedProduct.name}
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      imageRendering: '-webkit-optimize-contrast',
+                      WebkitBackfaceVisibility: 'hidden',
+                      backfaceVisibility: 'hidden',
+                      WebkitFontSmoothing: 'antialiased',
+                      MozOsxFontSmoothing: 'grayscale',
+                      transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                      padding: '1rem',
+                      filter: 'contrast(1.05) saturate(1.1)'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  />
+                </div>
+              )}
+
+              {/* Product Header with animation */}
+              <div style={{ animation: 'slideInLeft 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
+                  <h2 style={{
+                    fontSize: '2.25rem',
+                    fontWeight: '800',
+                    background: 'linear-gradient(135deg, #1f2937 0%, #10b981 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    margin: 0,
+                    letterSpacing: '-0.02em'
+                  }}>
+                    {selectedProduct.name}
+                  </h2>
+                  <span style={{
+                    padding: '0.625rem 1.25rem',
+                    borderRadius: '25px',
+                    fontSize: '0.875rem',
+                    fontWeight: '700',
+                    backgroundColor: selectedProduct.type === 'Bush' ? '#fee2e2' : '#dbeafe',
+                    color: selectedProduct.type === 'Bush' ? '#991b1b' : '#1e40af',
+                    border: `2px solid ${selectedProduct.type === 'Bush' ? '#fecaca' : '#bfdbfe'}`,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+                    animation: 'bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.3s both'
+                  }}>
+                    {selectedProduct.type}
+                  </span>
+                </div>
+
+                <p style={{
+                  fontSize: '2.75rem',
+                  fontWeight: '800',
+                  background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  margin: '0.75rem 0',
+                  textShadow: '0 2px 10px rgba(16, 185, 129, 0.2)',
+                  animation: 'pricePopIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.4s both'
+                }}>
+                  ₹{selectedProduct.price}
+                </p>
+
+                <p style={{
+                  fontSize: '1.05rem',
+                  color: '#6b7280',
+                  lineHeight: '1.7',
+                  marginTop: '1rem',
+                  padding: '1rem',
+                  backgroundColor: 'rgba(249, 250, 251, 0.8)',
+                  borderRadius: '12px',
+                  borderLeft: '4px solid #10b981'
+                }}>
+                  {selectedProduct.description}
+                </p>
+              </div>
+
+              {/* Product Specifications with enhanced animation */}
+              <div style={{ animation: 'slideInRight 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both' }}>
+                <h3 style={{
+                  fontSize: '1.5rem',
+                  fontWeight: '700',
+                  color: '#1f2937',
+                  marginBottom: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span style={{
+                    width: '8px',
+                    height: '32px',
+                    background: 'linear-gradient(180deg, #10b981 0%, #059669 100%)',
+                    borderRadius: '4px'
+                  }} />
+                  Product Specifications
+                </h3>
+                <div style={{
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '16px',
+                  overflow: 'hidden',
+                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.08)',
+                  background: 'white'
+                }}>
+                  {[
+                    { label: 'Propagation Method', value: selectedProduct.propagationMethod || 'Cutting', icon: '🌱' },
+                    { label: 'Maturity Duration', value: selectedProduct.maturityDuration || '1.5 years', icon: '⏳' },
+                    { label: 'Blooming Season', value: selectedProduct.bloomingSeason || 'All season', icon: '🌸' },
+                    { label: 'Plant Age', value: selectedProduct.plantAge || '3 Months', icon: '🌿' }
+                  ].map((spec, index) => (
+                    <div 
+                      key={index}
+                      style={{
+                        display: 'flex',
+                        borderBottom: index < 3 ? '1px solid #e5e7eb' : 'none',
+                        fontSize: '1rem',
+                        transition: 'all 0.3s ease',
+                        animation: `specSlideIn 0.5s ease ${0.4 + index * 0.1}s both`
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.05)';
+                        e.currentTarget.style.transform = 'translateX(5px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.transform = 'translateX(0)';
+                      }}
+                    >
+                      <div style={{
+                        flex: 1,
+                        padding: '1.25rem',
+                        color: '#6b7280',
+                        fontWeight: '600',
+                        backgroundColor: 'rgba(249, 250, 251, 0.8)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem'
+                      }}>
+                        <span style={{ fontSize: '1.5rem' }}>{spec.icon}</span>
+                        {spec.label}
+                      </div>
+                      <div style={{
+                        flex: 1,
+                        padding: '1.25rem',
+                        borderLeft: '1px solid #e5e7eb',
+                        color: '#1f2937',
+                        fontWeight: '700',
+                        fontSize: '1.05rem',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}>
+                        {spec.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Stock and Add to Cart with enhanced styling */}
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '1.25rem',
+                animation: 'fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both'
+              }}>
+                <div style={{
+                  padding: '1.25rem',
+                  borderRadius: '16px',
+                  backgroundColor: selectedProduct.stock > 10 ? 'rgba(240, 253, 244, 0.8)' : selectedProduct.stock > 0 ? 'rgba(254, 243, 199, 0.8)' : 'rgba(254, 242, 242, 0.8)',
+                  border: `2px solid ${selectedProduct.stock > 10 ? '#86efac' : selectedProduct.stock > 0 ? '#fcd34d' : '#fca5a5'}`,
+                  boxShadow: `0 8px 20px ${selectedProduct.stock > 10 ? 'rgba(16, 185, 129, 0.15)' : selectedProduct.stock > 0 ? 'rgba(217, 119, 6, 0.15)' : 'rgba(220, 38, 38, 0.15)'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                >
+                  <span style={{ fontSize: '1.75rem' }}>
+                    {selectedProduct.stock > 10 ? '✅' : selectedProduct.stock > 0 ? '⚠️' : '❌'}
+                  </span>
+                  <span style={{
+                    color: selectedProduct.stock > 10 ? '#059669' : selectedProduct.stock > 0 ? '#d97706' : '#dc2626',
+                    fontWeight: '700',
+                    fontSize: '1.125rem'
+                  }}>
+                    {selectedProduct.stock > 0 ? `${selectedProduct.stock} units in stock` : 'Out of stock'}
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => {
+                    addToCart(selectedProduct._id, selectedProduct.name);
+                    setShowProductModal(false);
+                  }}
+                  disabled={selectedProduct.stock === 0 || cartLoading[selectedProduct._id]}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.75rem',
+                    padding: '1.25rem',
+                    background: selectedProduct.stock > 0 
+                      ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
+                      : 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '16px',
+                    cursor: selectedProduct.stock > 0 && !cartLoading[selectedProduct._id] ? 'pointer' : 'not-allowed',
+                    fontWeight: '700',
+                    fontSize: '1.125rem',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: selectedProduct.stock > 0 
+                      ? '0 10px 30px rgba(16, 185, 129, 0.3)' 
+                      : '0 4px 10px rgba(156, 163, 175, 0.2)',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedProduct.stock > 0 && !cartLoading[selectedProduct._id]) {
+                      e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+                      e.currentTarget.style.boxShadow = '0 15px 40px rgba(16, 185, 129, 0.5)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                    e.currentTarget.style.boxShadow = selectedProduct.stock > 0 
+                      ? '0 10px 30px rgba(16, 185, 129, 0.3)' 
+                      : '0 4px 10px rgba(156, 163, 175, 0.2)';
+                  }}
+                >
+                  {/* Shimmer effect overlay */}
+                  {selectedProduct.stock > 0 && !cartLoading[selectedProduct._id] && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: '-100%',
+                      width: '100%',
+                      height: '100%',
+                      background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent)',
+                      animation: 'shimmer 3s infinite'
+                    }} />
+                  )}
+                  
+                  <span style={{ 
+                    fontSize: '1.25rem',
+                    position: 'relative',
+                    zIndex: 1
+                  }}>
+                    🛒
+                  </span>
+                  <span style={{ position: 'relative', zIndex: 1 }}>
+                    {cartLoading[selectedProduct._id] ? (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{
+                          width: '20px',
+                          height: '20px',
+                          border: '2px solid transparent',
+                          borderTop: '2px solid white',
+                          borderRadius: '50%',
+                          animation: 'spin 0.6s linear infinite'
+                        }} />
+                        Adding to Cart...
+                      </span>
+                    ) : selectedProduct.stock > 0 ? (
+                      'Add to Cart'
+                    ) : (
+                      'Out of Stock'
+                    )}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from { 
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+          }
+          to { 
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        @keyframes modalSlideUp {
+          from { 
+            opacity: 0;
+            transform: translateY(50px) scale(0.9) rotateX(10deg);
+          }
+          to { 
+            opacity: 1;
+            transform: translateY(0) scale(1) rotateX(0deg);
+          }
+        }
+        @keyframes imageZoomIn {
+          from { 
+            opacity: 0;
+            transform: scale(0.8);
+          }
+          to { 
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        @keyframes slideInLeft {
+          from { 
+            opacity: 0;
+            transform: translateX(-30px);
+          }
+          to { 
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        @keyframes slideInRight {
+          from { 
+            opacity: 0;
+            transform: translateX(30px);
+          }
+          to { 
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        @keyframes bounceIn {
+          0% { 
+            opacity: 0;
+            transform: scale(0.3) rotate(-10deg);
+          }
+          50% { 
+            opacity: 1;
+            transform: scale(1.05) rotate(2deg);
+          }
+          70% { 
+            transform: scale(0.95) rotate(-1deg);
+          }
+          100% { 
+            transform: scale(1) rotate(0);
+          }
+        }
+        @keyframes pricePopIn {
+          0% { 
+            opacity: 0;
+            transform: scale(0.5);
+          }
+          50% { 
+            transform: scale(1.1);
+          }
+          100% { 
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        @keyframes specSlideIn {
+          from { 
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to { 
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes fadeInUp {
+          from { 
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to { 
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes shimmer {
+          0% { left: -100%; }
+          100% { left: 100%; }
+        }
+        @keyframes pulse {
+          0%, 100% { 
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% { 
+            opacity: 0.8;
+            transform: scale(0.98);
+          }
         }
       `}</style>
     </div>

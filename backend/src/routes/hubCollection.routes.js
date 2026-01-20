@@ -7,6 +7,7 @@ import Hub from '../models/Hub.js';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
+import Cart from '../models/Cart.js';
 import { requireAuth } from '../middleware/auth.js';
 import { sendCollectionOtpEmail, sendHubArrivedForCollectionEmail } from '../services/emailService.js';
 import { createOrderPlacedNotification, createRestockRequestNotification } from '../services/notificationService.js';
@@ -211,6 +212,17 @@ router.post('/orders/hub-collection', requireAuth, asyncHandler(async (req, res)
     createOrderPlacedNotification(populatedOrder, collectionHub).catch(err => {
       console.error('Failed to create hub notification:', err);
     });
+  }
+  
+  // Clear the cart after successful order placement
+  try {
+    const cart = await Cart.findOne({ user: req.user.uid });
+    if (cart) {
+      await cart.clearCart();
+    }
+  } catch (err) {
+    console.error('Failed to clear cart:', err);
+    // Don't fail the order if cart clearing fails
   }
   
   // Customer-friendly message - don't expose internal restock details

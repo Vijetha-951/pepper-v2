@@ -315,11 +315,28 @@ router.patch('/admin/restock-requests/:requestId', requireAuth, requireAdmin, as
       product: request.product._id
     });
     
+    console.log(`🔍 Restock approval check for ${request.product.name}:`);
+    console.log(`  - Main Hub: ${mainHub.name} (${mainHub.district})`);
+    console.log(`  - Requested Quantity: ${request.requestedQuantity}`);
+    console.log(`  - Main Hub Inventory Found: ${!!mainHubInventory}`);
+    if (mainHubInventory) {
+      console.log(`  - Main Hub Total Quantity: ${mainHubInventory.quantity}`);
+      console.log(`  - Main Hub Reserved Quantity: ${mainHubInventory.reservedQuantity}`);
+      console.log(`  - Main Hub Available Quantity: ${mainHubInventory.getAvailableQuantity()}`);
+    }
+    
     if (!mainHubInventory || mainHubInventory.getAvailableQuantity() < request.requestedQuantity) {
+      const errorMsg = !mainHubInventory 
+        ? `No inventory found for ${request.product.name} in ${mainHub.name}`
+        : `Insufficient stock in main hub. Available: ${mainHubInventory.getAvailableQuantity()}, Requested: ${request.requestedQuantity}`;
+      
+      console.error(`❌ Restock approval failed: ${errorMsg}`);
+      
       return res.status(400).json({ 
         success: false, 
-        message: 'Insufficient stock in main hub',
-        available: mainHubInventory ? mainHubInventory.getAvailableQuantity() : 0
+        message: errorMsg,
+        available: mainHubInventory ? mainHubInventory.getAvailableQuantity() : 0,
+        requested: request.requestedQuantity
       });
     }
     
@@ -328,21 +345,9 @@ router.patch('/admin/restock-requests/:requestId', requireAuth, requireAdmin, as
     mainHubInventory.quantity -= request.requestedQuantity;
     await mainHubInventory.save();
     
-    // Sync Product stock with Kottayam Hub (Main Hub)
-    if (mainHub.district === 'Kottayam') {
-      try {
-        const product = await Product.findById(request.product._id);
-        if (product) {
-          product.available_stock = mainHubInventory.quantity;
-          product.total_stock = mainHubInventory.quantity;
-          product.stock = mainHubInventory.quantity;
-          await product.save();
-          console.log(`✅ Synced Product ${product.name} stock to match Kottayam Hub: ${mainHubInventory.quantity}`);
-        }
-      } catch (productSyncError) {
-        console.error('⚠️ Failed to sync Product stock:', productSyncError);
-      }
-    }
+    // NOTE: We do NOT sync Product stock when transferring between hubs
+    // Product stock should represent main warehouse inventory, not hub transfers
+    // Hub inventory is tracked separately in HubInventory collection
     
     // Add to requesting hub
     let requestingHubInventory = await HubInventory.findOne({
@@ -456,6 +461,83 @@ router.patch('/admin/restock-requests/:requestId', requireAuth, requireAdmin, as
   } else {
     return res.status(400).json({ success: false, message: 'Invalid action' });
   }
+}));
+
+// Sync Product stock to Kottayam hub inventory
+router.post('/admin/sync-kottayam-inventory', requireAdmin, asyncHandler(async (req, res) => {
+  console.log('🔄 Syncing Kottayam Hub Inventory with Product Stock...');
+  
+  // Find Kottayam hub
+  const kottayamHub = await Hub.findOne({ district: 'Kottayam' });
+  if (!kottayamHub) {
+    return res.status(404).json({ 
+      success: false, 
+      message: 'Kottayam hub not found' 
+    });
+  }
+
+  // Get all products
+  const products = await Product.find({});
+  
+  let syncedCount = 0;
+  let createdCount = 0;
+  const syncedProducts = [];
+
+  for (const product of products) {
+    // Check if hub inventory exists
+    let hubInv = await HubInventory.findOne({
+      hub: kottayamHub._id,
+      product: product._id
+    });
+
+    if (!hubInv) {
+      // Create new hub inventory entry
+      hubInv = new HubInventory({
+        hub: kottayamHub._id,
+        product: product._id,
+        quantity: product.available_stock || 0,
+        reservedQuantity: 0
+      });
+      await hubInv.save();
+      
+      syncedProducts.push({
+        name: product.name,
+        action: 'created',
+        quantity: product.available_stock || 0
+      });
+      createdCount++;
+    } else {
+      const currentAvailable = hubInv.quantity - (hubInv.reservedQuantity || 0);
+      
+      if (currentAvailable === 0 && product.available_stock > 0) {
+        // Sync: set hub quantity to match product stock
+        const oldQuantity = hubInv.quantity;
+        hubInv.quantity = product.available_stock;
+        await hubInv.save();
+        
+        syncedProducts.push({
+          name: product.name,
+          action: 'synced',
+          oldQuantity,
+          newQuantity: hubInv.quantity,
+          reserved: hubInv.reservedQuantity || 0
+        });
+        syncedCount++;
+      }
+    }
+  }
+
+  console.log(`✅ Sync complete! Created: ${createdCount}, Synced: ${syncedCount}`);
+
+  res.json({ 
+    success: true, 
+    message: `Successfully synced ${syncedCount + createdCount} products`,
+    details: {
+      created: createdCount,
+      synced: syncedCount,
+      products: syncedProducts
+    }
+  });
 }));
 
 export default router;
