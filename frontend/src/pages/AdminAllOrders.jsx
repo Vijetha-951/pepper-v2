@@ -517,12 +517,6 @@ const AdminAllOrders = () => {
                           <MapPin size={14} color="#059669" />
                           <span style={{ fontWeight: '500' }}>{order.collectionHub?.name || 'N/A'}</span>
                         </div>
-                        {order.collectionOtp && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#6b7280' }}>
-                            <Key size={12} />
-                            <span>OTP: {order.collectionOtp}</span>
-                          </div>
-                        )}
                       </div>
                     ) : (
                       <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
@@ -553,26 +547,6 @@ const AdminAllOrders = () => {
                       >
                         <Eye size={16} />
                         View
-                      </button>
-                      <button
-                        className="delete-order-btn"
-                        onClick={() => handleDeleteOrder(order._id, order.orderNumber)}
-                        title="Delete order permanently"
-                        style={{ 
-                          marginLeft: '8px',
-                          backgroundColor: '#dc3545',
-                          color: 'white',
-                          border: 'none',
-                          padding: '8px 12px',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}
-                      >
-                        <Trash2 size={16} />
-                        Delete
                       </button>
                     </div>
                   </td>
