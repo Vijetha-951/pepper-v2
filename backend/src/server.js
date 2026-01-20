@@ -21,6 +21,7 @@ import notificationRouter from './routes/notification.routes.js';
 import updateHubCoordinatesRouter from './routes/updateHubCoordinates.js';
 import hubLocationRouter from './routes/hubLocation.routes.js';
 import wishlistRouter from './routes/wishlist.routes.js';
+import videosRouter from './routes/videos.routes.js';
 
 // Debug environment variables
 console.log('Environment variables loaded:');
@@ -58,6 +59,7 @@ app.use('/api/hub-collection', hubCollectionRouter);
 app.use('/api/hub-location', hubLocationRouter);
 app.use('/api/notifications', notificationRouter);
 app.use('/api/wishlist', wishlistRouter);
+app.use('/api/videos', videosRouter);
 app.use('/api/admin', updateHubCoordinatesRouter);
 app.use('/api', stockRouter);
 

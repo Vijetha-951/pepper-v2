@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Package, ShoppingCart, Truck, LogOut, Bell, Search, Plus, Package2, AlertCircle, CheckCircle, Sparkles, Target, Heart } from "lucide-react";
+import { User, Package, ShoppingCart, Truck, LogOut, Bell, Search, Plus, Package2, AlertCircle, CheckCircle, Sparkles, Target, Heart, Video as VideoIcon, Play } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { auth } from "../config/firebase";
 import authService from "../services/authService";
@@ -35,6 +35,11 @@ export default function Dashboard() {
   const [statsLoading, setStatsLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showProductModal, setShowProductModal] = useState(false);
+  const [videos, setVideos] = useState([]);
+  const [videosLoading, setVideosLoading] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [videoCategory, setVideoCategory] = useState('all');
 
   useEffect(() => {
     const initializeUser = async () => {
@@ -85,6 +90,13 @@ export default function Dashboard() {
       // Component will handle fetching
     }
   }, [activeTab]);
+
+  // Fetch videos when videos tab is active
+  useEffect(() => {
+    if (activeTab === 'videos') {
+      fetchVideos();
+    }
+  }, [activeTab, videoCategory]);
 
   // Add CSS animation for spinner
   useEffect(() => {
@@ -330,6 +342,64 @@ export default function Dashboard() {
     return wishlist.items.some(item => item.product._id === productId);
   };
 
+  const fetchVideos = async () => {
+    setVideosLoading(true);
+    setErrorMessage("");
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const category = videoCategory !== 'all' ? `?category=${videoCategory}` : '';
+      console.log('📹 Fetching videos with category:', videoCategory);
+      const response = await fetch(`/api/videos${category}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('📹 Videos response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📹 Videos received:', data);
+        console.log('📹 Number of videos:', data.videos?.length || 0);
+        setVideos(data.videos || []);
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Failed to load videos:', response.status, errorText);
+        setErrorMessage('Failed to load videos');
+      }
+    } catch (error) {
+      console.error('❌ Error fetching videos:', error);
+      setErrorMessage('Failed to load videos');
+    } finally {
+      setVideosLoading(false);
+    }
+  };
+
+  const handleVideoLike = async (videoId) => {
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const response = await fetch(`/api/videos/${videoId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setVideos(prev => prev.map(v => 
+          v._id === videoId ? { ...v, likes: data.likes } : v
+        ));
+        setSuccessMessage('Video liked!');
+        setTimeout(() => setSuccessMessage(''), 2000);
+      }
+    } catch (error) {
+      console.error('Error liking video:', error);
+    }
+  };
+
   const proceedToHubCollection = () => {
     if (cart.items.length === 0) {
       setErrorMessage('Your cart is empty');
@@ -419,6 +489,7 @@ export default function Dashboard() {
       { id: 'orders', label: 'My Orders', icon: ShoppingCart },
       { id: 'reviews', label: 'My Reviews', icon: Sparkles },
       { id: 'products', label: 'Products', icon: Package },
+      { id: 'videos', label: 'Videos', icon: VideoIcon },
       { id: 'wishlist', label: 'My Wishlist', icon: Heart },
       { id: 'recommendations', label: 'Recommendations', icon: Sparkles },
       { id: 'cart', label: 'My Cart', icon: ShoppingCart },
@@ -429,6 +500,7 @@ export default function Dashboard() {
       { id: 'admin-products', label: 'Product Management', icon: Package },
       { id: 'admin-stock', label: 'Stock Management', icon: Package2 },
       { id: 'admin-hub-inventory', label: 'Hub Inventory', icon: Package2 },
+      { id: 'admin-videos', label: 'Video Management', icon: VideoIcon },
       { id: 'admin-demand-predictions', label: 'Demand Predictions', icon: Sparkles },
       { id: 'admin-customer-segmentation', label: 'Customer Segmentation', icon: Target },
       { id: 'admin-customer-reviews', label: 'Customer Reviews', icon: Sparkles },
@@ -1482,6 +1554,218 @@ export default function Dashboard() {
             }}
           />
         );
+      case 'videos':
+        const categories = [
+          { value: 'all', label: 'All Videos' },
+          { value: 'farming', label: 'Farming' },
+          { value: 'processing', label: 'Processing' },
+          { value: 'cooking', label: 'Cooking' },
+          { value: 'benefits', label: 'Health Benefits' },
+          { value: 'testimonial', label: 'Testimonials' },
+          { value: 'tutorial', label: 'Tutorials' },
+          { value: 'other', label: 'Other' }
+        ];
+
+        return (
+          <div style={cardStyle}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                🎥 Pepper Videos
+              </h3>
+              <button
+                onClick={fetchVideos}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500'
+                }}
+              >
+                <VideoIcon size={16} />
+                Refresh
+              </button>
+            </div>
+
+            {/* Category Filter */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', color: '#374151', fontWeight: '500' }}>
+                Filter by Category
+              </label>
+              <select
+                value={videoCategory}
+                onChange={(e) => setVideoCategory(e.target.value)}
+                style={{
+                  width: '100%',
+                  maxWidth: '300px',
+                  padding: '0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  outline: 'none'
+                }}
+              >
+                {categories.map(cat => (
+                  <option key={cat.value} value={cat.value}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Videos Display */}
+            {videosLoading ? (
+              <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  border: '4px solid #e5e7eb',
+                  borderTop: '4px solid #10b981',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                  margin: '0 auto 1rem'
+                }}></div>
+                Loading videos...
+              </div>
+            ) : videos.length === 0 ? (
+              <div style={{
+                padding: '3rem',
+                backgroundColor: '#f9fafb',
+                borderRadius: '8px',
+                textAlign: 'center',
+                border: '2px dashed #d1d5db'
+              }}>
+                <VideoIcon size={48} color="#9ca3af" style={{ marginBottom: '1rem' }} />
+                <h4 style={{ color: '#374151', marginBottom: '0.5rem' }}>No Videos Available</h4>
+                <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
+                  No videos found in this category. Check back later!
+                </p>
+              </div>
+            ) : (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                gap: '1.5rem'
+              }}>
+                {videos.map(video => (
+                  <div
+                    key={video._id}
+                    style={{
+                      background: 'white',
+                      borderRadius: '12px',
+                      overflow: 'hidden',
+                      boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+                      transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                      cursor: 'pointer',
+                      border: '1px solid #e5e7eb'
+                    }}
+                    onClick={() => {
+                      setSelectedVideo(video);
+                      setShowVideoModal(true);
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.1)';
+                    }}
+                  >
+                    {/* Thumbnail */}
+                    <div style={{
+                      position: 'relative',
+                      paddingBottom: '56.25%',
+                      background: video.thumbnail ? `url(${video.thumbnail})` : 'linear-gradient(135deg, #10b981, #059669)',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        background: 'rgba(0, 0, 0, 0.6)',
+                        borderRadius: '50%',
+                        padding: '1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Play size={32} color="white" />
+                      </div>
+                      {video.duration && (
+                        <div style={{
+                          position: 'absolute',
+                          bottom: '8px',
+                          right: '8px',
+                          background: 'rgba(0, 0, 0, 0.8)',
+                          color: 'white',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '4px',
+                          fontSize: '0.75rem'
+                        }}>
+                          {video.duration}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Video Info */}
+                    <div style={{ padding: '1rem' }}>
+                      <h4 style={{
+                        margin: '0 0 0.5rem 0',
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        color: '#1f2937',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {video.title}
+                      </h4>
+                      <p style={{
+                        margin: '0 0 0.75rem 0',
+                        fontSize: '0.875rem',
+                        color: '#6b7280',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden'
+                      }}>
+                        {video.description}
+                      </p>
+                      
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '0.75rem',
+                        color: '#9ca3af'
+                      }}>
+                        <span style={{
+                          backgroundColor: '#f3f4f6',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '4px',
+                          textTransform: 'capitalize'
+                        }}>
+                          {video.category}
+                        </span>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                          <span>👁️ {video.viewCount || 0}</span>
+                          <span>❤️ {video.likes || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
       case 'deliveries':
         return (
           <div style={cardStyle}>
@@ -1739,6 +2023,8 @@ export default function Dashboard() {
                     navigate('/admin-demand-predictions');
                   } else if (item.id === 'admin-customer-segmentation') {
                     navigate('/admin-customer-segmentation');
+                  } else if (item.id === 'admin-videos') {
+                    navigate('/admin-videos');
                   } else if (item.id === 'admin-customer-reviews') {
                     navigate('/admin-customer-reviews');
                   } else if (item.id === 'admin-orders') {
@@ -2674,6 +2960,175 @@ export default function Dashboard() {
           }
         }
       `}</style>
+
+      {/* Video Modal */}
+      {showVideoModal && selectedVideo && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem',
+            animation: 'fadeIn 0.3s ease'
+          }}
+          onClick={() => setShowVideoModal(false)}
+        >
+          <div
+            style={{
+              background: 'white',
+              borderRadius: '16px',
+              maxWidth: '1200px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              position: 'relative',
+              boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setShowVideoModal(false)}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: 'rgba(0, 0, 0, 0.5)',
+                color: 'white',
+                border: 'none',
+                fontSize: '1.5rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 10,
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#ef4444';
+                e.target.style.transform = 'rotate(90deg)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(0, 0, 0, 0.5)';
+                e.target.style.transform = 'rotate(0deg)';
+              }}
+            >
+              ×
+            </button>
+
+            {/* Video Player */}
+            <div style={{
+              position: 'relative',
+              paddingBottom: '56.25%',
+              backgroundColor: '#000',
+              borderRadius: '16px 16px 0 0',
+              overflow: 'hidden'
+            }}>
+              <iframe
+                src={selectedVideo.url}
+                title={selectedVideo.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  border: 'none'
+                }}
+              />
+            </div>
+
+            {/* Video Details */}
+            <div style={{ padding: '2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
+                <div>
+                  <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', fontWeight: '700', color: '#1f2937' }}>
+                    {selectedVideo.title}
+                  </h2>
+                  <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                    <span>👁️ {selectedVideo.viewCount || 0} views</span>
+                    <span>❤️ {selectedVideo.likes || 0} likes</span>
+                    {selectedVideo.duration && <span>⏱️ {selectedVideo.duration}</span>}
+                  </div>
+                </div>
+                <span style={{
+                  backgroundColor: '#f3f4f6',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  textTransform: 'capitalize',
+                  color: '#374151'
+                }}>
+                  {selectedVideo.category}
+                </span>
+              </div>
+
+              <p style={{ margin: '1rem 0', color: '#4b5563', lineHeight: '1.6' }}>
+                {selectedVideo.description}
+              </p>
+
+              {selectedVideo.tags && selectedVideo.tags.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem' }}>
+                  {selectedVideo.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      style={{
+                        backgroundColor: '#e5e7eb',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '12px',
+                        fontSize: '0.75rem',
+                        color: '#6b7280'
+                      }}
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <button
+                onClick={() => handleVideoLike(selectedVideo._id)}
+                style={{
+                  marginTop: '1.5rem',
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#059669';
+                  e.target.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#10b981';
+                  e.target.style.transform = 'scale(1)';
+                }}
+              >
+                ❤️ Like this video
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
