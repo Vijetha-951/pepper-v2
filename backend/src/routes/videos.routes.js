@@ -1,6 +1,8 @@
 import express from 'express';
 import asyncHandler from 'express-async-handler';
 import Video from '../models/Video.model.js';
+import VideoLike from '../models/VideoLike.model.js';
+import VideoView from '../models/VideoView.model.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -40,7 +42,7 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
 
 /**
  * GET /api/videos/:id
- * Get single video by ID and increment view count
+ * Get single video by ID and track view
  */
 router.get('/:id', requireAuth, asyncHandler(async (req, res) => {
   const video = await Video.findById(req.params.id);
@@ -59,19 +61,40 @@ router.get('/:id', requireAuth, asyncHandler(async (req, res) => {
     });
   }
 
-  // Increment view count
-  video.viewCount += 1;
-  await video.save();
+  // Track detailed view
+  const videoView = new VideoView({
+    videoId: video._id,
+    userId: req.user.uid,
+    userName: req.user.email?.split('@')[0] || '',
+    userEmail: req.user.email || ''
+  });
+  await videoView.save();
+
+  // Increment view count atomically
+  const updatedVideo = await Video.findByIdAndUpdate(
+    req.params.id,
+    { $inc: { viewCount: 1 } },
+    { new: true }
+  );
+
+  // Check if user has liked this video
+  const userLike = await VideoLike.findOne({
+    videoId: video._id,
+    userId: req.user.uid
+  });
 
   res.json({
     success: true,
-    video
+    video: {
+      ...updatedVideo.toObject(),
+      hasLiked: !!userLike
+    }
   });
 }));
 
 /**
  * POST /api/videos/:id/like
- * Like a video
+ * Like a video (toggle like/unlike)
  */
 router.post('/:id/like', requireAuth, asyncHandler(async (req, res) => {
   const video = await Video.findById(req.params.id);
@@ -83,13 +106,52 @@ router.post('/:id/like', requireAuth, asyncHandler(async (req, res) => {
     });
   }
 
-  video.likes += 1;
-  await video.save();
+  // Check if user already liked this video
+  const existingLike = await VideoLike.findOne({
+    videoId: video._id,
+    userId: req.user.uid
+  });
+
+  if (existingLike) {
+    // Unlike - remove the like
+    await existingLike.deleteOne();
+    
+    // Decrement likes atomically, but don't go below 0
+    const updatedVideo = await Video.findOneAndUpdate(
+      { _id: video._id, likes: { $gt: 0 } },
+      { $inc: { likes: -1 } },
+      { new: true }
+    ) || await Video.findById(video._id);
+
+    return res.json({
+      success: true,
+      message: 'Video unliked',
+      liked: false,
+      likes: updatedVideo.likes
+    });
+  }
+
+  // Like - add new like
+  const videoLike = new VideoLike({
+    videoId: video._id,
+    userId: req.user.uid,
+    userName: req.user.email?.split('@')[0] || '',
+    userEmail: req.user.email || ''
+  });
+  await videoLike.save();
+
+  // Increment likes atomically
+  const updatedVideo = await Video.findByIdAndUpdate(
+    video._id,
+    { $inc: { likes: 1 } },
+    { new: true }
+  );
 
   res.json({
     success: true,
     message: 'Video liked',
-    likes: video.likes
+    liked: true,
+    likes: updatedVideo.likes
   });
 }));
 
@@ -234,12 +296,10 @@ router.delete('/admin/:id', requireAuth, requireAdmin, asyncHandler(async (req, 
 router.get('/admin/stats', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
   const totalVideos = await Video.countDocuments();
   const activeVideos = await Video.countDocuments({ isActive: true });
-  const totalViews = await Video.aggregate([
-    { $group: { _id: null, total: { $sum: '$viewCount' } } }
-  ]);
-  const totalLikes = await Video.aggregate([
-    { $group: { _id: null, total: { $sum: '$likes' } } }
-  ]);
+  
+  // Aggregate totals from the actual activity collections for maximum accuracy
+  const totalViewsCount = await VideoView.countDocuments();
+  const totalLikesCount = await VideoLike.countDocuments();
 
   const videosByCategory = await Video.aggregate([
     { $match: { isActive: true } },
@@ -247,16 +307,189 @@ router.get('/admin/stats', requireAuth, requireAdmin, asyncHandler(async (req, r
     { $sort: { count: -1 } }
   ]);
 
+  // Most viewed videos
+  const mostViewed = await Video.find({ isActive: true })
+    .sort({ viewCount: -1 })
+    .limit(10)
+    .select('title viewCount likes category');
+
+  // Most liked videos
+  const mostLiked = await Video.find({ isActive: true })
+    .sort({ likes: -1 })
+    .limit(10)
+    .select('title viewCount likes category');
+
+  // Recent views (last 7 days)
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const recentViews = await VideoView.countDocuments({ 
+    viewedAt: { $gte: sevenDaysAgo } 
+  });
+
+  // Recent likes (last 7 days)
+  const recentLikes = await VideoLike.countDocuments({ 
+    likedAt: { $gte: sevenDaysAgo } 
+  });
+
+  // Unique viewers
+  const uniqueViewers = await VideoView.distinct('userId').then(users => users.length);
+
+  // Engagement rate (likes per view)
+  const engagementRate = totalViewsCount > 0 
+    ? ((totalLikesCount / totalViewsCount) * 100).toFixed(2) 
+    : 0;
+
   res.json({
     success: true,
     stats: {
       totalVideos,
       activeVideos,
       inactiveVideos: totalVideos - activeVideos,
-      totalViews: totalViews[0]?.total || 0,
-      totalLikes: totalLikes[0]?.total || 0,
-      videosByCategory
+      totalViews: totalViewsCount,
+      totalLikes: totalLikesCount,
+      recentViews,
+      recentLikes,
+      uniqueViewers,
+      engagementRate: parseFloat(engagementRate),
+      videosByCategory,
+      mostViewed,
+      mostLiked
     }
+  });
+}));
+
+/**
+ * GET /api/videos/admin/:id/analytics
+ * Get detailed analytics for a specific video - Admin only
+ */
+router.get('/admin/:id/analytics', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+  const video = await Video.findById(req.params.id);
+
+  if (!video) {
+    return res.status(404).json({
+      success: false,
+      message: 'Video not found'
+    });
+  }
+
+  // Get all likes for this video
+  const likes = await VideoLike.find({ videoId: video._id })
+    .sort({ likedAt: -1 })
+    .limit(100);
+
+  // Get all views for this video
+  const views = await VideoView.find({ videoId: video._id })
+    .sort({ viewedAt: -1 })
+    .limit(100);
+
+  // View statistics by day (last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const viewsByDay = await VideoView.aggregate([
+    { 
+      $match: { 
+        videoId: video._id,
+        viewedAt: { $gte: thirtyDaysAgo }
+      } 
+    },
+    {
+      $group: {
+        _id: { 
+          $dateToString: { format: '%Y-%m-%d', date: '$viewedAt' }
+        },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { _id: 1 } }
+  ]);
+
+  // Like statistics by day (last 30 days)
+  const likesByDay = await VideoLike.aggregate([
+    { 
+      $match: { 
+        videoId: video._id,
+        likedAt: { $gte: thirtyDaysAgo }
+      } 
+    },
+    {
+      $group: {
+        _id: { 
+          $dateToString: { format: '%Y-%m-%d', date: '$likedAt' }
+        },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { _id: 1 } }
+  ]);
+
+  // Unique viewers
+  const uniqueViewers = await VideoView.distinct('userId', { videoId: video._id });
+
+  res.json({
+    success: true,
+    video: {
+      id: video._id,
+      title: video.title,
+      category: video.category,
+      viewCount: video.viewCount,
+      likes: video.likes,
+      createdAt: video.createdAt
+    },
+    analytics: {
+      totalViews: video.viewCount,
+      totalLikes: video.likes,
+      uniqueViewers: uniqueViewers.length,
+      engagementRate: video.viewCount > 0 
+        ? ((video.likes / video.viewCount) * 100).toFixed(2) 
+        : 0,
+      recentLikes: likes,
+      recentViews: views,
+      viewsByDay,
+      likesByDay
+    }
+  });
+}));
+
+/**
+ * GET /api/videos/admin/users/:userId/activity
+ * Get video activity for a specific user - Admin only
+ */
+router.get('/admin/users/:userId/activity', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+  const userId = req.params.userId;
+
+  // Get user's liked videos
+  const likedVideos = await VideoLike.find({ userId })
+    .populate('videoId', 'title category thumbnail')
+    .sort({ likedAt: -1 })
+    .limit(50);
+
+  // Get user's viewed videos
+  const viewedVideos = await VideoView.find({ userId })
+    .populate('videoId', 'title category thumbnail')
+    .sort({ viewedAt: -1 })
+    .limit(50);
+
+  // Get statistics
+  const totalLikes = await VideoLike.countDocuments({ userId });
+  const totalViews = await VideoView.countDocuments({ userId });
+
+  res.json({
+    success: true,
+    userId,
+    stats: {
+      totalLikes,
+      totalViews
+    },
+    likedVideos: likedVideos.map(like => ({
+      video: like.videoId,
+      likedAt: like.likedAt
+    })),
+    viewedVideos: viewedVideos.map(view => ({
+      video: view.videoId,
+      viewedAt: view.viewedAt,
+      duration: view.duration
+    }))
   });
 }));
 

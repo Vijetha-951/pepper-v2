@@ -22,6 +22,8 @@ import AdminCustomerSegmentation from "./pages/AdminCustomerSegmentation.jsx";
 import AdminCustomerReviews from "./pages/AdminCustomerReviews.jsx";
 import AdminHubInventory from "./pages/AdminHubInventory.jsx";
 import AdminVideoManagement from "./pages/AdminVideoManagement.jsx";
+import AdminVideoAnalytics from "./pages/AdminVideoAnalytics.jsx";
+import UserVideos from "./pages/UserVideos.jsx";
 import DeliveryBoyStatus from "./pages/DeliveryBoyStatus.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 
@@ -117,6 +119,9 @@ function App() {
         <Route path="/admin-customer-reviews" element={<AdminCustomerReviews />} />
         <Route path="/admin/reviews" element={<AdminCustomerReviews />} />
         <Route path="/admin-videos" element={<AdminVideoManagement />} />
+        <Route path="/admin-video-analytics" element={<AdminVideoAnalytics />} />
+        <Route path="/videos" element={<UserVideos />} />
+        <Route path="/user/videos" element={<UserVideos />} />
         <Route path="/admin-orders" element={<AdminAllOrders />} />
         <Route path="/admin/orders" element={<AdminAllOrders />} />
         <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />

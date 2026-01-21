@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Video, Plus, Edit, Trash2, Eye, EyeOff, Heart, ArrowLeft } from 'lucide-react';
+import { Video, Plus, Edit, Trash2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { auth } from '../config/firebase';
 import './AdminVideoManagement.css';
 
@@ -33,6 +33,13 @@ export default function AdminVideoManagement() {
   const fetchVideos = async () => {
     setLoading(true);
     try {
+      if (!auth.currentUser) {
+        console.error('❌ No user logged in');
+        setErrorMessage('Please log in to continue');
+        setTimeout(() => navigate('/login'), 2000);
+        return;
+      }
+
       const token = await auth.currentUser.getIdToken();
       const response = await fetch('/api/videos/admin/all', {
         headers: {
@@ -41,6 +48,12 @@ export default function AdminVideoManagement() {
         }
       });
       
+      if (response.status === 401) {
+        setErrorMessage('Unauthorized: Admin access required');
+        setTimeout(() => navigate('/login'), 2000);
+        return;
+      }
+
       if (response.ok) {
         const data = await response.json();
         setVideos(data.videos || []);
@@ -49,7 +62,7 @@ export default function AdminVideoManagement() {
       }
     } catch (error) {
       console.error('Error fetching videos:', error);
-      setErrorMessage('Failed to load videos');
+      setErrorMessage('Error loading videos: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -57,7 +70,16 @@ export default function AdminVideoManagement() {
 
   const fetchStats = async () => {
     try {
+      if (!auth.currentUser) {
+        console.error('❌ No user logged in');
+        setErrorMessage('Please log in as admin');
+        setTimeout(() => navigate('/login'), 2000);
+        return;
+      }
+
       const token = await auth.currentUser.getIdToken();
+      console.log('📊 Fetching stats with token:', token.substring(0, 20) + '...');
+      
       const response = await fetch('/api/videos/admin/stats', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -65,12 +87,26 @@ export default function AdminVideoManagement() {
         }
       });
       
+      console.log('📊 Stats response status:', response.status);
+      
+      if (response.status === 401) {
+        setErrorMessage('Unauthorized: Please log in as admin (vj.vijetha01@gmail.com)');
+        setTimeout(() => navigate('/login'), 2000);
+        return;
+      }
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('📊 Stats data:', data);
         setStats(data.stats);
+      } else {
+        const errorData = await response.text();
+        console.error('❌ Stats error:', errorData);
+        setErrorMessage('Failed to load stats');
       }
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error('❌ Error fetching stats:', error);
+      setErrorMessage('Error: ' + error.message);
     }
   };
 
@@ -234,10 +270,30 @@ export default function AdminVideoManagement() {
           <h1>🎥 Video Management</h1>
           <p>Manage pepper-related videos for customers</p>
         </div>
-        <button onClick={() => { resetForm(); setShowModal(true); }} className="add-btn">
-          <Plus size={20} />
-          Add Video
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button 
+            onClick={() => navigate('/admin-video-analytics')} 
+            className="analytics-btn"
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontWeight: '600'
+            }}
+          >
+            📊 View Analytics
+          </button>
+          <button onClick={() => { resetForm(); setShowModal(true); }} className="add-btn">
+            <Plus size={20} />
+            Add Video
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -273,6 +329,23 @@ export default function AdminVideoManagement() {
           </div>
         </div>
       )}
+      
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+        <button 
+          onClick={() => { fetchStats(); fetchVideos(); }}
+          style={{
+            padding: '0.5rem 1rem',
+            background: '#10b981',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          🔄 Refresh Stats
+        </button>
+      </div>
 
       {/* Videos Table */}
       <div className="card">

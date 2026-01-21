@@ -389,14 +389,54 @@ export default function Dashboard() {
       
       if (response.ok) {
         const data = await response.json();
+        // Update videos list
         setVideos(prev => prev.map(v => 
           v._id === videoId ? { ...v, likes: data.likes } : v
         ));
-        setSuccessMessage('Video liked!');
+        // Update selectedVideo if it's the one being liked
+        if (selectedVideo && selectedVideo._id === videoId) {
+          setSelectedVideo(prev => ({ ...prev, likes: data.likes }));
+        }
+        setSuccessMessage(data.liked ? 'Video liked! ❤️' : 'Video unliked');
         setTimeout(() => setSuccessMessage(''), 2000);
       }
     } catch (error) {
       console.error('Error liking video:', error);
+      setErrorMessage('Failed to like video');
+      setTimeout(() => setErrorMessage(''), 3000);
+    }
+  };
+
+  const openVideo = async (video) => {
+    try {
+      const token = await auth.currentUser.getIdToken();
+      // Call GET endpoint which tracks the view and returns updated video data
+      const response = await fetch(`/api/videos/${video._id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Update the video in the list with new view count
+        setVideos(prev => prev.map(v => 
+          v._id === video._id ? { ...v, viewCount: data.video.viewCount, likes: data.video.likes } : v
+        ));
+        // Set the updated video data in the modal
+        setSelectedVideo(data.video);
+        setShowVideoModal(true);
+      } else {
+        // Fallback: show video with current data
+        setSelectedVideo(video);
+        setShowVideoModal(true);
+      }
+    } catch (error) {
+      console.error('Error opening video:', error);
+      // Fallback: show video with current data
+      setSelectedVideo(video);
+      setShowVideoModal(true);
     }
   };
 
@@ -1663,10 +1703,7 @@ export default function Dashboard() {
                       cursor: 'pointer',
                       border: '1px solid #e5e7eb'
                     }}
-                    onClick={() => {
-                      setSelectedVideo(video);
-                      setShowVideoModal(true);
-                    }}
+                    onClick={() => openVideo(video)}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = 'translateY(-4px)';
                       e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.15)';
