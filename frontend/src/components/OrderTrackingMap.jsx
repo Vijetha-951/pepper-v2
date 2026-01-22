@@ -130,7 +130,10 @@ const OrderTrackingMap = ({ order, routeData }) => {
         const isPassed = routeData.currentHubIndex !== undefined && index < routeData.currentHubIndex;
         
         // Build detailed hub info
-        let hubInfo = `${hub.district} - ${hub.type.replace('_', ' ')}`;
+        let hubInfo = hub.district || 'Hub';
+        if (hub.type) {
+          hubInfo = `${hub.district} - ${hub.type.replace('_', ' ')}`;
+        }
         if (hub.location?.address) {
           hubInfo = hub.location.address;
           if (hub.location.city) {

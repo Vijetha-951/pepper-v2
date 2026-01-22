@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
-import { User, Package, ShoppingCart, Truck, LogOut, Bell, Search, Plus, Package2, AlertCircle, CheckCircle, Sparkles, Target, Heart, Video as VideoIcon, Play } from "lucide-react";
+import { 
+  User, Package, ShoppingCart, Truck, LogOut, Bell, Search, 
+  Plus, Package2, AlertCircle, CheckCircle, Sparkles, Target, 
+  Heart, Video as VideoIcon, Play, DollarSign 
+} from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { auth } from "../config/firebase";
 import authService from "../services/authService";
@@ -29,7 +33,23 @@ export default function Dashboard() {
     totalOrders: 0,
     pendingDeliveries: 0,
     totalProducts: 0,
-    newNotifications: 0
+    newNotifications: 0,
+    lowStockProducts: 0,
+    todayOrders: 0,
+    weekOrders: 0,
+    monthOrders: 0,
+    todayRevenue: 0,
+    weekRevenue: 0,
+    monthRevenue: 0,
+    pendingAmount: 0,
+    revenue: {
+      totalRevenue: 0,
+      averageOrderValue: 0,
+      completedOrders: 0
+    },
+    statusStats: {},
+    totalCustomers: 0,
+    activeCustomers: 0
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -51,12 +71,20 @@ export default function Dashboard() {
       
       // Ensure user profile is refreshed from backend (to get latest role)
       if (!currentUser.role) {
-        console.log('Refreshing user profile to fetch role...');
+        console.log('🔄 Refreshing user profile to fetch role...');
         const refreshed = await authService.refreshUserProfile();
         currentUser = refreshed || currentUser;
+        console.log('✅ User refreshed:', currentUser);
+        console.log('🎭 User role after refresh:', currentUser?.role);
       }
       
       setUser(currentUser);
+      
+      // Fetch stats immediately after user is set if on overview tab
+      if (activeTab === 'overview' && currentUser) {
+        console.log('📊 Triggering initial stats fetch with role:', currentUser.role);
+        fetchDashboardStatsWithUser(currentUser);
+      }
     };
     
     initializeUser();
@@ -77,12 +105,13 @@ export default function Dashboard() {
     }
   }, [activeTab]);
 
-  // Fetch dashboard stats when overview tab is active
+  // Fetch dashboard stats when overview tab is active and user changes
   useEffect(() => {
-    if (activeTab === 'overview') {
+    if (activeTab === 'overview' && user?.role) {
+      console.log('📊 useEffect triggered - fetching stats for role:', user.role);
       fetchDashboardStats();
     }
-  }, [activeTab]);
+  }, [activeTab, user?.role]); // Only depend on the role property, not the whole user object
 
   // Fetch recommendations when recommendations tab is active
   useEffect(() => {
@@ -162,49 +191,60 @@ export default function Dashboard() {
     }
   };
 
-  const fetchDashboardStats = async () => {
+  const fetchDashboardStatsWithUser = async (userObj) => {
     setStatsLoading(true);
     try {
-      // Ensure user role is properly loaded
-      if (!user?.role) {
-        console.warn('⚠️ User role not found, attempting to refresh user profile...');
-        await authService.refreshUserProfile();
-        const updatedUser = authService.getCurrentUser();
-        setUser(updatedUser);
-      }
-
-      // Use admin stats endpoint for admin users, regular stats for other users
-      const endpoint = user?.role === 'admin' 
-        ? 'admin dashboard'
-        : 'user dashboard';
+      console.log('🔍 fetchDashboardStatsWithUser called');
+      console.log('👤 User object:', userObj);
+      console.log('🎭 User role:', userObj?.role);
       
-      console.log(`📊 Fetching ${endpoint} stats for user role: ${user?.role || 'unknown'}`);
+      const isAdmin = (userObj?.role === 'admin');
+      const endpoint = isAdmin ? 'admin dashboard' : 'user dashboard';
       
-      const data = user?.role === 'admin' 
+      console.log(`📊 Fetching ${endpoint} stats`);
+      console.log(`🔑 Is Admin: ${isAdmin}`);
+      
+      const data = isAdmin
         ? await customerProductService.getAdminDashboardStats()
         : await customerProductService.getDashboardStats();
       
-      console.log('📊 Stats data received:', data);
+      console.log('✅ Stats data received:', data);
+      console.log('📦 Total Orders:', data.totalOrders);
+      console.log('⏳ Pending Deliveries:', data.pendingDeliveries);
+      console.log('💰 Month Revenue:', data.monthRevenue);
       
       setStats({
         totalOrders: data.totalOrders || 0,
         pendingDeliveries: data.pendingDeliveries || 0,
         totalProducts: data.totalProducts || 0,
-        newNotifications: data.newNotifications || 0
+        newNotifications: data.newNotifications || 0,
+        lowStockProducts: data.lowStockProducts || 0,
+        todayOrders: data.todayOrders || 0,
+        weekOrders: data.weekOrders || 0,
+        monthOrders: data.monthOrders || 0,
+        todayRevenue: data.todayRevenue || 0,
+        weekRevenue: data.weekRevenue || 0,
+        monthRevenue: data.monthRevenue || 0,
+        pendingAmount: data.pendingAmount || 0,
+        revenue: data.revenue || { totalRevenue: 0, averageOrderValue: 0, completedOrders: 0 },
+        statusStats: data.statusStats || {},
+        totalCustomers: data.totalCustomers || 0,
+        activeCustomers: data.activeCustomers || 0
       });
+      
+      console.log('✅ Stats state updated');
       setRecentActivity(data.recentActivity || []);
-      setErrorMessage(""); // Clear any previous errors
+      setErrorMessage("");
     } catch (error) {
       console.error('❌ Error fetching dashboard stats:', error);
-      console.error('Error details:', {
-        message: error.message,
-        stack: error.stack,
-        userRole: user?.role
-      });
       setErrorMessage(`Failed to load dashboard stats: ${error.message}`);
     } finally {
       setStatsLoading(false);
     }
+  };
+
+  const fetchDashboardStats = async () => {
+    await fetchDashboardStatsWithUser(user);
   };
 
   const addToCart = async (productId, productName) => {
@@ -568,84 +608,249 @@ export default function Dashboard() {
           <span>{errorMessage}</span>
         </div>
       )}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: '1.5rem',
-        marginBottom: '2rem'
-      }}>
-        <div 
-          style={statCardStyle}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-4px)';
-            e.target.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.15)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.05)';
-          }}
-        >
-          <ShoppingCart size={32} color="#10b981" style={{ marginBottom: '1rem' }} />
-          <h3 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.5rem' }}>
-            {stats.totalOrders}
-          </h3>
-          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Total Orders</p>
-        </div>
 
-        <div 
-          style={statCardStyle}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-4px)';
-            e.target.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.15)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.05)';
-          }}
-        >
-          <Truck size={32} color="#f59e0b" style={{ marginBottom: '1rem' }} />
-          <h3 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.5rem' }}>
-            {stats.pendingDeliveries}
-          </h3>
-          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Pending Deliveries</p>
+      {statsLoading ? (
+        <div style={{
+          padding: '3rem',
+          textAlign: 'center',
+          color: '#6b7280'
+        }}>
+          <div style={{
+            width: '50px',
+            height: '50px',
+            border: '4px solid #f3f4f6',
+            borderTop: '4px solid #10b981',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem'
+          }}></div>
+          <p>Loading dashboard statistics...</p>
         </div>
+      ) : (
+        <>
+          {/* Admin-specific enhanced stats */}
+          {user?.role === 'admin' && (
+        <>
+          {/* Primary Stats */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '1.5rem',
+            marginBottom: '2rem'
+          }}>
+            <div style={{...statCardStyle, borderLeft: '4px solid #3b82f6'}}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Total Orders</p>
+                  <h3 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                    {stats.totalOrders}
+                  </h3>
+                </div>
+                <ShoppingCart size={28} color="#3b82f6" />
+              </div>
+            </div>
 
-        <div 
-          style={statCardStyle}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-4px)';
-            e.target.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.15)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.05)';
-          }}
-        >
-          <Package size={32} color="#10b981" style={{ marginBottom: '1rem' }} />
-          <h3 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.5rem' }}>
-            {stats.totalProducts}
-          </h3>
-          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Available Products</p>
-        </div>
+            <div style={{...statCardStyle, borderLeft: '4px solid #f59e0b'}}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Pending Actions</p>
+                  <h3 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                    {stats.pendingDeliveries}
+                  </h3>
+                  <p style={{ color: '#f59e0b', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                    ₹{stats.pendingAmount?.toLocaleString() || 0}
+                  </p>
+                </div>
+                <Truck size={28} color="#f59e0b" />
+              </div>
+            </div>
 
-        <div 
-          style={statCardStyle}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-4px)';
-            e.target.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.15)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.05)';
-          }}
-        >
-          <Bell size={32} color="#ef4444" style={{ marginBottom: '1rem' }} />
-          <h3 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.5rem' }}>
-            {stats.newNotifications}
-          </h3>
-          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>New Notifications</p>
+            <div style={{...statCardStyle, borderLeft: '4px solid #10b981'}}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Available Products</p>
+                  <h3 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                    {stats.totalProducts}
+                  </h3>
+                  {stats.lowStockProducts > 0 && (
+                    <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                      ⚠️ {stats.lowStockProducts} low stock
+                    </p>
+                  )}
+                </div>
+                <Package size={28} color="#10b981" />
+              </div>
+            </div>
+
+            <div style={{...statCardStyle, borderLeft: '4px solid #8b5cf6'}}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Total Customers</p>
+                  <h3 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                    {stats.totalCustomers}
+                  </h3>
+                  <p style={{ color: '#8b5cf6', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                    {stats.activeCustomers} active
+                  </p>
+                </div>
+                <User size={28} color="#8b5cf6" />
+              </div>
+            </div>
+          </div>
+
+          {/* Revenue Stats */}
+          <div style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            borderRadius: '12px',
+            padding: '1.5rem',
+            color: 'white',
+            marginBottom: '2rem',
+            boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)'
+          }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <DollarSign size={24} />
+              Revenue Overview
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1.5rem' }}>
+              <div>
+                <p style={{ opacity: 0.9, fontSize: '0.875rem', marginBottom: '0.5rem' }}>Today</p>
+                <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>₹{stats.todayRevenue?.toLocaleString() || 0}</p>
+                <p style={{ opacity: 0.8, fontSize: '0.75rem' }}>{stats.todayOrders || 0} orders</p>
+              </div>
+              <div>
+                <p style={{ opacity: 0.9, fontSize: '0.875rem', marginBottom: '0.5rem' }}>This Week</p>
+                <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>₹{stats.weekRevenue?.toLocaleString() || 0}</p>
+                <p style={{ opacity: 0.8, fontSize: '0.75rem' }}>{stats.weekOrders || 0} orders</p>
+              </div>
+              <div>
+                <p style={{ opacity: 0.9, fontSize: '0.875rem', marginBottom: '0.5rem' }}>This Month</p>
+                <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>₹{stats.monthRevenue?.toLocaleString() || 0}</p>
+                <p style={{ opacity: 0.8, fontSize: '0.75rem' }}>{stats.monthOrders || 0} orders</p>
+              </div>
+              <div>
+                <p style={{ opacity: 0.9, fontSize: '0.875rem', marginBottom: '0.5rem' }}>All Time</p>
+                <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>₹{stats.revenue?.totalRevenue?.toLocaleString() || 0}</p>
+                <p style={{ opacity: 0.8, fontSize: '0.75rem' }}>
+                  Avg: ₹{stats.revenue?.averageOrderValue?.toLocaleString() || 0}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Order Status Breakdown */}
+          <div style={{
+            ...cardStyle,
+            marginBottom: '2rem'
+          }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: '#1f2937' }}>
+              Order Status Breakdown
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
+              {Object.entries(stats.statusStats || {}).map(([status, count]) => (
+                <div key={status} style={{
+                  padding: '1rem',
+                  background: '#f9fafb',
+                  borderRadius: '8px',
+                  textAlign: 'center',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.25rem' }}>
+                    {count}
+                  </p>
+                  <p style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'capitalize' }}>
+                    {status.replace(/_/g, ' ').toLowerCase()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Regular user stats (original) */}
+      {user?.role !== 'admin' && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '1.5rem',
+          marginBottom: '2rem'
+        }}>
+          <div 
+            style={statCardStyle}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-4px)';
+              e.target.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.05)';
+            }}
+          >
+            <ShoppingCart size={32} color="#10b981" style={{ marginBottom: '1rem' }} />
+            <h3 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.5rem' }}>
+              {stats.totalOrders}
+            </h3>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Total Orders</p>
+          </div>
+
+          <div 
+            style={statCardStyle}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-4px)';
+              e.target.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.05)';
+            }}
+          >
+            <Truck size={32} color="#f59e0b" style={{ marginBottom: '1rem' }} />
+            <h3 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.5rem' }}>
+              {stats.pendingDeliveries}
+            </h3>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Pending Deliveries</p>
+          </div>
+
+          <div 
+            style={statCardStyle}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-4px)';
+              e.target.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.05)';
+            }}
+          >
+            <Package size={32} color="#10b981" style={{ marginBottom: '1rem' }} />
+            <h3 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.5rem' }}>
+              {stats.totalProducts}
+            </h3>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Available Products</p>
+          </div>
+
+          <div 
+            style={statCardStyle}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-4px)';
+              e.target.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.05)';
+            }}
+          >
+            <Bell size={32} color="#ef4444" style={{ marginBottom: '1rem' }} />
+            <h3 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.5rem' }}>
+              {stats.newNotifications}
+            </h3>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>New Notifications</p>
+          </div>
         </div>
-      </div>
+      )}
+
+        </>
+      )}
 
       <div style={cardStyle}>
         <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' }}>

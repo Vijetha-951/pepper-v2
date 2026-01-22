@@ -533,11 +533,7 @@ export default function AdminOrderDetail() {
                   </div>
                 )}
               </>
-            ) : (
-              <div className="status-pending" style={{ padding: '1rem', borderRadius: '8px' }}>
-                No delivery boy assigned yet
-              </div>
-            )}
+            ) : null}
           </div>
 
           {/* Shipping Address */}

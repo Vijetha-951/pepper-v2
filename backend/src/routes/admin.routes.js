@@ -403,16 +403,32 @@ router.get('/orders/:id/route', asyncHandler(async (req, res) => {
 
 // Admin Dashboard Stats - comprehensive system-wide statistics
 router.get('/stats', asyncHandler(async (_req, res) => {
+  // Date ranges
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrowStart = new Date(today);
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+  
+  const weekAgo = new Date(today);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  
   // Get total orders in system
   const totalOrders = await Order.countDocuments({});
   
-  // Get pending deliveries (orders not DELIVERED or CANCELLED)
+  // Get pending actions (orders requiring attention)
   const pendingDeliveries = await Order.countDocuments({ 
-    status: { $nin: ['DELIVERED', 'CANCELLED'] } 
+    status: { $in: ['PENDING', 'APPROVED'] } 
   });
   
   // Get available products count
   const totalProducts = await Product.countDocuments({ available_stock: { $gt: 0 } });
+  
+  // Get low stock products (less than 10 units)
+  const lowStockProducts = await Product.countDocuments({ 
+    available_stock: { $gt: 0, $lt: 10 } 
+  });
   
   // Get order status breakdown
   const statusBreakdown = await Order.aggregate([
@@ -430,17 +446,76 @@ router.get('/stats', asyncHandler(async (_req, res) => {
     statusStats[item._id] = item.count;
   });
   
-  // Get recent orders for activity feed (last 5 orders from all users)
-  const recentOrders = await Order.find({})
-    .populate('user', 'firstName lastName email')
-    .populate('items.product', 'name')
-    .sort({ createdAt: -1 })
-    .limit(5);
+  // Get today's orders count
+  const todayOrders = await Order.countDocuments({
+    createdAt: { $gte: today, $lt: tomorrowStart }
+  });
   
-  // Calculate revenue stats
-  const revenueStats = await Order.aggregate([
+  // Get this week's orders count
+  const weekOrders = await Order.countDocuments({
+    createdAt: { $gte: weekAgo }
+  });
+  
+  // Get this month's orders count
+  const monthOrders = await Order.countDocuments({
+    createdAt: { $gte: monthStart }
+  });
+  
+  // Get today's revenue (PAID orders only)
+  const todayRevenueData = await Order.aggregate([
     {
-      $match: { status: 'DELIVERED' } // Only count delivered orders as completed revenue
+      $match: {
+        'payment.status': 'PAID',
+        createdAt: { $gte: today, $lt: tomorrowStart }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: '$totalAmount' },
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+  
+  // Get this week's revenue
+  const weekRevenueData = await Order.aggregate([
+    {
+      $match: {
+        'payment.status': 'PAID',
+        createdAt: { $gte: weekAgo }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: '$totalAmount' },
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+  
+  // Get this month's revenue
+  const monthRevenueData = await Order.aggregate([
+    {
+      $match: {
+        'payment.status': 'PAID',
+        createdAt: { $gte: monthStart }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: '$totalAmount' },
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+  
+  // Get all-time revenue stats (DELIVERED orders)
+  const allTimeRevenueData = await Order.aggregate([
+    {
+      $match: { status: 'DELIVERED' }
     },
     {
       $group: {
@@ -452,32 +527,20 @@ router.get('/stats', asyncHandler(async (_req, res) => {
     }
   ]);
   
-  const revenue = revenueStats.length > 0 ? {
-    totalRevenue: revenueStats[0].totalRevenue || 0,
-    averageOrderValue: parseFloat((revenueStats[0].averageOrderValue || 0).toFixed(2)),
-    completedOrders: revenueStats[0].completedOrders || 0
+  const revenue = allTimeRevenueData.length > 0 ? {
+    totalRevenue: allTimeRevenueData[0].totalRevenue || 0,
+    averageOrderValue: parseFloat((allTimeRevenueData[0].averageOrderValue || 0).toFixed(2)),
+    completedOrders: allTimeRevenueData[0].completedOrders || 0
   } : {
     totalRevenue: 0,
     averageOrderValue: 0,
     completedOrders: 0
   };
   
-  // Get today's stats
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrowStart = new Date(today);
-  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-  
-  const todayOrders = await Order.countDocuments({
-    createdAt: { $gte: today, $lt: tomorrowStart }
-  });
-  
-  const todayRevenue = await Order.aggregate([
+  // Get pending amount (PENDING orders)
+  const pendingAmountData = await Order.aggregate([
     {
-      $match: {
-        status: 'DELIVERED',
-        createdAt: { $gte: today, $lt: tomorrowStart }
-      }
+      $match: { status: 'PENDING' }
     },
     {
       $group: {
@@ -487,15 +550,48 @@ router.get('/stats', asyncHandler(async (_req, res) => {
     }
   ]);
   
+  // Get total customers
+  const totalCustomers = await User.countDocuments({ role: 'user' });
+  
+  // Get active customers (placed at least one order)
+  const activeCustomers = await Order.distinct('user').then(users => users.length);
+  
+  // Get recent orders for activity feed
+  const recentOrders = await Order.find({})
+    .populate('user', 'firstName lastName email')
+    .populate('items.product', 'name')
+    .sort({ createdAt: -1 })
+    .limit(10);
+  
   res.status(200).json({
+    // Main stats
     totalOrders,
     pendingDeliveries,
     totalProducts,
-    newNotifications: 0, // Placeholder for future notifications system
-    statusStats,
-    revenue,
+    lowStockProducts,
+    newNotifications: 0, // Placeholder
+    
+    // Order stats
     todayOrders,
-    todayRevenue: todayRevenue.length > 0 ? todayRevenue[0].total : 0,
+    weekOrders,
+    monthOrders,
+    statusStats,
+    
+    // Revenue stats
+    revenue,
+    todayRevenue: todayRevenueData.length > 0 ? todayRevenueData[0].total : 0,
+    todayPaidOrders: todayRevenueData.length > 0 ? todayRevenueData[0].count : 0,
+    weekRevenue: weekRevenueData.length > 0 ? weekRevenueData[0].total : 0,
+    weekPaidOrders: weekRevenueData.length > 0 ? weekRevenueData[0].count : 0,
+    monthRevenue: monthRevenueData.length > 0 ? monthRevenueData[0].total : 0,
+    monthPaidOrders: monthRevenueData.length > 0 ? monthRevenueData[0].count : 0,
+    pendingAmount: pendingAmountData.length > 0 ? pendingAmountData[0].total : 0,
+    
+    // Customer stats
+    totalCustomers,
+    activeCustomers,
+    
+    // Recent activity
     recentActivity: recentOrders.map(order => ({
       _id: order._id,
       type: 'order',
@@ -503,7 +599,8 @@ router.get('/stats', asyncHandler(async (_req, res) => {
       user: order.user,
       items: order.items,
       totalAmount: order.totalAmount,
-      createdAt: order.createdAt
+      createdAt: order.createdAt,
+      paymentStatus: order.payment?.status || 'PENDING'
     }))
   });
 }));

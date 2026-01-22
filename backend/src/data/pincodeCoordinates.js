@@ -141,8 +141,12 @@ export const pincodeCoordinates = {
   '670004': { lat: 11.8601, lng: 75.3567, district: 'Kannur', state: 'Kerala' },
   '670005': { lat: 11.8879, lng: 75.3843, district: 'Kannur', state: 'Kerala' },
   
-  // Kasaragod District
-  '671121': { lat: 12.4996, lng: 74.9869, district: 'Kasaragod', state: 'Kerala' },
+  // Kasaragod District (Note: 670XXX range includes Kasaragod areas like Kanhangad)
+  '670511': { lat: 12.3167, lng: 75.1100, district: 'Kasaragod', state: 'Kerala' }, // Kanhangad
+  '670521': { lat: 12.3089, lng: 75.1023, district: 'Kasaragod', state: 'Kerala' }, // Near Kanhangad
+  '670571': { lat: 12.3401, lng: 75.1345, district: 'Kasaragod', state: 'Kerala' }, // Kasaragod area
+  '670581': { lat: 12.3234, lng: 75.1189, district: 'Kasaragod', state: 'Kerala' }, // Kasaragod area
+  '671121': { lat: 12.4996, lng: 74.9869, district: 'Kasaragod', state: 'Kerala' }, // Kasaragod town
   '671122': { lat: 12.4923, lng: 74.9798, district: 'Kasaragod', state: 'Kerala' },
   '671123': { lat: 12.5067, lng: 74.9932, district: 'Kasaragod', state: 'Kerala' },
   '671124': { lat: 12.4854, lng: 74.9721, district: 'Kasaragod', state: 'Kerala' },
