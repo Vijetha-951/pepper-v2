@@ -111,18 +111,27 @@ export default function UserVideos() {
   };
 
   const getYouTubeEmbedUrl = (url) => {
-    if (url.includes('youtube.com/embed/')) {
-      return url;
-    }
+    if (!url) return '';
+    
+    // Extract video ID from various formats
+    let videoId = '';
+    
     if (url.includes('youtube.com/watch?v=')) {
-      const videoId = url.split('watch?v=')[1]?.split('&')[0];
-      return `https://www.youtube.com/embed/${videoId}`;
+      videoId = url.split('watch?v=')[1]?.split('&')[0];
+    } else if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1]?.split('?')[0];
+    } else if (url.includes('youtube.com/embed/')) {
+      // Handle cases like /embed/embed/ or /embed/videoId
+      const parts = url.split('/embed/');
+      videoId = parts[parts.length - 1]?.split('?')[0];
+    } else if (url.includes('youtube.com/shorts/')) {
+      videoId = url.split('/shorts/')[1]?.split('?')[0];
+    } else {
+      // If it's just the ID or something else
+      videoId = url;
     }
-    if (url.includes('youtu.be/')) {
-      const videoId = url.split('youtu.be/')[1]?.split('?')[0];
-      return `https://www.youtube.com/embed/${videoId}`;
-    }
-    return url;
+    
+    return `https://www.youtube.com/embed/${videoId}`;
   };
 
   if (loading) {

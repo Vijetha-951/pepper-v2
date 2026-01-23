@@ -215,6 +215,9 @@ const HubManagerDashboard = () => {
     let inTransitCount = 0;
     let recentArrivalsCount = 0;
 
+    console.log('🔍 Calculating summary for hub:', hub.name, hub._id);
+    console.log('📅 Today is:', new Date().toLocaleDateString());
+
     orders.forEach(order => {
       // Find events related to THIS hub
       const getHubId = (h) => (typeof h === 'object' && h !== null ? h._id : h);
@@ -223,6 +226,14 @@ const HubManagerDashboard = () => {
       const arrivalEvent = [...(order.trackingTimeline || [])]
         .reverse()
         .find(t => t.status === 'ARRIVED_AT_HUB' && getHubId(t.hub) === hub._id);
+      
+      if (arrivalEvent) {
+        const eventTime = arrivalEvent.timestamp || arrivalEvent.createdAt;
+        const eventDate = new Date(eventTime);
+        console.log(`📦 Order ${order._id.substring(0,8)} - Arrival:`, 
+          eventDate.toLocaleString(), 
+          '| Date:', eventDate.toLocaleDateString());
+      }
 
       // Get latest dispatch from this hub
       const dispatchEvent = [...(order.trackingTimeline || [])]
@@ -249,7 +260,8 @@ const HubManagerDashboard = () => {
         new Date(dispatchTime) > new Date(arrivalTimeVal);
 
       // 2. Ready for Dispatch: Scanned in (Approved) and NOT dispatched
-      if (order.status === 'APPROVED' && !isDispatched) {
+      // Must have been scanned in (arrivalEvent exists) and not yet dispatched
+      if (order.status === 'APPROVED' && arrivalEvent && !isDispatched) {
         readyForDispatchCount++;
       }
 
@@ -261,8 +273,16 @@ const HubManagerDashboard = () => {
       // 4. Recent Arrivals: Arrived today (since midnight)
       if (arrivalEvent) {
         const eventTime = arrivalEvent.timestamp || arrivalEvent.createdAt;
-        const arrivalTime = new Date(eventTime).getTime();
-        if (arrivalTime >= todayTimestamp) {
+        const arrivalDate = new Date(eventTime);
+        
+        // Compare dates (ignore time) to handle timezone issues
+        const arrivalDateOnly = new Date(arrivalDate.getFullYear(), arrivalDate.getMonth(), arrivalDate.getDate());
+        const todayDateOnly = new Date(startOfToday.getFullYear(), startOfToday.getMonth(), startOfToday.getDate());
+        
+        console.log(`  Comparing: ${arrivalDateOnly.toLocaleDateString()} === ${todayDateOnly.toLocaleDateString()}`, 
+          arrivalDateOnly.getTime() === todayDateOnly.getTime() ? '✓ MATCH' : '✗ NO');
+        
+        if (arrivalDateOnly.getTime() === todayDateOnly.getTime()) {
           recentArrivalsCount++;
         }
       }
@@ -945,33 +965,6 @@ const HubManagerDashboard = () => {
       )}
 
       <div className="hub-summary">
-        <div className="summary-card">
-          <div className="summary-icon packages">
-            <Package size={24} />
-          </div>
-          <div className="summary-content">
-            <p className="summary-label">Total Orders Left to Scan</p>
-            <p className="summary-value">{summary.ordersLeftToScan}</p>
-          </div>
-        </div>
-        <div className="summary-card">
-          <div className="summary-icon dispatch">
-            <Truck size={24} />
-          </div>
-          <div className="summary-content">
-            <p className="summary-label">Ready for Dispatch</p>
-            <p className="summary-value">{summary.readyForDispatch}</p>
-          </div>
-        </div>
-        <div className="summary-card">
-          <div className="summary-icon transit">
-            <Clock size={24} />
-          </div>
-          <div className="summary-content">
-            <p className="summary-label">In Transit</p>
-            <p className="summary-value">{summary.inTransit}</p>
-          </div>
-        </div>
         <div className="summary-card">
           <div className="summary-icon recent">
             <AlertCircle size={24} />

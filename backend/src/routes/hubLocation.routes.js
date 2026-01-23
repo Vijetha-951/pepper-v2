@@ -86,7 +86,7 @@ router.post('/find-nearest-hub', requireAuth, async (req, res) => {
       });
     }
 
-    // Calculate distance to each hub
+    // Calculate distance to each hub with district awareness
     const hubsWithDistance = hubs.map(hub => {
       const distance = calculateDistance(
         pincodeCoords.lat,
@@ -95,18 +95,23 @@ router.post('/find-nearest-hub', requireAuth, async (req, res) => {
         hub.location.coordinates.lng
       );
       
+      const sameDistrict = hub.district?.toLowerCase() === pincodeCoords.district?.toLowerCase();
+      
       return {
         hub: hub,
         distance: distance,
-        distanceFormatted: `${distance.toFixed(2)} km`
+        distanceFormatted: `${distance.toFixed(2)} km`,
+        sameDistrict: sameDistrict
       };
     });
 
-    // Sort by distance (closest first)
-    hubsWithDistance.sort((a, b) => a.distance - b.distance);
+    // PRIORITY: Prefer hubs in same district, then use distance
+    const sameDistrictHubs = hubsWithDistance.filter(h => h.sameDistrict);
+    const hubsToConsider = sameDistrictHubs.length > 0 ? sameDistrictHubs : hubsWithDistance;
+    hubsToConsider.sort((a, b) => a.distance - b.distance);
 
-    // Get the nearest hub
-    const nearest = hubsWithDistance[0];
+    // Get the nearest hub (district-aware)
+    const nearest = hubsToConsider[0];
 
     // Check if pincode is explicitly in hub's coverage
     let matchType = 'distance';
@@ -122,13 +127,14 @@ router.post('/find-nearest-hub', requireAuth, async (req, res) => {
       distance: nearest.distance,
       distanceFormatted: nearest.distanceFormatted,
       matchType: matchType,
+      sameDistrict: nearest.sameDistrict,
       pincodeInfo: {
         pincode: pincode,
         district: pincodeCoords.district,
         state: pincodeCoords.state
       },
       message: matchType === 'distance' 
-        ? `Assigned nearest hub based on distance (${nearest.distanceFormatted} away)`
+        ? `Assigned ${nearest.sameDistrict ? 'nearest hub in same district' : 'nearest available hub'} (${nearest.distanceFormatted} away)`
         : null
     });
 
@@ -178,18 +184,29 @@ router.get('/by-pincode/:pincode', requireAuth, async (req, res) => {
       });
     }
 
-    // Calculate distances and sort
-    const hubsWithDistance = hubs.map(hub => ({
-      hub: hub,
-      distance: calculateDistance(
+    // Calculate distances with district awareness
+    const hubsWithDistance = hubs.map(hub => {
+      const distance = calculateDistance(
         pincodeCoords.lat,
         pincodeCoords.lng,
         hub.location.coordinates.lat,
         hub.location.coordinates.lng
-      )
-    })).sort((a, b) => a.distance - b.distance);
+      );
+      const sameDistrict = hub.district?.toLowerCase() === pincodeCoords.district?.toLowerCase();
+      
+      return {
+        hub: hub,
+        distance: distance,
+        sameDistrict: sameDistrict
+      };
+    });
 
-    const nearest = hubsWithDistance[0];
+    // Prioritize same-district hubs
+    const sameDistrictHubs = hubsWithDistance.filter(h => h.sameDistrict);
+    const hubsToConsider = sameDistrictHubs.length > 0 ? sameDistrictHubs : hubsWithDistance;
+    hubsToConsider.sort((a, b) => a.distance - b.distance);
+
+    const nearest = hubsToConsider[0];
 
     let matchType = 'distance';
     if (nearest.hub.coverage?.pincodes?.includes(pincode)) {
@@ -249,13 +266,22 @@ router.post('/all-with-distances', requireAuth, async (req, res) => {
         hub.location.coordinates.lat,
         hub.location.coordinates.lng
       );
+      const sameDistrict = hub.district?.toLowerCase() === pincodeCoords.district?.toLowerCase();
       
       return {
         ...hub.toObject(),
         distance: distance,
-        distanceFormatted: `${distance.toFixed(2)} km`
+        distanceFormatted: `${distance.toFixed(2)} km`,
+        sameDistrict: sameDistrict
       };
-    }).sort((a, b) => a.distance - b.distance);
+    });
+
+    // Sort: same-district hubs first, then by distance
+    hubsWithDistance.sort((a, b) => {
+      if (a.sameDistrict && !b.sameDistrict) return -1;
+      if (!a.sameDistrict && b.sameDistrict) return 1;
+      return a.distance - b.distance;
+    });
 
     return res.json({
       success: true,

@@ -115,23 +115,29 @@ export default function AdminVideoManagement() {
     
     // Validate and auto-convert YouTube URL
     let videoUrl = formData.url.trim();
+    let videoId = '';
     
-    // Auto-convert YouTube watch URL to embed URL
+    // Extract video ID from various formats
     if (videoUrl.includes('youtube.com/watch?v=')) {
-      const videoId = videoUrl.split('watch?v=')[1]?.split('&')[0];
-      if (videoId) {
-        videoUrl = `https://www.youtube.com/embed/${videoId}`;
-        setFormData({ ...formData, url: videoUrl });
-      }
+      videoId = videoUrl.split('watch?v=')[1]?.split('&')[0];
     } else if (videoUrl.includes('youtu.be/')) {
-      const videoId = videoUrl.split('youtu.be/')[1]?.split('?')[0];
-      if (videoId) {
-        videoUrl = `https://www.youtube.com/embed/${videoId}`;
-        setFormData({ ...formData, url: videoUrl });
-      }
+      videoId = videoUrl.split('youtu.be/')[1]?.split('?')[0];
+    } else if (videoUrl.includes('youtube.com/embed/')) {
+      const parts = videoUrl.split('/embed/');
+      videoId = parts[parts.length - 1]?.split('?')[0];
+    } else if (videoUrl.includes('youtube.com/shorts/')) {
+      videoId = videoUrl.split('/shorts/')[1]?.split('?')[0];
+    } else if (!videoUrl.includes('/') && videoUrl.length > 5) {
+      // If it looks like a video ID already
+      videoId = videoUrl;
+    }
+
+    if (videoId) {
+      videoUrl = `https://www.youtube.com/embed/${videoId}`;
+      setFormData(prev => ({ ...prev, url: videoUrl }));
     }
     
-    // Validate embed format for YouTube
+    // Final validation for YouTube
     if (videoUrl.includes('youtube.com') && !videoUrl.includes('/embed/')) {
       setErrorMessage('❌ YouTube URL must be in embed format: https://www.youtube.com/embed/VIDEO_ID');
       setTimeout(() => setErrorMessage(''), 5000);
