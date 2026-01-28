@@ -11,10 +11,12 @@ export default function AdminHubInventory() {
   const [restockRequests, setRestockRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [activeTab, setActiveTab] = useState('inventory'); // 'inventory' or 'requests'
-  const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: '', requestId: null, message: '' });
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: '', requestId: null, message: '', requestedQuantity: 0 });
+  const [approvedQuantity, setApprovedQuantity] = useState('');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -105,12 +107,14 @@ export default function AdminHubInventory() {
     }
   };
 
-  const openApproveModal = (requestId) => {
+  const openApproveModal = (requestId, requestedQty) => {
+    setApprovedQuantity(requestedQty.toString()); // Pre-fill with requested quantity
     setConfirmModal({
       isOpen: true,
       type: 'approve',
       requestId,
-      message: 'Approve this restock request? Stock will be transferred from Kottayam Hub.'
+      message: 'Specify the quantity to approve for this restock request. Stock will be transferred from Kottayam Hub.',
+      requestedQuantity: requestedQty
     });
   };
 
@@ -124,38 +128,59 @@ export default function AdminHubInventory() {
   };
 
   const closeModal = () => {
-    setConfirmModal({ isOpen: false, type: '', requestId: null, message: '' });
+    setConfirmModal({ isOpen: false, type: '', requestId: null, message: '', requestedQuantity: 0 });
+    setApprovedQuantity('');
   };
 
   const handleApproveRestock = async (requestId) => {
+    if (processing) return;
+    
     try {
+      setProcessing(true);
       setError('');
       setSuccess('');
+      
+      const qty = parseInt(approvedQuantity);
+      if (!qty || qty <= 0) {
+        setError('Please enter a valid quantity');
+        setProcessing(false);
+        return;
+      }
+      
       const headers = await getAuthHeaders();
       
       const response = await fetch(`/api/hub-inventory/admin/restock-requests/${requestId}`, {
         method: 'PATCH',
         headers,
-        body: JSON.stringify({ action: 'APPROVE' })
+        body: JSON.stringify({ action: 'APPROVE', approvedQuantity: qty })
       });
+
+      const data = await response.json();
 
       if (response.ok) {
         setSuccess('Restock request approved successfully!');
+        setError('');
         closeModal();
         fetchRestockRequests();
         if (selectedHub) fetchHubInventory(selectedHub);
       } else {
-        const data = await response.json();
         setError(data.message || 'Failed to approve restock request');
+        setSuccess('');
       }
     } catch (error) {
       console.error('Error approving restock:', error);
       setError('Failed to approve restock request');
+      setSuccess('');
+    } finally {
+      setProcessing(false);
     }
   };
 
   const handleRejectRestock = async (requestId) => {
+    if (processing) return;
+
     try {
+      setProcessing(true);
       setError('');
       setSuccess('');
       const headers = await getAuthHeaders();
@@ -166,17 +191,23 @@ export default function AdminHubInventory() {
         body: JSON.stringify({ action: 'REJECT' })
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         setSuccess('Restock request rejected');
+        setError('');
         closeModal();
         fetchRestockRequests();
       } else {
-        const data = await response.json();
         setError(data.message || 'Failed to reject restock request');
+        setSuccess('');
       }
     } catch (error) {
       console.error('Error rejecting restock:', error);
       setError('Failed to reject restock request');
+      setSuccess('');
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -523,7 +554,7 @@ export default function AdminHubInventory() {
                         {request.status === 'PENDING' && (
                           <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                             <button
-                              onClick={() => openApproveModal(request._id)}
+                              onClick={() => openApproveModal(request._id, request.requestedQuantity)}
                               style={{
                                 padding: '0.5rem 1rem',
                                 background: '#10b981',
@@ -577,7 +608,8 @@ export default function AdminHubInventory() {
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 1000
-        }}>\n          <div style={{
+        }}>
+          <div style={{
             background: 'white',
             borderRadius: '12px',
             padding: '2rem',
@@ -585,14 +617,44 @@ export default function AdminHubInventory() {
             width: '90%',
             boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
           }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: '#1f2937' }}>
+              {confirmModal.type === 'approve' ? 'Approve Restock Request' : 'Reject Restock Request'}
+            </h3>
             <p style={{
               fontSize: '1rem',
               color: '#4b5563',
-              marginBottom: '2rem',
+              marginBottom: '1.5rem',
               lineHeight: '1.5'
             }}>
               {confirmModal.message}
             </p>
+            
+            {confirmModal.type === 'approve' && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#374151' }}>
+                  Quantity to Approve:
+                </label>
+                <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.5rem' }}>
+                  Requested: {confirmModal.requestedQuantity} units
+                </p>
+                <input
+                  type="number"
+                  min="1"
+                  value={approvedQuantity}
+                  onChange={(e) => setApprovedQuantity(e.target.value)}
+                  placeholder="Enter quantity"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+            )}
+            
             <div style={{
               display: 'flex',
               gap: '1rem',
@@ -600,15 +662,17 @@ export default function AdminHubInventory() {
             }}>
               <button
                 onClick={closeModal}
+                disabled={processing}
                 style={{
                   padding: '0.75rem 1.5rem',
                   background: '#f3f4f6',
                   color: '#374151',
                   border: 'none',
                   borderRadius: '8px',
-                  cursor: 'pointer',
+                  cursor: processing ? 'not-allowed' : 'pointer',
                   fontSize: '1rem',
-                  fontWeight: '500'
+                  fontWeight: '500',
+                  opacity: processing ? 0.7 : 1
                 }}
               >
                 Cancel
@@ -621,18 +685,24 @@ export default function AdminHubInventory() {
                     handleRejectRestock(confirmModal.requestId);
                   }
                 }}
+                disabled={processing}
                 style={{
                   padding: '0.75rem 1.5rem',
-                  background: '#7c3aed',
+                  background: confirmModal.type === 'approve' ? '#10b981' : '#ef4444',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
-                  cursor: 'pointer',
+                  cursor: processing ? 'not-allowed' : 'pointer',
                   fontSize: '1rem',
-                  fontWeight: '500'
+                  fontWeight: '500',
+                  opacity: processing ? 0.7 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
                 }}
               >
-                OK
+                {processing && <RefreshCw size={18} className="animate-spin" />}
+                {confirmModal.type === 'approve' ? 'Approve' : 'Reject'}
               </button>
             </div>
           </div>

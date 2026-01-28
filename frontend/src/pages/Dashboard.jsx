@@ -736,34 +736,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
-          {/* Order Status Breakdown */}
-          <div style={{
-            ...cardStyle,
-            marginBottom: '2rem'
-          }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: '#1f2937' }}>
-              Order Status Breakdown
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
-              {Object.entries(stats.statusStats || {}).map(([status, count]) => (
-                <div key={status} style={{
-                  padding: '1rem',
-                  background: '#f9fafb',
-                  borderRadius: '8px',
-                  textAlign: 'center',
-                  border: '1px solid #e5e7eb'
-                }}>
-                  <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.25rem' }}>
-                    {count}
-                  </p>
-                  <p style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'capitalize' }}>
-                    {status.replace(/_/g, ' ').toLowerCase()}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
         </>
       )}
 

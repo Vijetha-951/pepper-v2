@@ -270,7 +270,12 @@ const HubManagerDashboard = () => {
         inTransitCount++;
       }
 
-      // 4. Recent Arrivals: Arrived today (since midnight)
+      // 4. Recent Arrivals: Orders that reached this hub today
+      // Count if either:
+      // a) Has ARRIVED_AT_HUB event today, OR
+      // b) currentHub is this hub AND order was created today (auto-assignment)
+      let countedAsArrival = false;
+      
       if (arrivalEvent) {
         const eventTime = arrivalEvent.timestamp || arrivalEvent.createdAt;
         const arrivalDate = new Date(eventTime);
@@ -279,10 +284,25 @@ const HubManagerDashboard = () => {
         const arrivalDateOnly = new Date(arrivalDate.getFullYear(), arrivalDate.getMonth(), arrivalDate.getDate());
         const todayDateOnly = new Date(startOfToday.getFullYear(), startOfToday.getMonth(), startOfToday.getDate());
         
-        console.log(`  Comparing: ${arrivalDateOnly.toLocaleDateString()} === ${todayDateOnly.toLocaleDateString()}`, 
+        console.log(`  Comparing arrival event: ${arrivalDateOnly.toLocaleDateString()} === ${todayDateOnly.toLocaleDateString()}`, 
           arrivalDateOnly.getTime() === todayDateOnly.getTime() ? '✓ MATCH' : '✗ NO');
         
         if (arrivalDateOnly.getTime() === todayDateOnly.getTime()) {
+          recentArrivalsCount++;
+          countedAsArrival = true;
+        }
+      }
+      
+      // Also count if order is currently at this hub and was created today (no manual arrival event yet)
+      if (!countedAsArrival && isAtThisHub) {
+        const orderCreatedDate = new Date(order.createdAt);
+        const orderCreatedDateOnly = new Date(orderCreatedDate.getFullYear(), orderCreatedDate.getMonth(), orderCreatedDate.getDate());
+        const todayDateOnly = new Date(startOfToday.getFullYear(), startOfToday.getMonth(), startOfToday.getDate());
+        
+        console.log(`  Order ${order._id.substring(0,8)} at hub, created: ${orderCreatedDateOnly.toLocaleDateString()} === ${todayDateOnly.toLocaleDateString()}`, 
+          orderCreatedDateOnly.getTime() === todayDateOnly.getTime() ? '✓ MATCH' : '✗ NO');
+        
+        if (orderCreatedDateOnly.getTime() === todayDateOnly.getTime()) {
           recentArrivalsCount++;
         }
       }

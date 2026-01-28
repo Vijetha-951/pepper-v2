@@ -23,6 +23,10 @@ const RestockRequestSchema = new mongoose.Schema(
       required: true, 
       min: 1 
     },
+    approvedQuantity: {
+      type: Number,
+      min: 0
+    },
     requestedBy: { 
       type: mongoose.Schema.Types.ObjectId, 
       ref: 'User', 

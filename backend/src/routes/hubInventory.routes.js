@@ -281,7 +281,7 @@ router.post('/hub/restock-requests', requireAuth, asyncHandler(async (req, res) 
 // Approve/Reject restock request (Admin)
 router.patch('/admin/restock-requests/:requestId', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
   const { requestId } = req.params;
-  const { action, rejectedReason, notes } = req.body; // action: 'APPROVE' | 'REJECT'
+  const { action, rejectedReason, notes, approvedQuantity } = req.body; // action: 'APPROVE' | 'REJECT', approvedQuantity for APPROVE
   
   const user = await User.findOne({ firebaseUid: req.user.uid });
   if (!user) {
@@ -304,6 +304,13 @@ router.patch('/admin/restock-requests/:requestId', requireAuth, requireAdmin, as
   }
   
   if (action === 'APPROVE') {
+    // Validate approved quantity
+    if (!approvedQuantity || approvedQuantity <= 0) {
+      return res.status(400).json({ success: false, message: 'Please specify a valid quantity to approve' });
+    }
+    
+    const quantityToTransfer = parseInt(approvedQuantity);
+    
     // Check if main hub (Kottayam) has enough stock
     const mainHub = await Hub.findOne({ district: 'Kottayam' });
     if (!mainHub) {
@@ -318,6 +325,7 @@ router.patch('/admin/restock-requests/:requestId', requireAuth, requireAdmin, as
     console.log(`🔍 Restock approval check for ${request.product.name}:`);
     console.log(`  - Main Hub: ${mainHub.name} (${mainHub.district})`);
     console.log(`  - Requested Quantity: ${request.requestedQuantity}`);
+    console.log(`  - Approved Quantity: ${quantityToTransfer}`);
     console.log(`  - Main Hub Inventory Found: ${!!mainHubInventory}`);
     if (mainHubInventory) {
       console.log(`  - Main Hub Total Quantity: ${mainHubInventory.quantity}`);
@@ -325,10 +333,10 @@ router.patch('/admin/restock-requests/:requestId', requireAuth, requireAdmin, as
       console.log(`  - Main Hub Available Quantity: ${mainHubInventory.getAvailableQuantity()}`);
     }
     
-    if (!mainHubInventory || mainHubInventory.getAvailableQuantity() < request.requestedQuantity) {
+    if (!mainHubInventory || mainHubInventory.getAvailableQuantity() < quantityToTransfer) {
       const errorMsg = !mainHubInventory 
         ? `No inventory found for ${request.product.name} in ${mainHub.name}`
-        : `Insufficient stock in main hub. Available: ${mainHubInventory.getAvailableQuantity()}, Requested: ${request.requestedQuantity}`;
+        : `Insufficient stock in main hub. Available: ${mainHubInventory.getAvailableQuantity()}, Approved: ${quantityToTransfer}`;
       
       console.error(`❌ Restock approval failed: ${errorMsg}`);
       
@@ -336,18 +344,26 @@ router.patch('/admin/restock-requests/:requestId', requireAuth, requireAdmin, as
         success: false, 
         message: errorMsg,
         available: mainHubInventory ? mainHubInventory.getAvailableQuantity() : 0,
-        requested: request.requestedQuantity
+        requested: request.requestedQuantity,
+        approved: quantityToTransfer
       });
     }
     
     // Transfer stock from main hub to requesting hub
-    // Reduce from main hub
-    mainHubInventory.quantity -= request.requestedQuantity;
+    // 1. Reduce from Product available_stock (which represents main warehouse/Kottayam inventory)
+    const product = await Product.findById(request.product._id);
+    if (product) {
+      product.available_stock = Math.max(0, (product.available_stock || 0) - quantityToTransfer);
+      product.stock = product.available_stock; // Keep legacy field in sync
+      await product.save();
+      // NOTE: Product post-save hook will automatically sync mainHubInventory.quantity 
+      // with product.available_stock, so we don't strictly need to update mainHubInventory.quantity 
+      // manually, but we already have it loaded so we'll ensure it's in sync.
+    }
+
+    // 2. Ensure main hub inventory is updated (in case hook didn't run or for redundancy)
+    mainHubInventory.quantity = product ? product.available_stock : (mainHubInventory.quantity - quantityToTransfer);
     await mainHubInventory.save();
-    
-    // NOTE: We do NOT sync Product stock when transferring between hubs
-    // Product stock should represent main warehouse inventory, not hub transfers
-    // Hub inventory is tracked separately in HubInventory collection
     
     // Add to requesting hub
     let requestingHubInventory = await HubInventory.findOne({
@@ -359,24 +375,25 @@ router.patch('/admin/restock-requests/:requestId', requireAuth, requireAdmin, as
       requestingHubInventory = await HubInventory.create({
         hub: request.requestingHub._id,
         product: request.product._id,
-        quantity: request.requestedQuantity,
+        quantity: quantityToTransfer,
         reservedQuantity: 0,
         restockHistory: []
       });
+    } else {
+      await requestingHubInventory.restock(
+        quantityToTransfer, 
+        'MAIN_HUB', 
+        `Fulfilled restock request #${request._id} - Admin approved ${quantityToTransfer} units (requested ${request.requestedQuantity})`
+      );
     }
-    
-    await requestingHubInventory.restock(
-      request.requestedQuantity, 
-      'MAIN_HUB', 
-      `Fulfilled restock request #${request._id}`
-    );
     
     // Update request status
     request.status = 'FULFILLED';
     request.approvedBy = user._id;
     request.approvedAt = new Date();
     request.fulfilledAt = new Date();
-    request.notes = notes || '';
+    request.approvedQuantity = quantityToTransfer;
+    request.notes = notes || `Admin approved ${quantityToTransfer} units (requested ${request.requestedQuantity})`;
     await request.save();
     
     // Check if this restock was for a pending order and update order status
