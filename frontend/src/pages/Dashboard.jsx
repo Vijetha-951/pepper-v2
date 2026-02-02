@@ -2672,8 +2672,8 @@ export default function Dashboard() {
           <div
             style={{
               background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 50%, #ffffff 100%)',
-              borderRadius: '32px',
-              maxWidth: '950px',
+              borderRadius: '24px',
+              maxWidth: '600px',
               width: '100%',
               maxHeight: '90vh',
               overflow: 'auto',
@@ -2701,15 +2701,15 @@ export default function Dashboard() {
               onClick={() => setShowProductModal(false)}
               style={{
                 position: 'absolute',
-                top: '1.5rem',
-                right: '1.5rem',
-                width: '56px',
-                height: '56px',
+                top: '1rem',
+                right: '1rem',
+                width: '40px',
+                height: '40px',
                 borderRadius: '50%',
                 border: 'none',
                 background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
                 color: 'white',
-                fontSize: '2rem',
+                fontSize: '1.5rem',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -2738,16 +2738,16 @@ export default function Dashboard() {
             <div style={{ 
               display: 'flex', 
               flexDirection: 'column', 
-              gap: '2rem', 
-              padding: '2.5rem',
+              gap: '1.25rem', 
+              padding: '1.5rem',
               position: 'relative'
             }}>
               {/* Product Image with enhanced styling */}
               {selectedProduct.image && (
                 <div style={{
                   width: '100%',
-                  height: '520px',
-                  borderRadius: '24px',
+                  height: '320px',
+                  borderRadius: '16px',
                   overflow: 'hidden',
                   background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
                   boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15), inset 0 0 0 1px rgba(255, 255, 255, 0.5)',
@@ -2794,7 +2794,7 @@ export default function Dashboard() {
               <div style={{ animation: 'slideInLeft 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
                   <h2 style={{
-                    fontSize: '2.25rem',
+                    fontSize: '1.5rem',
                     fontWeight: '800',
                     background: 'linear-gradient(135deg, #1f2937 0%, #10b981 100%)',
                     WebkitBackgroundClip: 'text',
@@ -2823,13 +2823,13 @@ export default function Dashboard() {
                 </div>
 
                 <p style={{
-                  fontSize: '2.75rem',
+                  fontSize: '1.75rem',
                   fontWeight: '800',
                   background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
-                  margin: '0.75rem 0',
+                  margin: '0.5rem 0',
                   textShadow: '0 2px 10px rgba(16, 185, 129, 0.2)',
                   animation: 'pricePopIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.4s both'
                 }}>
@@ -2837,14 +2837,14 @@ export default function Dashboard() {
                 </p>
 
                 <p style={{
-                  fontSize: '1.05rem',
+                  fontSize: '0.9rem',
                   color: '#6b7280',
-                  lineHeight: '1.7',
-                  marginTop: '1rem',
-                  padding: '1rem',
+                  lineHeight: '1.6',
+                  marginTop: '0.75rem',
+                  padding: '0.75rem',
                   backgroundColor: 'rgba(249, 250, 251, 0.8)',
-                  borderRadius: '12px',
-                  borderLeft: '4px solid #10b981'
+                  borderRadius: '10px',
+                  borderLeft: '3px solid #10b981'
                 }}>
                   {selectedProduct.description}
                 </p>
@@ -2853,17 +2853,17 @@ export default function Dashboard() {
               {/* Product Specifications with enhanced animation */}
               <div style={{ animation: 'slideInRight 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both' }}>
                 <h3 style={{
-                  fontSize: '1.5rem',
+                  fontSize: '1.125rem',
                   fontWeight: '700',
                   color: '#1f2937',
-                  marginBottom: '1.25rem',
+                  marginBottom: '0.75rem',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem'
                 }}>
                   <span style={{
-                    width: '8px',
-                    height: '32px',
+                    width: '6px',
+                    height: '24px',
                     background: 'linear-gradient(180deg, #10b981 0%, #059669 100%)',
                     borderRadius: '4px'
                   }} />
@@ -2887,7 +2887,7 @@ export default function Dashboard() {
                       style={{
                         display: 'flex',
                         borderBottom: index < 3 ? '1px solid #e5e7eb' : 'none',
-                        fontSize: '1rem',
+                        fontSize: '0.875rem',
                         transition: 'all 0.3s ease',
                         animation: `specSlideIn 0.5s ease ${0.4 + index * 0.1}s both`
                       }}
@@ -2902,24 +2902,24 @@ export default function Dashboard() {
                     >
                       <div style={{
                         flex: 1,
-                        padding: '1.25rem',
+                        padding: '0.75rem',
                         color: '#6b7280',
                         fontWeight: '600',
                         backgroundColor: 'rgba(249, 250, 251, 0.8)',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.75rem'
+                        gap: '0.5rem'
                       }}>
-                        <span style={{ fontSize: '1.5rem' }}>{spec.icon}</span>
+                        <span style={{ fontSize: '1.125rem' }}>{spec.icon}</span>
                         {spec.label}
                       </div>
                       <div style={{
                         flex: 1,
-                        padding: '1.25rem',
+                        padding: '0.75rem',
                         borderLeft: '1px solid #e5e7eb',
                         color: '#1f2937',
                         fontWeight: '700',
-                        fontSize: '1.05rem',
+                        fontSize: '0.9rem',
                         display: 'flex',
                         alignItems: 'center'
                       }}>
@@ -2934,30 +2934,30 @@ export default function Dashboard() {
               <div style={{ 
                 display: 'flex', 
                 flexDirection: 'column', 
-                gap: '1.25rem',
+                gap: '0.75rem',
                 animation: 'fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both'
               }}>
                 <div style={{
-                  padding: '1.25rem',
-                  borderRadius: '16px',
+                  padding: '0.875rem',
+                  borderRadius: '12px',
                   backgroundColor: selectedProduct.stock > 10 ? 'rgba(240, 253, 244, 0.8)' : selectedProduct.stock > 0 ? 'rgba(254, 243, 199, 0.8)' : 'rgba(254, 242, 242, 0.8)',
                   border: `2px solid ${selectedProduct.stock > 10 ? '#86efac' : selectedProduct.stock > 0 ? '#fcd34d' : '#fca5a5'}`,
                   boxShadow: `0 8px 20px ${selectedProduct.stock > 10 ? 'rgba(16, 185, 129, 0.15)' : selectedProduct.stock > 0 ? 'rgba(217, 119, 6, 0.15)' : 'rgba(220, 38, 38, 0.15)'}`,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.75rem',
+                  gap: '0.5rem',
                   transition: 'all 0.3s ease'
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
                 onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                 >
-                  <span style={{ fontSize: '1.75rem' }}>
+                  <span style={{ fontSize: '1.25rem' }}>
                     {selectedProduct.stock > 10 ? '✅' : selectedProduct.stock > 0 ? '⚠️' : '❌'}
                   </span>
                   <span style={{
                     color: selectedProduct.stock > 10 ? '#059669' : selectedProduct.stock > 0 ? '#d97706' : '#dc2626',
                     fontWeight: '700',
-                    fontSize: '1.125rem'
+                    fontSize: '0.95rem'
                   }}>
                     {selectedProduct.stock > 0 ? `${selectedProduct.stock} units in stock` : 'Out of stock'}
                   </span>
@@ -2974,17 +2974,17 @@ export default function Dashboard() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.75rem',
-                    padding: '1.25rem',
+                    gap: '0.5rem',
+                    padding: '0.875rem',
                     background: selectedProduct.stock > 0 
                       ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
                       : 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '16px',
+                    borderRadius: '12px',
                     cursor: selectedProduct.stock > 0 && !cartLoading[selectedProduct._id] ? 'pointer' : 'not-allowed',
                     fontWeight: '700',
-                    fontSize: '1.125rem',
+                    fontSize: '0.95rem',
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     boxShadow: selectedProduct.stock > 0 
                       ? '0 10px 30px rgba(16, 185, 129, 0.3)' 
@@ -3019,7 +3019,7 @@ export default function Dashboard() {
                   )}
                   
                   <span style={{ 
-                    fontSize: '1.25rem',
+                    fontSize: '1rem',
                     position: 'relative',
                     zIndex: 1
                   }}>
