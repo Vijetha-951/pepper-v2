@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Eye, Package, DollarSign, Clock, RefreshCw, ChevronLeft, ChevronRight, ArrowLeft, MapPin, Home, Building2, Key, Trash2 } from 'lucide-react';
+import { Search, Eye, Package, DollarSign, Clock, RefreshCw, ChevronLeft, ChevronRight, ArrowLeft, MapPin, Home, Building2, Key, Trash2, Download } from 'lucide-react';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import './AdminAllOrders.css';
@@ -278,6 +278,38 @@ const AdminAllOrders = () => {
     }
   };
 
+  const handleDownloadInvoice = async (orderId) => {
+    try {
+      if (!user) {
+        alert('Not authenticated');
+        return;
+      }
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/invoices/admin/${orderId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Invoice-${orderId.slice(-8).toUpperCase()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } else {
+        alert('Invoice not available for this order');
+      }
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      alert('Failed to download invoice');
+    }
+  };
+
   // Pagination
   const indexOfLastOrder = currentPage * ordersPerPage;
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
@@ -548,6 +580,17 @@ const AdminAllOrders = () => {
                         <Eye size={16} />
                         View
                       </button>
+                      {(order.payment?.status === 'PAID' || order.payment?.method === 'COD') && (
+                        <button
+                          className="view-details-btn"
+                          onClick={() => handleDownloadInvoice(order._id)}
+                          title="Download Invoice"
+                          style={{ background: '#10b981', marginLeft: '0.5rem' }}
+                        >
+                          <Download size={16} />
+                          Invoice
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

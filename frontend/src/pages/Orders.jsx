@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
-import { Package, Search, Eye, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, Star } from 'lucide-react';
+import { Package, Search, Eye, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, Star, Download } from 'lucide-react';
 import ReviewModal from '../components/ReviewModal';
 import './Orders.css';
 
@@ -148,6 +148,34 @@ const Orders = () => {
   const handleReviewSuccess = () => {
     setShowReviewModal(false);
     setReviewOrder(null);
+  };
+
+  const handleDownloadInvoice = async (orderId) => {
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/invoices/${orderId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Invoice-${orderId.slice(-8).toUpperCase()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } else {
+        alert('Invoice not available for this order');
+      }
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      alert('Failed to download invoice');
+    }
     setSuccessMessage('Review submitted successfully!');
     setTimeout(() => {
       setSuccessMessage('');
@@ -463,8 +491,19 @@ const Orders = () => {
                           title="View Details"
                         >
                           <Eye size={16} />
-                          <span>View Details / Invoice</span>
+                          <span>View Details</span>
                         </button>
+                        {(order.payment?.status === 'PAID' || order.payment?.method === 'COD') && (
+                          <button
+                            className="action-btn"
+                            onClick={() => handleDownloadInvoice(order._id)}
+                            title="Download Invoice"
+                            style={{ background: '#10b981', color: 'white' }}
+                          >
+                            <Download size={16} />
+                            <span>Invoice</span>
+                          </button>
+                        )}
                         {order.status === 'DELIVERED' && (
                           <button
                             className="action-btn review-btn"

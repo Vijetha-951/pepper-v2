@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { generateInvoice } from './invoiceService.js';
 
 // Create reusable transporter
 let transporter = null;
@@ -44,6 +45,14 @@ export const sendPaymentSuccessEmail = async ({ to, userName, order, paymentId }
     return { success: false, message: 'Email service not configured' };
   }
 
+  // Generate invoice PDF
+  let invoicePath = null;
+  try {
+    invoicePath = await generateInvoice(order);
+  } catch (error) {
+    console.error('⚠️ Failed to generate invoice, sending email without attachment:', error);
+  }
+
   try {
     const orderItems = order.items
       .map(item => `
@@ -60,6 +69,10 @@ export const sendPaymentSuccessEmail = async ({ to, userName, order, paymentId }
       from: `"PEPPER Store" <${process.env.EMAIL_USER}>`,
       to: to,
       subject: '✅ Payment Successful - Order Confirmed',
+      attachments: invoicePath ? [{
+        filename: `Invoice-${order._id.toString().slice(-8).toUpperCase()}.pdf`,
+        path: invoicePath
+      }] : [],
       html: `
         <!DOCTYPE html>
         <html>
@@ -189,6 +202,14 @@ export const sendOrderConfirmationEmail = async ({ to, userName, order }) => {
     return { success: false, message: 'Email service not configured' };
   }
 
+  // Generate invoice PDF
+  let invoicePath = null;
+  try {
+    invoicePath = await generateInvoice(order);
+  } catch (error) {
+    console.error('⚠️ Failed to generate invoice, sending email without attachment:', error);
+  }
+
   try {
     const orderItems = order.items
       .map(item => `
@@ -205,6 +226,10 @@ export const sendOrderConfirmationEmail = async ({ to, userName, order }) => {
       from: `"PEPPER Store" <${process.env.EMAIL_USER}>`,
       to: to,
       subject: '✅ Order Confirmed - Cash on Delivery',
+      attachments: invoicePath ? [{
+        filename: `Invoice-${order._id.toString().slice(-8).toUpperCase()}.pdf`,
+        path: invoicePath
+      }] : [],
       html: `
         <!DOCTYPE html>
         <html>

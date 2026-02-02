@@ -24,6 +24,7 @@ import updateHubCoordinatesRouter from './routes/updateHubCoordinates.js';
 import hubLocationRouter from './routes/hubLocation.routes.js';
 import wishlistRouter from './routes/wishlist.routes.js';
 import videosRouter from './routes/videos.routes.js';
+import invoiceRouter from './routes/invoice.routes.js';
 
 // Get directory path for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -46,6 +47,8 @@ app.use(morgan('dev'));
 // ====== Static Files ======
 // Serve uploaded videos
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Serve invoices (protected by routes)
+app.use('/invoices', express.static(path.join(__dirname, '../invoices')));
 
 // ====== Health Check ======
 app.get('/api/health', (_req, res) => {
@@ -70,6 +73,7 @@ app.use('/api/hub-location', hubLocationRouter);
 app.use('/api/notifications', notificationRouter);
 app.use('/api/wishlist', wishlistRouter);
 app.use('/api/videos', videosRouter);
+app.use('/api/invoices', invoiceRouter);
 app.use('/api/admin', updateHubCoordinatesRouter);
 app.use('/api', stockRouter);
 
