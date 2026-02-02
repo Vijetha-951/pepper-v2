@@ -167,8 +167,8 @@ export const generateInvoice = async (order) => {
           .fontSize(10)
           .text(itemName, 60, yPosition, { width: 200, ellipsis: true })
           .text(quantity.toString(), 270, yPosition, { width: 50, align: 'center' })
-          .text(`₹${price.toFixed(2)}`, 330, yPosition, { width: 80, align: 'right' })
-          .text(`₹${amount.toFixed(2)}`, 420, yPosition, { width: 115, align: 'right' });
+          .text(`Rs. ${price.toFixed(2)}`, 330, yPosition, { width: 80, align: 'right' })
+          .text(`Rs. ${amount.toFixed(2)}`, 420, yPosition, { width: 115, align: 'right' });
 
         yPosition += 25;
       });
@@ -191,21 +191,21 @@ export const generateInvoice = async (order) => {
         .fillColor('#666666')
         .text('Subtotal:', summaryX, yPosition)
         .fillColor('#000000')
-        .text(`₹${order.totalAmount.toFixed(2)}`, 420, yPosition, { width: 115, align: 'right' });
+        .text(`Rs. ${order.totalAmount.toFixed(2)}`, 420, yPosition, { width: 115, align: 'right' });
 
       yPosition += 20;
       doc
         .fillColor('#666666')
         .text('Tax (0%):', summaryX, yPosition)
         .fillColor('#000000')
-        .text('₹0.00', 420, yPosition, { width: 115, align: 'right' });
+        .text('Rs. 0.00', 420, yPosition, { width: 115, align: 'right' });
 
       yPosition += 20;
       doc
         .fillColor('#666666')
         .text('Delivery Charges:', summaryX, yPosition)
         .fillColor('#000000')
-        .text('₹0.00', 420, yPosition, { width: 115, align: 'right' });
+        .text('Rs. 0.00', 420, yPosition, { width: 115, align: 'right' });
 
       // Total
       yPosition += 10;
@@ -222,7 +222,7 @@ export const generateInvoice = async (order) => {
         .fillColor('#2c5f2d')
         .text('TOTAL:', summaryX, yPosition)
         .fontSize(14)
-        .text(`₹${order.totalAmount.toFixed(2)}`, 420, yPosition, { width: 115, align: 'right' });
+        .text(`Rs. ${order.totalAmount.toFixed(2)}`, 420, yPosition, { width: 115, align: 'right' });
 
       // Footer
       const footerY = 720;

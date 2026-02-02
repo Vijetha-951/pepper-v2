@@ -1,0 +1,15 @@
+{
+  "model_type": "random_forest",
+  "train_accuracy": 0.9828869047619048,
+  "test_accuracy": 0.9594494047619048,
+  "cv_mean": 0.95963528222209,
+  "cv_std": 0.003205309965619419,
+  "training_date": "2026-02-02T11:39:38.166232",
+  "n_samples": 26880,
+  "n_features": 8,
+  "classes": [
+    "Not Recommended",
+    "Plant with Care",
+    "Recommended"
+  ]
+}

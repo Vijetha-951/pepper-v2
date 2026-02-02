@@ -1,0 +1,77 @@
+### Seasonal Suitability API - Test Requests
+### Use the REST Client extension in VS Code or copy to Postman
+
+### Health Check
+GET http://localhost:5000/api/seasonal-suitability/health
+
+###
+
+### Get Prediction - Good Conditions (July in Idukki)
+POST http://localhost:5000/api/seasonal-suitability/predict
+Content-Type: application/json
+
+{
+  "month": 7,
+  "district": "Idukki",
+  "pincode": 685501,
+  "variety": "Panniyur 5",
+  "temperature": 24.5,
+  "rainfall": 320,
+  "humidity": 82,
+  "waterAvailability": "High"
+}
+
+###
+
+### Get Prediction - Poor Conditions (Summer with low water)
+POST http://localhost:5000/api/seasonal-suitability/predict
+Content-Type: application/json
+
+{
+  "month": 4,
+  "district": "Thiruvananthapuram",
+  "pincode": 695001,
+  "variety": "Karimunda",
+  "temperature": 35,
+  "rainfall": 50,
+  "humidity": 45,
+  "waterAvailability": "Low"
+}
+
+###
+
+### Get Prediction - Moderate Conditions
+POST http://localhost:5000/api/seasonal-suitability/predict
+Content-Type: application/json
+
+{
+  "month": 12,
+  "district": "Kottayam",
+  "pincode": 686001,
+  "variety": "Sreekara",
+  "temperature": 26,
+  "rainfall": 100,
+  "humidity": 70,
+  "waterAvailability": "Medium"
+}
+
+###
+
+### Get Analytics Summary
+GET http://localhost:5000/api/seasonal-suitability/analytics/summary
+
+###
+
+### Get Variety-wise Analytics
+GET http://localhost:5000/api/seasonal-suitability/analytics/by-variety
+
+###
+
+### Track User Action (after getting a prediction)
+POST http://localhost:5000/api/seasonal-suitability/track-action
+Content-Type: application/json
+
+{
+  "analyticsId": "YOUR_ANALYTICS_ID_FROM_PREDICTION",
+  "actionType": "addedToCart"
+}

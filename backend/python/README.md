@@ -1,9 +1,10 @@
-# Pepper Yield Prediction ML Module
+# Pepper ML Module
 
-Machine Learning module for predicting pepper crop yields and providing cultivation recommendations.
+Machine Learning modules for the PEPPER e-commerce platform, including yield prediction, seasonal suitability, and various AI-powered features.
 
 ## 🚀 Quick Start
 
+### For Yield Prediction
 ```bash
 # Install dependencies
 pip install -r requirements.txt
@@ -11,18 +12,49 @@ pip install -r requirements.txt
 # Setup and train (one command!)
 python setup_ml_module.py
 
-# Start ML API
+# Start Yield Prediction API
 python pepper_ml_api.py
+```
+
+### For Seasonal Suitability (NEW)
+```bash
+# Install dependencies (if not already installed)
+pip install -r requirements.txt
+
+# Generate training data
+python seasonal_suitability_dataset.py
+
+# Train model
+python seasonal_suitability_model.py
+
+# Start Seasonal Suitability API
+python seasonal_suitability_api.py --port 5001
 ```
 
 ## 📁 Files
 
+### Yield Prediction
 - **`pepper_yield_predictor.py`** - Core ML model (training & prediction)
 - **`generate_pepper_training_data.py`** - Synthetic data generator
 - **`pepper_ml_api.py`** - Flask REST API
 - **`setup_ml_module.py`** - Automated setup script
 - **`test_ml_module.py`** - Verification tests
-- **`requirements.txt`** - Python dependencies
+
+### Seasonal Suitability (NEW)
+- **`seasonal_suitability_dataset.py`** - Training data generator (28,000+ samples)
+- **`seasonal_suitability_model.py`** - Random Forest ML trainer
+- **`seasonal_suitability_api.py`** - Flask prediction API (port 5001)
+
+### Other ML Modules
+- **`demand_prediction.py`** - Demand forecasting
+- **`customer_segmentation.py`** - Customer clustering
+- **`recommendation_engine.py`** - Product recommendations
+- **`disease_detector.py`** - Disease detection
+- **`review_sentiment_classifier.py`** - Sentiment analysis
+- **`cancellation_svm_classifier.py`** - Cancellation prediction
+
+### Shared
+- **`requirements.txt`** - Python dependencies (all modules)
 
 ## 🔧 Manual Setup
 
@@ -216,8 +248,23 @@ For production:
 ## 📞 Integration
 
 Node.js backend already configured!
+
+### Yield Prediction
 - Service: `backend/src/services/pepperMLService.js`
 - Routes: `backend/src/routes/pepperML.js`
+
+### Seasonal Suitability
+- Service: `backend/src/services/seasonalSuitability.service.js`
+- Routes: `backend/src/routes/seasonalSuitability.routes.js`
+- Model: `backend/src/models/SeasonalSuitabilityAnalytics.js`
+
+## 📚 Documentation
+
+### Seasonal Suitability System
+- **Quick Start**: `../../SEASONAL_SUITABILITY_QUICK_REFERENCE.md`
+- **Full Guide**: `../../SEASONAL_SUITABILITY_GUIDE.md`
+- **Implementation**: `../../SEASONAL_SUITABILITY_IMPLEMENTATION.md`
+- **Checklist**: `../../SEASONAL_SUITABILITY_CHECKLIST.md`
 
 ## 📝 License
 
@@ -225,8 +272,17 @@ Part of PEPPER project
 
 ## 🤝 Contributing
 
-To improve the model:
+To improve the models:
+
+### Yield Prediction
 1. Collect real-world yield data
 2. Add to training dataset
 3. Retrain and compare performance
 4. Submit improved model
+
+### Seasonal Suitability
+1. Collect actual planting outcomes
+2. Update training data with real results
+3. Retrain model with new samples
+4. Compare accuracy metrics
+5. Deploy improved model

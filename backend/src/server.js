@@ -25,6 +25,7 @@ import hubLocationRouter from './routes/hubLocation.routes.js';
 import wishlistRouter from './routes/wishlist.routes.js';
 import videosRouter from './routes/videos.routes.js';
 import invoiceRouter from './routes/invoice.routes.js';
+import seasonalSuitabilityRouter from './routes/seasonalSuitability.routes.js';
 
 // Get directory path for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -74,6 +75,7 @@ app.use('/api/notifications', notificationRouter);
 app.use('/api/wishlist', wishlistRouter);
 app.use('/api/videos', videosRouter);
 app.use('/api/invoices', invoiceRouter);
+app.use('/api/seasonal-suitability', seasonalSuitabilityRouter);
 app.use('/api/admin', updateHubCoordinatesRouter);
 app.use('/api', stockRouter);
 

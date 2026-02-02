@@ -1,0 +1,13 @@
+{
+  "feature_columns": [
+    "month",
+    "pincode",
+    "temperature",
+    "rainfall",
+    "humidity",
+    "district_encoded",
+    "variety_encoded",
+    "water_availability_encoded"
+  ],
+  "target_column": "suitability"
+}

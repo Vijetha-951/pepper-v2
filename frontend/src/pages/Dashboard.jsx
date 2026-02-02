@@ -11,6 +11,9 @@ import customerProductService from "../services/customerProductService";
 import RecommendedProducts from "../components/RecommendedProducts";
 import MyReviews from "./MyReviews";
 import DemandPredictionWidget from "../components/DemandPredictionWidget";
+import SeasonalSuitabilityHelper from "../utils/seasonalSuitability";
+
+const seasonalHelper = new SeasonalSuitabilityHelper();
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -60,6 +63,7 @@ export default function Dashboard() {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [videoCategory, setVideoCategory] = useState('all');
+  const [seasonalRecommendations, setSeasonalRecommendations] = useState({});
 
   useEffect(() => {
     const initializeUser = async () => {
@@ -97,6 +101,27 @@ export default function Dashboard() {
       fetchWishlist();
     }
   }, [activeTab]);
+
+  // Fetch seasonal recommendations for products
+  const fetchSeasonalRecommendations = async (productsList) => {
+    const recommendations = {};
+    for (const product of productsList) {
+      if (product.variety) {
+        const recommendation = await seasonalHelper.getRecommendation(product);
+        if (recommendation) {
+          recommendations[product._id] = recommendation;
+        }
+      }
+    }
+    setSeasonalRecommendations(recommendations);
+  };
+
+  // Fetch seasonal recommendations when products change
+  useEffect(() => {
+    if (products.length > 0) {
+      fetchSeasonalRecommendations(products);
+    }
+  }, [products]);
 
   // Fetch cart when cart tab is active
   useEffect(() => {
@@ -1282,6 +1307,56 @@ export default function Dashboard() {
                               fill={isInWishlist(product._id) ? 'white' : 'none'}
                             />
                           </button>
+                        </div>
+                      )}
+
+                      {/* Seasonal Suitability Badge */}
+                      {seasonalRecommendations[product._id] && (
+                        <div style={{
+                          marginBottom: '1rem',
+                          padding: '0.75rem',
+                          borderRadius: '10px',
+                          background: seasonalRecommendations[product._id].suitability === 'Recommended' 
+                            ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)'
+                            : seasonalRecommendations[product._id].suitability === 'Plant with Care'
+                            ? 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)'
+                            : 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
+                          border: seasonalRecommendations[product._id].suitability === 'Recommended'
+                            ? '2px solid #10b981'
+                            : seasonalRecommendations[product._id].suitability === 'Plant with Care'
+                            ? '2px solid #f59e0b'
+                            : '2px solid #ef4444',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}>
+                          <span style={{ fontSize: '1.25rem' }}>
+                            {seasonalRecommendations[product._id].suitability === 'Recommended' ? '✓' : 
+                             seasonalRecommendations[product._id].suitability === 'Plant with Care' ? '⚠️' : '✗'}
+                          </span>
+                          <div style={{ flex: 1 }}>
+                            <div style={{
+                              fontSize: '0.75rem',
+                              fontWeight: '700',
+                              color: seasonalRecommendations[product._id].suitability === 'Recommended'
+                                ? '#059669'
+                                : seasonalRecommendations[product._id].suitability === 'Plant with Care'
+                                ? '#d97706'
+                                : '#dc2626',
+                              marginBottom: '0.25rem',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px'
+                            }}>
+                              {seasonalRecommendations[product._id].suitability}
+                            </div>
+                            <div style={{
+                              fontSize: '0.7rem',
+                              color: '#6b7280',
+                              lineHeight: '1.4'
+                            }}>
+                              {seasonalRecommendations[product._id].recommendation}
+                            </div>
+                          </div>
                         </div>
                       )}
 

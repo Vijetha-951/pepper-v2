@@ -54,11 +54,22 @@ router.get('/:orderId', requireAuth, asyncHandler(async (req, res) => {
   try {
     let invoicePath = getInvoicePath(orderId);
 
-    // Generate invoice if it doesn't exist
-    if (!invoiceExists(orderId)) {
-      console.log(`Generating invoice for order ${orderId}...`);
-      invoicePath = await generateInvoice(order);
+    // Always regenerate invoice to ensure latest data
+    console.log(`Regenerating invoice for order ${orderId}...`);
+    console.log('👤 User data:', { 
+      firstName: order.user?.firstName, 
+      lastName: order.user?.lastName, 
+      email: order.user?.email 
+    });
+    
+    // Delete old invoice if exists
+    if (fs.existsSync(invoicePath)) {
+      fs.unlinkSync(invoicePath);
+      console.log('🗑️ Deleted old invoice');
     }
+    
+    invoicePath = await generateInvoice(order);
+    console.log('✅ New invoice generated');
 
     // Check if file exists
     if (!fs.existsSync(invoicePath)) {
@@ -107,11 +118,22 @@ router.get('/admin/:orderId', requireAuth, requireAdmin, asyncHandler(async (req
   try {
     let invoicePath = getInvoicePath(orderId);
 
-    // Generate invoice if it doesn't exist
-    if (!invoiceExists(orderId)) {
-      console.log(`Generating invoice for order ${orderId}...`);
-      invoicePath = await generateInvoice(order);
+    // Always regenerate invoice to ensure latest data
+    console.log(`Regenerating admin invoice for order ${orderId}...`);
+    console.log('👤 User data:', { 
+      firstName: order.user?.firstName, 
+      lastName: order.user?.lastName, 
+      email: order.user?.email 
+    });
+    
+    // Delete old invoice if exists
+    if (fs.existsSync(invoicePath)) {
+      fs.unlinkSync(invoicePath);
+      console.log('🗑️ Deleted old invoice');
     }
+    
+    invoicePath = await generateInvoice(order);
+    console.log('✅ New invoice generated');
 
     // Check if file exists
     if (!fs.existsSync(invoicePath)) {

@@ -13,6 +13,11 @@ const productSchema = new mongoose.Schema(
     image: { type: String, default: '' },
     isActive: { type: Boolean, default: true },
     // Product Specifications
+    variety: { 
+      type: String, 
+      enum: ['Panniyur 1', 'Panniyur 5', 'Karimunda', 'Subhakara', 'Pournami', 'IISR Shakthi', 'IISR Thevam', 'Sreekara', 'Other'],
+      default: 'Karimunda'
+    },
     propagationMethod: { type: String, default: 'Cutting' },
     maturityDuration: { type: String, default: '1.5 years' },
     bloomingSeason: { type: String, default: 'All season' },
