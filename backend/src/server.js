@@ -2,6 +2,8 @@ import './config/env.js'; // Load environment variables first
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import connectDB from './config/db.js';
 import productsRouter from './routes/products.routes.js';
 import authRouter from './routes/auth.routes.js';
@@ -23,6 +25,10 @@ import hubLocationRouter from './routes/hubLocation.routes.js';
 import wishlistRouter from './routes/wishlist.routes.js';
 import videosRouter from './routes/videos.routes.js';
 
+// Get directory path for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Debug environment variables
 console.log('Environment variables loaded:');
 console.log('PORT from env:', process.env.PORT);
@@ -36,6 +42,10 @@ const PORT = process.env.PORT || 5000;
 app.use(cors({ origin: true, credentials: true })); // Allow all origins in development
 app.use(express.json());
 app.use(morgan('dev'));
+
+// ====== Static Files ======
+// Serve uploaded videos
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ====== Health Check ======
 app.get('/api/health', (_req, res) => {

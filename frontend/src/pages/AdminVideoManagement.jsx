@@ -13,6 +13,10 @@ export default function AdminVideoManagement() {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [stats, setStats] = useState(null);
+  const [uploadMethod, setUploadMethod] = useState('file'); // 'url' or 'file' - default to 'file' for upload
+  const [videoFile, setVideoFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -113,6 +117,19 @@ export default function AdminVideoManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Check if using file upload method
+    if (uploadMethod === 'file') {
+      if (!videoFile) {
+        setErrorMessage('❌ Please select a video file to upload');
+        setTimeout(() => setErrorMessage(''), 3000);
+        return;
+      }
+      
+      // Handle file upload
+      return handleFileUpload();
+    }
+    
+    // Handle URL-based video (existing logic)
     // Validate and auto-convert YouTube URL
     let videoUrl = formData.url.trim();
     let videoId = '';
@@ -181,6 +198,97 @@ export default function AdminVideoManagement() {
     } catch (error) {
       console.error('Error saving video:', error);
       setErrorMessage('Failed to save video');
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!videoFile) return;
+    
+    setIsUploading(true);
+    setUploadProgress(0);
+    
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const formDataToSend = new FormData();
+      
+      formDataToSend.append('video', videoFile);
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('thumbnail', formData.thumbnail || '');
+      formDataToSend.append('category', formData.category);
+      formDataToSend.append('duration', formData.duration || '');
+      formDataToSend.append('tags', formData.tags || '');
+      
+      const xhr = new XMLHttpRequest();
+      
+      // Track upload progress
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const percentComplete = Math.round((e.loaded / e.total) * 100);
+          setUploadProgress(percentComplete);
+        }
+      });
+      
+      // Handle completion
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 201) {
+          setSuccessMessage('✅ Video uploaded successfully!');
+          setShowModal(false);
+          resetForm();
+          fetchVideos();
+          fetchStats();
+          setTimeout(() => setSuccessMessage(''), 3000);
+        } else {
+          const response = JSON.parse(xhr.responseText);
+          setErrorMessage(response.message || '❌ Failed to upload video');
+          setTimeout(() => setErrorMessage(''), 5000);
+        }
+        setIsUploading(false);
+        setUploadProgress(0);
+      });
+      
+      // Handle errors
+      xhr.addEventListener('error', () => {
+        setErrorMessage('❌ Upload failed. Please try again.');
+        setTimeout(() => setErrorMessage(''), 5000);
+        setIsUploading(false);
+        setUploadProgress(0);
+      });
+      
+      xhr.open('POST', '/api/videos/admin/upload');
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      xhr.send(formDataToSend);
+      
+    } catch (error) {
+      console.error('Error uploading video:', error);
+      setErrorMessage('❌ Failed to upload video: ' + error.message);
+      setTimeout(() => setErrorMessage(''), 5000);
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Check file size (max 500MB)
+      if (file.size > 500 * 1024 * 1024) {
+        setErrorMessage('❌ File size must be less than 500MB');
+        setTimeout(() => setErrorMessage(''), 5000);
+        return;
+      }
+      
+      // Check file type
+      const allowedTypes = ['video/mp4', 'video/avi', 'video/quicktime', 'video/x-msvideo', 'video/x-flv', 'video/webm', 'video/x-matroska'];
+      if (!allowedTypes.includes(file.type)) {
+        setErrorMessage('❌ Only video files are allowed (MP4, AVI, MOV, WMV, FLV, WebM, MKV)');
+        setTimeout(() => setErrorMessage(''), 5000);
+        return;
+      }
+      
+      setVideoFile(file);
+      setSuccessMessage(`✅ Selected: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
+      setTimeout(() => setSuccessMessage(''), 3000);
     }
   };
 
@@ -262,6 +370,10 @@ export default function AdminVideoManagement() {
       isActive: true
     });
     setEditingVideo(null);
+    setUploadMethod('file');
+    setVideoFile(null);
+    setUploadProgress(0);
+    setIsUploading(false);
   };
 
   return (
@@ -467,23 +579,107 @@ export default function AdminVideoManagement() {
                 />
               </div>
 
-              <div className="form-group">
-                <label>Video URL * (YouTube embed, Vimeo, etc.)</label>
-                <input
-                  type="url"
-                  value={formData.url}
-                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                  placeholder="https://www.youtube.com/embed/VIDEO_ID"
-                  required
-                />
-                <small style={{ display: 'block', marginTop: '0.5rem', color: '#059669', fontWeight: '500' }}>
-                  ✅ Correct: https://www.youtube.com/embed/VIDEO_ID<br/>
-                  ❌ Wrong: https://www.youtube.com/watch?v=VIDEO_ID
-                </small>
-                <small style={{ display: 'block', marginTop: '0.25rem', color: '#6b7280' }}>
-                  Paste any YouTube URL - it will be auto-converted to embed format
-                </small>
-              </div>
+              {!editingVideo && (
+                <div className="form-group">
+                  <label>Upload Method *</label>
+                  <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="uploadMethod"
+                        value="url"
+                        checked={uploadMethod === 'url'}
+                        onChange={(e) => setUploadMethod(e.target.value)}
+                      />
+                      <span>YouTube/Vimeo URL</span>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="uploadMethod"
+                        value="file"
+                        checked={uploadMethod === 'file'}
+                        onChange={(e) => setUploadMethod(e.target.value)}
+                      />
+                      <span>Upload Video File</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {uploadMethod === 'url' ? (
+                <div className="form-group">
+                  <label>Video URL * (YouTube embed, Vimeo, etc.)</label>
+                  <input
+                    type="url"
+                    value={formData.url}
+                    onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                    placeholder="https://www.youtube.com/embed/VIDEO_ID"
+                    required={uploadMethod === 'url'}
+                  />
+                  <small style={{ display: 'block', marginTop: '0.5rem', color: '#059669', fontWeight: '500' }}>
+                    ✅ Correct: https://www.youtube.com/embed/VIDEO_ID<br/>
+                    ❌ Wrong: https://www.youtube.com/watch?v=VIDEO_ID
+                  </small>
+                  <small style={{ display: 'block', marginTop: '0.25rem', color: '#6b7280' }}>
+                    Paste any YouTube URL - it will be auto-converted to embed format
+                  </small>
+                </div>
+              ) : (
+                <div className="form-group">
+                  <label>Video File * (Max 500MB)</label>
+                  <input
+                    type="file"
+                    accept="video/*"
+                    onChange={handleFileChange}
+                    required={uploadMethod === 'file' && !videoFile}
+                    style={{
+                      padding: '0.75rem',
+                      border: '2px dashed #d1d5db',
+                      borderRadius: '8px',
+                      width: '100%',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  {videoFile && (
+                    <div style={{ 
+                      marginTop: '0.5rem', 
+                      padding: '0.5rem', 
+                      background: '#f0fdf4', 
+                      borderRadius: '6px',
+                      fontSize: '0.875rem',
+                      color: '#059669'
+                    }}>
+                      ✅ {videoFile.name} ({(videoFile.size / (1024 * 1024)).toFixed(2)} MB)
+                    </div>
+                  )}
+                  <small style={{ display: 'block', marginTop: '0.5rem', color: '#6b7280' }}>
+                    Supported formats: MP4, AVI, MOV, WMV, FLV, WebM, MKV
+                  </small>
+                </div>
+              )}
+
+              {isUploading && (
+                <div className="form-group">
+                  <div style={{ marginBottom: '0.5rem', color: '#6b7280' }}>
+                    Uploading... {uploadProgress}%
+                  </div>
+                  <div style={{ 
+                    width: '100%', 
+                    height: '8px', 
+                    background: '#e5e7eb', 
+                    borderRadius: '4px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${uploadProgress}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #10b981, #059669)',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
+                </div>
+              )}
 
               <div className="form-group">
                 <label>Thumbnail URL</label>
@@ -574,11 +770,27 @@ export default function AdminVideoManagement() {
               </div>
 
               <div className="modal-actions">
-                <button type="button" onClick={() => setShowModal(false)} className="cancel-btn">
+                <button 
+                  type="button" 
+                  onClick={() => setShowModal(false)} 
+                  className="cancel-btn"
+                  disabled={isUploading}
+                >
                   Cancel
                 </button>
-                <button type="submit" className="submit-btn">
-                  {editingVideo ? 'Update Video' : 'Add Video'}
+                <button 
+                  type="submit" 
+                  className="submit-btn"
+                  disabled={isUploading}
+                  style={{ opacity: isUploading ? 0.6 : 1 }}
+                >
+                  {isUploading 
+                    ? `Uploading... ${uploadProgress}%` 
+                    : editingVideo 
+                      ? 'Update Video' 
+                      : uploadMethod === 'file' 
+                        ? 'Upload Video' 
+                        : 'Add Video'}
                 </button>
               </div>
             </form>

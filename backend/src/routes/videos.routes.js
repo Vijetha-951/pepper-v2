@@ -1,11 +1,56 @@
 import express from 'express';
 import asyncHandler from 'express-async-handler';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import Video from '../models/Video.model.js';
 import VideoLike from '../models/VideoLike.model.js';
 import VideoView from '../models/VideoView.model.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const router = express.Router();
+
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, '../../uploads/videos');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for video uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'video-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+// File filter to accept only video files
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = /mp4|avi|mov|wmv|flv|webm|mkv/;
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = allowedTypes.test(file.mimetype);
+
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Only video files are allowed (mp4, avi, mov, wmv, flv, webm, mkv)'));
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 500 * 1024 * 1024 // 500MB max file size
+  }
+});
 
 // ====== PUBLIC ROUTES (for authenticated users) ======
 
@@ -229,6 +274,67 @@ router.post('/admin/create', requireAuth, requireAdmin, asyncHandler(async (req,
     message: 'Video created successfully',
     video
   });
+}));
+
+/**
+ * POST /api/videos/admin/upload
+ * Upload video file - Admin only
+ */
+router.post('/admin/upload', requireAuth, requireAdmin, upload.single('video'), asyncHandler(async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No video file uploaded'
+      });
+    }
+
+    const { title, description, thumbnail, category, duration, tags } = req.body;
+
+    // Validation
+    if (!title || !description) {
+      // Delete uploaded file if validation fails
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({
+        success: false,
+        message: 'Title and description are required'
+      });
+    }
+
+    // Create video URL path (accessible via static serve)
+    const videoUrl = `/uploads/videos/${req.file.filename}`;
+
+    const video = new Video({
+      title,
+      description,
+      url: videoUrl,
+      thumbnail: thumbnail || '',
+      category: category || 'other',
+      duration: duration || '',
+      tags: tags ? (Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim())) : [],
+      uploadedBy: req.user.uid,
+      isActive: true
+    });
+
+    await video.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Video uploaded successfully',
+      video,
+      file: {
+        filename: req.file.filename,
+        size: req.file.size,
+        path: videoUrl
+      }
+    });
+  } catch (error) {
+    // Delete uploaded file if there's an error
+    if (req.file) {
+      fs.unlinkSync(req.file.path);
+    }
+    throw error;
+  }
 }));
 
 /**

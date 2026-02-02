@@ -3249,20 +3249,40 @@ export default function Dashboard() {
               borderRadius: '16px 16px 0 0',
               overflow: 'hidden'
             }}>
-              <iframe
-                src={selectedVideo.url}
-                title={selectedVideo.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  border: 'none'
-                }}
-              />
+              {selectedVideo.url.startsWith('/uploads/') ? (
+                // Local video file
+                <video
+                  controls
+                  autoPlay
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    border: 'none'
+                  }}
+                >
+                  <source src={selectedVideo.url} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                // YouTube/Vimeo iframe embed
+                <iframe
+                  src={selectedVideo.url}
+                  title={selectedVideo.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    border: 'none'
+                  }}
+                />
+              )}
             </div>
 
             {/* Video Details */}
