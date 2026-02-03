@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Eye, Package, DollarSign, Clock, RefreshCw, ChevronLeft, ChevronRight, ArrowLeft, MapPin, Home, Building2, Key, Trash2, Download } from 'lucide-react';
+import { Eye, Package, DollarSign, Clock, ChevronLeft, ChevronRight, ArrowLeft, MapPin, Home, Building2, Key, Trash2, Download } from 'lucide-react';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import './AdminAllOrders.css';
@@ -8,14 +8,8 @@ import './AdminAllOrders.css';
 const AdminAllOrders = () => {
   const [user, setUser] = useState(null);
   const [orders, setOrders] = useState([]);
-  const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [orderStatusFilter, setOrderStatusFilter] = useState('');
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
-  const [deliveryTypeFilter, setDeliveryTypeFilter] = useState('');
-  const [dateRangeFilter, setDateRangeFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [ordersPerPage] = useState(10);
   const [summary, setSummary] = useState({
@@ -41,9 +35,8 @@ const AdminAllOrders = () => {
   }, []);
 
   useEffect(() => {
-    filterOrders();
     calculateSummary();
-  }, [orders, searchTerm, orderStatusFilter, paymentStatusFilter, deliveryTypeFilter, dateRangeFilter]);
+  }, [orders]);
 
   const fetchOrders = async (firebaseUser = user) => {
     try {
@@ -64,7 +57,6 @@ const AdminAllOrders = () => {
       if (response.ok) {
         const data = await response.json();
         setOrders(data);
-        setFilteredOrders(data);
       } else {
         setError('Failed to fetch orders');
       }
@@ -108,68 +100,6 @@ const AdminAllOrders = () => {
       pendingOrders,
       pendingAmount
     });
-  };
-
-  const filterOrders = () => {
-    let filtered = [...orders];
-
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(order => {
-        const orderId = order._id.slice(-8).toUpperCase();
-        const customerName = `${order.user?.firstName || ''} ${order.user?.lastName || ''}`.toLowerCase();
-        const products = order.items?.map(item => item.name?.toLowerCase() || '').join(' ');
-        const search = searchTerm.toLowerCase();
-
-        return orderId.includes(search.toUpperCase()) ||
-          customerName.includes(search) ||
-          products.includes(search);
-      });
-    }
-
-    // Order status filter
-    if (orderStatusFilter) {
-      if (orderStatusFilter === 'PROCESSING') {
-        filtered = filtered.filter(order =>
-          ['PENDING', 'APPROVED', 'OUT_FOR_DELIVERY'].includes(order.status)
-        );
-      } else {
-        filtered = filtered.filter(order => order.status === orderStatusFilter);
-      }
-    }
-
-    // Payment status filter
-    if (paymentStatusFilter) {
-      filtered = filtered.filter(order => order.payment?.status === paymentStatusFilter);
-    }
-
-    // Delivery type filter
-    if (deliveryTypeFilter) {
-      filtered = filtered.filter(order => order.deliveryType === deliveryTypeFilter);
-    }
-
-    // Date range filter
-    if (dateRangeFilter !== 'all') {
-      const now = new Date();
-      filtered = filtered.filter(order => {
-        const orderDate = new Date(order.createdAt);
-        switch (dateRangeFilter) {
-          case 'today':
-            return orderDate.toDateString() === now.toDateString();
-          case 'week':
-            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            return orderDate >= weekAgo;
-          case 'month':
-            return orderDate.getMonth() === now.getMonth() &&
-              orderDate.getFullYear() === now.getFullYear();
-          default:
-            return true;
-        }
-      });
-    }
-
-    setFilteredOrders(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
   };
 
   const getStatusBadgeClass = (status) => {
@@ -313,8 +243,8 @@ const AdminAllOrders = () => {
   // Pagination
   const indexOfLastOrder = currentPage * ordersPerPage;
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
-  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
+  const totalPages = Math.ceil(orders.length / ordersPerPage);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -393,81 +323,6 @@ const AdminAllOrders = () => {
             <h3>₹{summary.pendingAmount.toLocaleString()}</h3>
             <p className="card-subtitle">Pending Order</p>
           </div>
-        </div>
-      </div>
-
-      {/* Filters Section */}
-      <div className="filters-section">
-        <div className="search-bar">
-          <Search size={20} />
-          <input
-            type="text"
-            placeholder="Search by Order ID, Customer, Product..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        <div className="filter-dropdowns">
-          <div className="filter-group">
-            <label>Order Status</label>
-            <select
-              value={orderStatusFilter}
-              onChange={(e) => setOrderStatusFilter(e.target.value)}
-            >
-              <option value="">All</option>
-              <option value="PROCESSING">Processing</option>
-              <option value="PENDING">Pending</option>
-              <option value="APPROVED">Approved</option>
-              <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
-              <option value="READY_FOR_COLLECTION">Ready for Collection</option>
-              <option value="DELIVERED">Delivered</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>Payment Status</label>
-            <select
-              value={paymentStatusFilter}
-              onChange={(e) => setPaymentStatusFilter(e.target.value)}
-            >
-              <option value="">All</option>
-              <option value="PAID">Paid</option>
-              <option value="PENDING">Pending</option>
-              <option value="FAILED">Failed</option>
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>Delivery Type</label>
-            <select
-              value={deliveryTypeFilter}
-              onChange={(e) => setDeliveryTypeFilter(e.target.value)}
-            >
-              <option value="">All</option>
-              <option value="HOME_DELIVERY">Home Delivery</option>
-              <option value="HUB_COLLECTION">Hub Collection</option>
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>Date Range</label>
-            <select
-              value={dateRangeFilter}
-              onChange={(e) => setDateRangeFilter(e.target.value)}
-            >
-              <option value="all">All Time</option>
-              <option value="today">Today</option>
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-            </select>
-          </div>
-
-          <button className="refresh-btn" onClick={fetchOrders}>
-            <RefreshCw size={18} />
-            Refresh
-          </button>
         </div>
       </div>
 

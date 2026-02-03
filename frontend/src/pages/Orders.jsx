@@ -2,19 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
-import { Package, Search, Eye, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, Star, Download } from 'lucide-react';
+import { Package, Eye, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, Star, Download } from 'lucide-react';
 import ReviewModal from '../components/ReviewModal';
 import './Orders.css';
 
 const Orders = () => {
   const [user] = useAuthState(auth);
   const [orders, setOrders] = useState([]);
-  const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [currentPage, setCurrentPage] = useState(1);
   const [ordersPerPage, setOrdersPerPage] = useState(10);
   const [successMessage, setSuccessMessage] = useState('');
@@ -32,10 +28,7 @@ const Orders = () => {
     }
   }, [user, navigate]);
 
-  useEffect(() => {
-    filterOrders();
-    setCurrentPage(1); // Reset to first page when filters change
-  }, [orders, searchTerm, statusFilter, dateRange]);
+
 
   const fetchOrders = async () => {
     try {
@@ -50,7 +43,6 @@ const Orders = () => {
       if (response.ok) {
         const data = await response.json();
         setOrders(data);
-        setFilteredOrders(data);
       } else {
         setError('Failed to fetch orders');
       }
@@ -60,39 +52,6 @@ const Orders = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const filterOrders = () => {
-    let filtered = [...orders];
-
-    // Filter by search term (Order ID or Product name)
-    if (searchTerm) {
-      filtered = filtered.filter(order => 
-        order._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.items.some(item => 
-          item.name.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      );
-    }
-
-    // Filter by status
-    if (statusFilter !== 'ALL') {
-      filtered = filtered.filter(order => order.status === statusFilter);
-    }
-
-    // Filter by date range
-    if (dateRange.start) {
-      filtered = filtered.filter(order => 
-        new Date(order.createdAt) >= new Date(dateRange.start)
-      );
-    }
-    if (dateRange.end) {
-      filtered = filtered.filter(order => 
-        new Date(order.createdAt) <= new Date(dateRange.end)
-      );
-    }
-
-    setFilteredOrders(filtered);
   };
 
   const getStatusBadgeClass = (status) => {
@@ -231,8 +190,8 @@ const Orders = () => {
   // Pagination calculations
   const indexOfLastOrder = currentPage * ordersPerPage;
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
-  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
+  const totalPages = Math.ceil(orders.length / ordersPerPage);
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -329,48 +288,6 @@ const Orders = () => {
         {/* Title */}
         <h1 className="page-title">My Order History</h1>
 
-        {/* Filters Section */}
-        <div className="filters-section">
-          {/* Search Bar */}
-          <div className="search-bar">
-            <Search className="search-icon" size={18} />
-            <input
-              type="text"
-              placeholder="Filter by Status"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
-          </div>
-
-          {/* Status Filter Buttons */}
-          <div className="status-filters">
-            <button
-              className={`filter-btn ${statusFilter === 'ALL' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('ALL')}
-            >
-              All Orders
-            </button>
-            <button
-              className={`filter-btn ${statusFilter === 'PENDING' || statusFilter === 'APPROVED' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('PENDING')}
-            >
-              Processing
-            </button>
-            <button
-              className={`filter-btn ${statusFilter === 'CANCELLED' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('CANCELLED')}
-            >
-              Cancelled
-            </button>
-          </div>
-
-          {/* Date Range Filter */}
-          <div className="date-filter">
-            <span className="filter-label">Filter by Date Range</span>
-          </div>
-        </div>
-
         {/* Success Message */}
         {successMessage && (
           <div className="success-message">
@@ -386,7 +303,7 @@ const Orders = () => {
         )}
 
         {/* Orders Table */}
-        {filteredOrders.length === 0 ? (
+        {orders.length === 0 ? (
           <div className="empty-state">
             <Package className="empty-icon" size={64} />
             <h2>No orders found</h2>
@@ -403,7 +320,7 @@ const Orders = () => {
             {/* Orders per page selector and info */}
             <div className="pagination-info">
               <div className="results-info">
-                Showing {indexOfFirstOrder + 1} to {Math.min(indexOfLastOrder, filteredOrders.length)} of {filteredOrders.length} orders
+                Showing {indexOfFirstOrder + 1} to {Math.min(indexOfLastOrder, orders.length)} of {orders.length} orders
               </div>
               <div className="orders-per-page">
                 <label htmlFor="ordersPerPage">Orders per page:</label>
@@ -527,13 +444,13 @@ const Orders = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
             <div className="pagination-container">
               <button
                 className="pagination-btn"
