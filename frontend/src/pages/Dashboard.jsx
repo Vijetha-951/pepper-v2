@@ -278,6 +278,16 @@ export default function Dashboard() {
       return;
     }
 
+    // Check if product is in stock before attempting to add
+    const product = products.find(p => p._id === productId);
+    const availableStock = product ? (product.available_stock !== undefined ? product.available_stock : product.stock) : 0;
+    
+    if (product && availableStock <= 0) {
+      setCartPrompt({ productId, visible: true, error: "Currently out of stock" });
+      setTimeout(() => setCartPrompt({ productId: null, visible: false }), 3000);
+      return;
+    }
+
     setCartLoading(prev => ({ ...prev, [productId]: true }));
     setErrorMessage("");
     setSuccessMessage("");
@@ -288,17 +298,21 @@ export default function Dashboard() {
 
       // Show inline "View Cart" prompt near this product
       // It will stay visible until another product is added
-      setCartPrompt({ productId, visible: true });
+      setCartPrompt({ productId, visible: true, error: null });
       
       // Update product stock locally
       setProducts(prev => prev.map(p => 
-        p._id === productId ? { ...p, stock: Math.max(0, p.stock - 1) } : p
+        p._id === productId ? { 
+          ...p, 
+          available_stock: Math.max(0, (p.available_stock !== undefined ? p.available_stock : p.stock) - 1),
+          stock: Math.max(0, (p.stock || 0) - 1)
+        } : p
       ));
 
-      // Refresh cart if we're on cart tab
-      if (activeTab === 'cart') {
-        fetchCart();
-      }
+      // Refresh cart data in background without showing loader
+      customerProductService.getCart().then(cartData => {
+        setCart(cartData || { items: [], total: 0 });
+      }).catch(console.error);
 
       // Clear success message after 3 seconds
       setTimeout(() => {
@@ -307,10 +321,8 @@ export default function Dashboard() {
 
     } catch (err) {
       console.error("Add to cart error:", err);
-      setErrorMessage(err.message || "Failed to add product to cart");
-      setTimeout(() => {
-        setErrorMessage("");
-      }, 5000);
+      setCartPrompt({ productId, visible: true, error: err.message || "Failed to add" });
+      setTimeout(() => setCartPrompt({ productId: null, visible: false }), 3000);
     } finally {
       setCartLoading(prev => ({ ...prev, [productId]: false }));
     }
@@ -322,7 +334,7 @@ export default function Dashboard() {
       fetchCart(); // Refresh cart
     } catch (error) {
       console.error('Error updating cart:', error);
-      setErrorMessage("Failed to update cart item");
+      // Silently handle the error since UI prevents invalid operations
     }
   };
 
@@ -1261,10 +1273,10 @@ export default function Dashboard() {
                             borderRadius: '8px',
                             fontSize: '0.75rem',
                             fontWeight: '600',
-                            color: product.stock > 10 ? '#059669' : product.stock > 0 ? '#d97706' : '#dc2626',
+                            color: (product.available_stock !== undefined ? product.available_stock : product.stock) > 10 ? '#059669' : (product.available_stock !== undefined ? product.available_stock : product.stock) > 0 ? '#d97706' : '#dc2626',
                             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
                           }}>
-                            ⚡ {product.stock > 0 ? 'Available' : 'Sold Out'}
+                            ⚡ {(product.available_stock !== undefined ? product.available_stock : product.stock) > 0 ? 'Available' : 'Sold Out'}
                           </div>
                           
                           {/* Wishlist Heart Button */}
@@ -1438,19 +1450,19 @@ export default function Dashboard() {
                         <span style={{ 
                           padding: '0.375rem 0.75rem',
                           borderRadius: '8px',
-                          background: product.stock > 10 ? '#d1fae5' : product.stock > 0 ? '#fef3c7' : '#fee2e2',
-                          color: product.stock > 10 ? '#059669' : product.stock > 0 ? '#d97706' : '#dc2626',
+                          background: (product.available_stock !== undefined ? product.available_stock : product.stock) > 10 ? '#d1fae5' : (product.available_stock !== undefined ? product.available_stock : product.stock) > 0 ? '#fef3c7' : '#fee2e2',
+                          color: (product.available_stock !== undefined ? product.available_stock : product.stock) > 10 ? '#059669' : (product.available_stock !== undefined ? product.available_stock : product.stock) > 0 ? '#d97706' : '#dc2626',
                           fontWeight: '600',
                           fontSize: '0.75rem'
                         }}>
-                          📦 {product.stock} left
+                          📦 {product.available_stock !== undefined ? product.available_stock : product.stock} left
                         </span>
                       </div>
 
                       {/* Add to Cart Button */}
                       <button
                         onClick={() => addToCart(product._id, product.name)}
-                        disabled={product.stock === 0 || cartLoading[product._id]}
+                        disabled={cartLoading[product._id]}
                         style={{
                           width: '100%',
                           display: 'flex',
@@ -1458,31 +1470,39 @@ export default function Dashboard() {
                           justifyContent: 'center',
                           gap: '0.5rem',
                           padding: '0.875rem',
-                          background: product.stock > 0 
+                          background: (product.available_stock !== undefined ? product.available_stock > 0 : product.stock > 0) 
                             ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
-                            : '#d1d5db',
+                            : '#ef4444',
                           color: 'white',
                           border: 'none',
                           borderRadius: '12px',
-                          cursor: product.stock > 0 && !cartLoading[product._id] ? 'pointer' : 'not-allowed',
+                          cursor: !cartLoading[product._id] ? 'pointer' : 'not-allowed',
                           fontWeight: '700',
                           fontSize: '0.9375rem',
                           transition: 'all 0.3s ease',
                           position: 'relative',
-                          boxShadow: product.stock > 0 ? '0 4px 15px rgba(5, 150, 105, 0.4)' : 'none',
+                          boxShadow: (product.available_stock !== undefined ? product.available_stock > 0 : product.stock > 0) 
+                            ? '0 4px 15px rgba(5, 150, 105, 0.4)' 
+                            : '0 4px 15px rgba(239, 68, 68, 0.3)',
                           textTransform: 'uppercase',
                           letterSpacing: '0.5px'
                         }}
                         onMouseEnter={(e) => {
-                          if (product.stock > 0 && !cartLoading[product._id]) {
+                          if (!cartLoading[product._id]) {
                             e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 6px 20px rgba(5, 150, 105, 0.5)';
+                            if ((product.available_stock !== undefined ? product.available_stock > 0 : product.stock > 0)) {
+                              e.currentTarget.style.boxShadow = '0 6px 20px rgba(5, 150, 105, 0.5)';
+                            } else {
+                              e.currentTarget.style.boxShadow = '0 6px 20px rgba(239, 68, 68, 0.4)';
+                            }
                           }
                         }}
                         onMouseLeave={(e) => {
-                          if (product.stock > 0) {
-                            e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          if ((product.available_stock !== undefined ? product.available_stock > 0 : product.stock > 0)) {
                             e.currentTarget.style.boxShadow = '0 4px 15px rgba(5, 150, 105, 0.4)';
+                          } else {
+                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(239, 68, 68, 0.3)';
                           }
                         }}
                       >
@@ -1498,7 +1518,7 @@ export default function Dashboard() {
                           }}></div>
                           Adding...
                         </>
-                      ) : product.stock > 0 ? (
+                      ) : (product.available_stock !== undefined ? product.available_stock > 0 : product.stock > 0) ? (
                         <>
                           <ShoppingCart size={16} />
                           Add to Cart
@@ -1518,31 +1538,41 @@ export default function Dashboard() {
                         right: '1rem',
                         bottom: '4rem',
                         background: 'white',
-                        border: '1px solid #e5e7eb',
+                        border: `1px solid ${cartPrompt.error ? '#fecaca' : '#e5e7eb'}`,
                         borderRadius: '8px',
                         boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                         padding: '0.75rem 1rem',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem',
-                        zIndex: 5
+                        zIndex: 10
                       }}>
-                        <span style={{ color: '#065f46', fontWeight: 600 }}>Added!</span>
-                        <button
-                          onClick={() => setActiveTab('cart')}
-                          style={{
-                            backgroundColor: '#059669',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            padding: '0.4rem 0.75rem',
-                            cursor: 'pointer',
-                            fontSize: '0.8rem',
-                            fontWeight: 600
-                          }}
-                        >
-                          View Cart
-                        </button>
+                        {cartPrompt.error ? (
+                          <>
+                            <AlertCircle size={16} color="#dc2626" />
+                            <span style={{ color: '#dc2626', fontWeight: 600 }}>{cartPrompt.error}</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle size={16} color="#059669" />
+                            <span style={{ color: '#065f46', fontWeight: 600 }}>Added!</span>
+                            <button
+                              onClick={() => setActiveTab('cart')}
+                              style={{
+                                backgroundColor: '#059669',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                padding: '0.4rem 0.75rem',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem',
+                                fontWeight: 600
+                              }}
+                            >
+                              View Cart
+                            </button>
+                          </>
+                        )}
                         <button
                           onClick={() => setCartPrompt({ productId: null, visible: false })}
                           style={{
@@ -1709,20 +1739,35 @@ export default function Dashboard() {
                         }}>
                           {item.quantity}
                         </span>
-                        <button
-                          onClick={() => updateCartQuantity(item.product?._id, item.quantity + 1)}
-                          style={{
+                        {item.quantity < (item.product?.available_stock || item.product?.stock || 0) ? (
+                          <button
+                            onClick={() => updateCartQuantity(item.product?._id, item.quantity + 1)}
+                            style={{
+                              padding: '0.25rem 0.5rem',
+                              backgroundColor: '#e5e7eb',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              color: '#374151'
+                            }}
+                            disabled={!item.product?._id}
+                          >
+                            +
+                          </button>
+                        ) : (
+                          <div style={{
                             padding: '0.25rem 0.5rem',
-                            backgroundColor: '#e5e7eb',
-                            border: 'none',
+                            backgroundColor: '#f3f4f6',
+                            border: '1px solid #d1d5db',
                             borderRadius: '4px',
-                            cursor: 'pointer',
-                            color: '#374151'
-                          }}
-                          disabled={!item.product?._id}
-                        >
-                          +
-                        </button>
+                            color: '#9ca3af',
+                            fontSize: '0.75rem',
+                            textAlign: 'center',
+                            minWidth: '60px'
+                          }}>
+                            Max
+                          </div>
+                        )}
                       </div>
                       
                       {/* Subtotal */}

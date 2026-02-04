@@ -257,38 +257,43 @@ export default function RecommendedProducts({ onAddToCart, onProductClick }) {
               <button
                 onClick={() => onAddToCart(product._id, product.name)}
                 style={{
-                  background: product.available_stock > 0 
+                  background: (product.available_stock !== undefined ? product.available_stock : product.stock) > 0 
                     ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                    : '#d1d5db',
+                    : '#ef4444',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
                   padding: '0.625rem 1rem',
                   marginTop: 'auto',
-                  cursor: product.available_stock > 0 ? 'pointer' : 'not-allowed',
+                  cursor: 'pointer',
                   fontSize: '0.875rem',
                   fontWeight: '700',
                   transition: 'all 0.3s ease',
-                  opacity: product.available_stock > 0 ? 1 : 0.6,
-                  boxShadow: product.available_stock > 0 ? '0 4px 12px rgba(16, 185, 129, 0.3)' : 'none',
+                  opacity: 1,
+                  boxShadow: (product.available_stock !== undefined ? product.available_stock : product.stock) > 0 
+                    ? '0 4px 12px rgba(16, 185, 129, 0.3)' 
+                    : '0 4px 12px rgba(239, 68, 68, 0.2)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.3px'
                 }}
-                disabled={product.available_stock <= 0}
                 onMouseEnter={(e) => {
-                  if (product.available_stock > 0) {
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  if ((product.available_stock !== undefined ? product.available_stock : product.stock) > 0) {
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)';
+                  } else {
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(239, 68, 68, 0.3)';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (product.available_stock > 0) {
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  if ((product.available_stock !== undefined ? product.available_stock : product.stock) > 0) {
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                  } else {
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.2)';
                   }
                 }}
               >
-                Add to Cart
+                {(product.available_stock !== undefined ? product.available_stock : product.stock) > 0 ? 'Add to Cart' : 'Out of Stock'}
               </button>
             </div>
           </div>

@@ -91,9 +91,18 @@ class CustomerProductService {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Cart error response:', errorText);
-        throw new Error(`Failed to add to cart: ${response.status} ${response.statusText}`);
+        let errorMessage = `Failed to add to cart: ${response.status} ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          console.error('Cart error response:', errorData);
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (parseError) {
+          // If JSON parsing fails, try to get text
+          console.error('Failed to parse error JSON:', parseError);
+        }
+        throw new Error(errorMessage);
       }
 
       const contentType = response.headers.get('content-type');
