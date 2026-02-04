@@ -368,15 +368,6 @@ export default function Login() {
         </button>
 
         <div style={welcomeContentStyle}>
-          <div style={{
-            ...iconContainerStyle,
-            background: 'rgba(255, 255, 255, 0.2)',
-            backdropFilter: 'blur(16px)',
-            border: '2px solid rgba(255, 255, 255, 0.3)',
-            boxShadow: '0 15px 35px rgba(0, 0, 0, 0.2)'
-          }}>
-            <LogIn size={28} color="white" />
-          </div>
           <h1 style={{ 
             fontSize: '2.5rem', 
             fontWeight: 'bold', 
@@ -411,9 +402,6 @@ export default function Login() {
         <div style={formContainerStyle}>
           {/* Header */}
           <div style={headerStyle}>
-            <div style={iconContainerStyle}>
-              <LogIn color="white" size={20} />
-            </div>
             <h2 style={titleStyle}>Sign In</h2>
             <p style={subtitleStyle}>Access your account</p>
           </div>
