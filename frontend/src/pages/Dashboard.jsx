@@ -31,6 +31,8 @@ export default function Dashboard() {
   const [cartPrompt, setCartPrompt] = useState({ productId: null, visible: false });
   const [searchQuery, setSearchQuery] = useState("");
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
   const [stats, setStats] = useState({
     totalOrders: 0,
@@ -93,6 +95,20 @@ export default function Dashboard() {
     
     initializeUser();
   }, []);
+
+  // Fetch notifications when user is available
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user]);
+
+  // Fetch notifications when notification panel is opened
+  useEffect(() => {
+    if (showNotifications && user) {
+      fetchNotifications();
+    }
+  }, [showNotifications]);
 
   // Fetch products when products tab is active
   useEffect(() => {
@@ -364,6 +380,34 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Error fetching wishlist:', error);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    if (!auth.currentUser) return;
+    
+    setNotificationsLoading(true);
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const response = await fetch('/api/notifications?limit=10', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data);
+        
+        // Update notification count in stats
+        const unreadCount = data.filter(n => !n.isRead).length;
+        setStats(prev => ({ ...prev, newNotifications: unreadCount }));
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setNotificationsLoading(false);
     }
   };
 
@@ -2647,64 +2691,101 @@ export default function Dashboard() {
                   )}
                 </div>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{
-                    padding: '0.75rem',
-                    background: '#f0fdf4',
-                    borderRadius: '8px',
-                    border: '1px solid #bbf7d0'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'start', gap: '0.5rem' }}>
-                      <Package size={16} color="#10b981" style={{ marginTop: '2px', flexShrink: 0 }} />
-                      <div style={{ flex: 1 }}>
-                        <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: '500', color: '#1f2937' }}>
-                          Order Delivered
-                        </p>
-                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#6b7280' }}>
-                          Your order #12345 has been delivered successfully
-                        </p>
-                      </div>
-                    </div>
+                {notificationsLoading ? (
+                  <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                    <div style={{ 
+                      width: '24px', 
+                      height: '24px', 
+                      border: '3px solid #e5e7eb',
+                      borderTop: '3px solid #10b981',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite',
+                      margin: '0 auto'
+                    }} />
+                    <p style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>Loading notifications...</p>
                   </div>
+                ) : notifications.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                    <Bell size={32} style={{ margin: '0 auto 0.5rem' }} />
+                    <p style={{ fontSize: '0.875rem' }}>No notifications yet</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {notifications.map((notification) => {
+                      // Determine background color and icon based on notification type
+                      let bgColor, borderColor, iconColor, Icon;
+                      
+                      switch (notification.type) {
+                        case 'ORDER_DELIVERED':
+                          bgColor = '#f0fdf4';
+                          borderColor = '#bbf7d0';
+                          iconColor = '#10b981';
+                          Icon = Package;
+                          break;
+                        case 'ORDER_DISPATCHED':
+                          bgColor = '#fef3c7';
+                          borderColor = '#fde68a';
+                          iconColor = '#f59e0b';
+                          Icon = Truck;
+                          break;
+                        case 'ORDER_READY':
+                          bgColor = '#dbeafe';
+                          borderColor = '#93c5fd';
+                          iconColor = '#3b82f6';
+                          Icon = Package2;
+                          break;
+                        case 'ORDER_ARRIVED':
+                          bgColor = '#ede9fe';
+                          borderColor = '#c4b5fd';
+                          iconColor = '#8b5cf6';
+                          Icon = CheckCircle;
+                          break;
+                        default:
+                          bgColor = '#f3f4f6';
+                          borderColor = '#d1d5db';
+                          iconColor = '#6b7280';
+                          Icon = Bell;
+                      }
 
-                  <div style={{
-                    padding: '0.75rem',
-                    background: '#fef3c7',
-                    borderRadius: '8px',
-                    border: '1px solid #fde68a'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'start', gap: '0.5rem' }}>
-                      <Truck size={16} color="#f59e0b" style={{ marginTop: '2px', flexShrink: 0 }} />
-                      <div style={{ flex: 1 }}>
-                        <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: '500', color: '#1f2937' }}>
-                          Order Shipped
-                        </p>
-                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#6b7280' }}>
-                          Your order #12346 is on the way
-                        </p>
-                      </div>
-                    </div>
+                      return (
+                        <div 
+                          key={notification._id} 
+                          style={{
+                            padding: '0.75rem',
+                            background: bgColor,
+                            borderRadius: '8px',
+                            border: `1px solid ${borderColor}`,
+                            opacity: notification.isRead ? 0.6 : 1,
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => {
+                            if (notification.order) {
+                              setActiveTab('orders');
+                              setShowNotifications(false);
+                            }
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'start', gap: '0.5rem' }}>
+                            <Icon size={16} color={iconColor} style={{ marginTop: '2px', flexShrink: 0 }} />
+                            <div style={{ flex: 1 }}>
+                              <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: '500', color: '#1f2937' }}>
+                                {notification.title}
+                              </p>
+                              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#6b7280' }}>
+                                {notification.message}
+                              </p>
+                              {notification.createdAt && (
+                                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.65rem', color: '#9ca3af' }}>
+                                  {new Date(notification.createdAt).toLocaleDateString()} {new Date(notification.createdAt).toLocaleTimeString()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-
-                  <div style={{
-                    padding: '0.75rem',
-                    background: '#ede9fe',
-                    borderRadius: '8px',
-                    border: '1px solid #c4b5fd'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'start', gap: '0.5rem' }}>
-                      <Bell size={16} color="#8b5cf6" style={{ marginTop: '2px', flexShrink: 0 }} />
-                      <div style={{ flex: 1 }}>
-                        <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: '500', color: '#1f2937' }}>
-                          New Products Available
-                        </p>
-                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#6b7280' }}>
-                          Check out our latest pepper varieties
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                )}
 
                 <button
                   onClick={() => setShowNotifications(false)}

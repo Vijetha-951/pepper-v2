@@ -10,7 +10,7 @@ import Notification from '../models/Notification.js';
 import Cart from '../models/Cart.js';
 import { requireAuth } from '../middleware/auth.js';
 import { sendCollectionOtpEmail, sendHubArrivedForCollectionEmail } from '../services/emailService.js';
-import { createOrderPlacedNotification, createRestockRequestNotification } from '../services/notificationService.js';
+import { createOrderPlacedNotification, createRestockRequestNotification, createOrderReadyNotification, createOrderDeliveredNotification } from '../services/notificationService.js';
 
 const router = express.Router();
 
@@ -450,6 +450,11 @@ router.patch('/orders/:orderId/ready-for-collection', requireAuth, asyncHandler(
     });
   }
   
+  // Create notification for customer
+  createOrderReadyNotification(order, order.collectionHub).catch(err => {
+    console.error('Failed to create ready notification:', err);
+  });
+  
   res.json({ 
     success: true, 
     message: 'Order is ready for collection. OTP sent to customer.',
@@ -575,6 +580,11 @@ router.post('/orders/:orderId/verify-collection', requireAuth, asyncHandler(asyn
   });
   
   await order.save();
+  
+  // Create delivery notification for customer
+  createOrderDeliveredNotification(order).catch(err => {
+    console.error('Failed to create delivery notification:', err);
+  });
   
   // Delete all notifications related to this order
   try {

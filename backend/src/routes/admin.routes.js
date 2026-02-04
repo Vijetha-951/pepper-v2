@@ -10,6 +10,7 @@ import admin from '../config/firebase.js';
 import { getFirestore } from 'firebase-admin/firestore';
 import DemandPredictionService from '../services/demandPredictionService.js';
 import CustomerSegmentationService from '../services/customerSegmentationService.js';
+import { createOrderDispatchedNotification, createOrderDeliveredNotification } from '../services/notificationService.js';
 
 const router = express.Router();
 router.use(requireAuth, requireAdmin);
@@ -344,7 +345,22 @@ router.patch('/orders/:id/assign', asyncHandler(async (req, res) => {
 }));
 router.patch('/orders/:id/status', asyncHandler(async (req, res) => {
   const { status } = req.body; // APPROVED | OUT_FOR_DELIVERY | DELIVERED | CANCELLED
-  const o = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+  const o = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true })
+    .populate('user', 'firstName lastName email _id');
+  
+  // Create appropriate notification for customer
+  if (o && o.user) {
+    if (status === 'OUT_FOR_DELIVERY') {
+      createOrderDispatchedNotification(o).catch(err => {
+        console.error('Failed to create dispatch notification:', err);
+      });
+    } else if (status === 'DELIVERED') {
+      createOrderDeliveredNotification(o).catch(err => {
+        console.error('Failed to create delivery notification:', err);
+      });
+    }
+  }
+  
   res.json(o);
 }));
 router.patch('/orders/:id/cancel', asyncHandler(async (req, res) => {

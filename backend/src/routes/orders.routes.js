@@ -4,6 +4,7 @@ import Order from '../models/Order.js';
 import User from '../models/User.js';
 import Product from '../models/Product.js';
 import { requireAuth } from '../middleware/auth.js';
+import { createOrderDispatchedNotification, createOrderDeliveredNotification } from '../services/notificationService.js';
 
 const router = express.Router();
 
@@ -224,10 +225,24 @@ router.put('/:order_id/status', requireAuth, asyncHandler(async (req, res) => {
     order_id,
     { status },
     { new: true }
-  ).populate('items.product', 'name image');
+  ).populate('items.product', 'name image')
+   .populate('user', 'firstName lastName email _id');
 
   if (!order) {
     return res.status(404).json({ message: 'Order not found' });
+  }
+
+  // Create appropriate notification for customer
+  if (order && order.user) {
+    if (status === 'OUT_FOR_DELIVERY') {
+      createOrderDispatchedNotification(order).catch(err => {
+        console.error('Failed to create dispatch notification:', err);
+      });
+    } else if (status === 'DELIVERED') {
+      createOrderDeliveredNotification(order).catch(err => {
+        console.error('Failed to create delivery notification:', err);
+      });
+    }
   }
 
   res.status(200).json({

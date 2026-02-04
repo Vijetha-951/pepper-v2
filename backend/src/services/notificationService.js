@@ -289,3 +289,106 @@ export async function deleteNotification(notificationId, userId) {
     return { success: false, message: error.message };
   }
 }
+
+/**
+ * Create a notification for customer when order is dispatched
+ * @param {Object} order - The order document
+ */
+export async function createOrderDispatchedNotification(order) {
+  try {
+    if (!order.user) {
+      console.log('⚠️ Order has no user, cannot create notification');
+      return null;
+    }
+
+    const notification = await Notification.create({
+      recipient: order.user._id || order.user,
+      type: 'ORDER_DISPATCHED',
+      title: 'Order Dispatched',
+      message: `Your order #${order._id.toString().substring(0, 8)} has been dispatched and is on the way!`,
+      order: order._id,
+      isRead: false,
+      metadata: {
+        orderId: order._id.toString(),
+        orderStatus: order.status,
+        totalAmount: order.totalAmount
+      }
+    });
+
+    console.log(`✅ Created dispatch notification for customer order ${order._id}`);
+    return notification;
+  } catch (error) {
+    console.error('❌ Error creating dispatch notification:', error);
+    return null;
+  }
+}
+
+/**
+ * Create a notification for customer when order is ready for collection
+ * @param {Object} order - The order document
+ * @param {Object} hub - The hub where order is ready
+ */
+export async function createOrderReadyNotification(order, hub) {
+  try {
+    if (!order.user) {
+      console.log('⚠️ Order has no user, cannot create notification');
+      return null;
+    }
+
+    const notification = await Notification.create({
+      recipient: order.user._id || order.user,
+      type: 'ORDER_READY',
+      title: 'Order Ready for Collection',
+      message: `Your order #${order._id.toString().substring(0, 8)} is ready for collection at ${hub.name}!`,
+      order: order._id,
+      hub: hub._id,
+      isRead: false,
+      metadata: {
+        orderId: order._id.toString(),
+        orderStatus: order.status,
+        totalAmount: order.totalAmount,
+        hubName: hub.name,
+        hubAddress: hub.address
+      }
+    });
+
+    console.log(`✅ Created ready notification for customer order ${order._id}`);
+    return notification;
+  } catch (error) {
+    console.error('❌ Error creating ready notification:', error);
+    return null;
+  }
+}
+
+/**
+ * Create a notification for customer when order is delivered
+ * @param {Object} order - The order document
+ */
+export async function createOrderDeliveredNotification(order) {
+  try {
+    if (!order.user) {
+      console.log('⚠️ Order has no user, cannot create notification');
+      return null;
+    }
+
+    const notification = await Notification.create({
+      recipient: order.user._id || order.user,
+      type: 'ORDER_DELIVERED',
+      title: 'Order Delivered Successfully',
+      message: `Your order #${order._id.toString().substring(0, 8)} has been delivered successfully!`,
+      order: order._id,
+      isRead: false,
+      metadata: {
+        orderId: order._id.toString(),
+        orderStatus: order.status,
+        totalAmount: order.totalAmount
+      }
+    });
+
+    console.log(`✅ Created delivery notification for customer order ${order._id}`);
+    return notification;
+  } catch (error) {
+    console.error('❌ Error creating delivery notification:', error);
+    return null;
+  }
+}
