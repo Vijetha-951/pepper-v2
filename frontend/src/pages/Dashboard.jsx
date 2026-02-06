@@ -10,6 +10,8 @@ import authService from "../services/authService";
 import customerProductService from "../services/customerProductService";
 import RecommendedProducts from "../components/RecommendedProducts";
 import MyReviews from "./MyReviews";
+import Orders from "./Orders";
+import Wishlist from "./Wishlist";
 import DemandPredictionWidget from "../components/DemandPredictionWidget";
 import SeasonalSuitabilityHelper from "../utils/seasonalSuitability";
 
@@ -19,7 +21,15 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'overview');
+  
+  // Get tab from URL query parameter or location state
+  const getInitialTab = () => {
+    const params = new URLSearchParams(location.search);
+    const tabFromUrl = params.get('tab');
+    return tabFromUrl || location.state?.activeTab || 'overview';
+  };
+  
+  const [activeTab, setActiveTab] = useState(getInitialTab());
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState({ items: [], total: 0 });
   const [wishlist, setWishlist] = useState({ items: [] });
@@ -96,6 +106,15 @@ export default function Dashboard() {
     initializeUser();
   }, []);
 
+  // Update tab when URL changes
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabFromUrl = params.get('tab');
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [location.search]);
+
   // Fetch notifications when user is available
   useEffect(() => {
     if (user) {
@@ -114,6 +133,13 @@ export default function Dashboard() {
   useEffect(() => {
     if (activeTab === 'products') {
       fetchProducts();
+      fetchWishlist();
+    }
+  }, [activeTab]);
+
+  // Fetch wishlist when wishlist tab is active
+  useEffect(() => {
+    if (activeTab === 'wishlist') {
       fetchWishlist();
     }
   }, [activeTab]);
@@ -968,14 +994,7 @@ export default function Dashboard() {
       case 'overview':
         return renderOverview();
       case 'orders':
-        return (
-          <div style={cardStyle}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' }}>
-              My Orders
-            </h3>
-            <p style={{ color: '#6b7280' }}>Your order history and current orders will appear here.</p>
-          </div>
-        );
+        return <Orders />;
       case 'products':
         // Filter products based on search query
         const filteredProducts = products.filter(product => 
@@ -1643,8 +1662,7 @@ export default function Dashboard() {
           </div>
         );
       case 'wishlist':
-        navigate('/wishlist');
-        return null;
+        return <Wishlist />;
       case 'cart':
         return (
           <div style={cardStyle}>
@@ -2388,7 +2406,8 @@ export default function Dashboard() {
                 onClick={() => {
                   // Navigate to dedicated pages
                   if (item.id === 'orders') {
-                    navigate('/orders');
+                    setActiveTab('orders');
+                    navigate('/dashboard?tab=orders');
                   } else if (item.id === 'admin-stock') {
                     navigate('/admin-stock');
                   } else if (item.id === 'admin-hub-inventory') {

@@ -182,36 +182,6 @@ const Wishlist = () => {
           marginBottom: '2rem',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
         }}>
-          <button
-            onClick={() => navigate('/dashboard')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.5rem 1rem',
-              background: 'transparent',
-              border: '2px solid #10b981',
-              borderRadius: '12px',
-              color: '#10b981',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              marginBottom: '1.5rem',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#10b981';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = '#10b981';
-            }}
-          >
-            <ArrowLeft size={18} />
-            Back to Dashboard
-          </button>
-
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <div style={{

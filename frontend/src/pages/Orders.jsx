@@ -265,24 +265,10 @@ const Orders = () => {
       <div className="orders-content">
         {/* Header */}
         <div className="orders-header">
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              navigate('/dashboard');
-            }}
-            className="back-button-orders"
-            title="Back to Dashboard"
-            type="button"
-          >
-            <ArrowLeft size={20} />
-            Back
-          </button>
           <div className="logo-section">
             <span className="logo-icon">🌱</span>
             <span className="brand-name">PEPPER NURSERY</span>
           </div>
-          <div className="header-spacer-orders"></div>
         </div>
 
         {/* Title */}
@@ -342,10 +328,8 @@ const Orders = () => {
               <table className="orders-table">
                 <thead>
                   <tr>
-                    <th>Order ID</th>
                     <th>Order Date</th>
                     <th>Product & Quantity</th>
-                    <th>Unit Price</th>
                     <th>Total Price</th>
                     <th>Status</th>
                     <th>Action</th>
@@ -354,17 +338,6 @@ const Orders = () => {
                 <tbody>
                   {currentOrders.map((order) => (
                   <tr key={order._id}>
-                    <td className="order-id">
-                      <div className="id-wrapper">
-                        <div className="order-id-text">#{order._id.slice(-8).toUpperCase()}</div>
-                        {order.payment?.transactionId && (
-                          <div className="payment-id">Pay ID: {order.payment.transactionId.slice(-10)}</div>
-                        )}
-                        {order.payment?.refundId && (
-                          <div className="refund-id">Refund ID: {order.payment.refundId.slice(-10)}</div>
-                        )}
-                      </div>
-                    </td>
                     <td className="order-date">
                       {formatDate(order.createdAt)}
                     </td>
@@ -374,15 +347,6 @@ const Orders = () => {
                           <div key={index} className="product-item">
                             <span className="product-name">{item.name}</span>
                             <span className="product-quantity">({item.quantity}x)</span>
-                          </div>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="unit-price">
-                      <div className="price-list">
-                        {order.items.map((item, index) => (
-                          <div key={index} className="price-item">
-                            {formatCurrency(item.priceAtOrder)}
                           </div>
                         ))}
                       </div>

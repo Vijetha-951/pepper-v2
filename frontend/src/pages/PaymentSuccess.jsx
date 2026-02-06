@@ -84,7 +84,7 @@ const PaymentSuccess = () => {
       <div className="payment-success-container">
         <div className="error-message">
           <p>Order details not found</p>
-          <button onClick={() => navigate('/orders')} className="btn-primary">
+          <button onClick={() => navigate('/dashboard?tab=orders')} className="btn-primary">
             View All Orders
           </button>
         </div>
@@ -280,13 +280,13 @@ const PaymentSuccess = () => {
         {/* Action Buttons */}
         <div className="action-buttons">
           <button 
-            onClick={() => navigate('/orders')} 
+            onClick={() => navigate('/dashboard?tab=orders')} 
             className="btn-secondary"
           >
             {location.state?.fromOrders ? 'Back to Orders' : 'View All Orders'}
           </button>
           <button 
-            onClick={() => navigate('/user/dashboard', { state: { activeTab: 'products' } })} 
+            onClick={() => navigate('/dashboard?tab=products')} 
             className="btn-primary"
           >
             Continue Shopping

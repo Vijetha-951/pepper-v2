@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar.jsx";
 import Home from "./pages/Home.jsx";
 import AddProducts from "./pages/AddProducts.jsx";
@@ -60,12 +60,7 @@ function App() {
             <Dashboard />
           </>
         } />
-        <Route path="/wishlist" element={
-          <>
-            <Navbar />
-            <Wishlist />
-          </>
-        } />
+        <Route path="/wishlist" element={<Navigate to="/dashboard?tab=wishlist" replace />} />
         <Route path="/checkout" element={
           <>
             <Navbar />
@@ -84,8 +79,8 @@ function App() {
             <CollectionVerification />
           </>
         } />
-        <Route path="/orders" element={<Orders />} />
-        <Route path="/my-orders" element={<Orders />} />
+        <Route path="/orders" element={<Navigate to="/dashboard?tab=orders" replace />} />
+        <Route path="/my-orders" element={<Navigate to="/dashboard?tab=orders" replace />} />
         <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
         <Route path="/payment-success" element={
           <>

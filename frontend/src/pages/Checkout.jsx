@@ -349,7 +349,7 @@ const Checkout = () => {
         // Refresh cart to reflect backend clearing
         await fetchCart();
         
-        setTimeout(() => navigate('/orders'), 1500);
+        setTimeout(() => navigate('/dashboard?tab=orders'), 1500);
         return;
       }
 

@@ -37,8 +37,8 @@ export default function UserSidebar({ user }) {
     { id: 'dashboard', label: 'Dashboard', icon: Package, path: '/dashboard' },
     { id: 'products', label: 'Products', icon: Package, path: '/add-products' },
     { id: 'cart', label: 'My Cart', icon: ShoppingCart, path: '/cart' },
-    { id: 'orders', label: 'My Orders', icon: FileText, path: '/orders' },
-    { id: 'wishlist', label: 'My Wishlist', icon: Heart, path: '/wishlist' },
+    { id: 'orders', label: 'My Orders', icon: FileText, path: '/dashboard?tab=orders' },
+    { id: 'wishlist', label: 'My Wishlist', icon: Heart, path: '/dashboard?tab=wishlist' },
     { id: 'reviews', label: 'My Reviews', icon: Star, path: '/my-reviews' },
     { id: 'videos', label: 'Videos', icon: VideoIcon, path: '/user-videos' },
     { id: 'recommendations', label: 'Recommendations', icon: Sparkles, path: '/dashboard?tab=recommendations' }
