@@ -338,6 +338,12 @@ function ProductFormModal({ isEdit, product, onClose, onSuccess, varieties, vari
     price: product?.price ? product.price.toString() : '',
     stock: product?.stock ? product.stock.toString() : '',
     image: product?.image || '',
+    propagationMethod: product?.propagationMethod || 'Rooted Cutting',
+    propagationDate: product?.propagationDate ? new Date(product.propagationDate).toISOString().split('T')[0] : new Date(Date.now() - 8 * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 8 months ago
+    maturityMonths: product?.maturityMonths ? product.maturityMonths.toString() : '24',
+    bloomingMonths: product?.bloomingMonths ? product.bloomingMonths.join(',') : '4,5,6', // April-June
+    locationRegion: product?.location?.region || 'Kerala',
+    locationClimate: product?.location?.climate || 'Tropical',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -349,6 +355,8 @@ function ProductFormModal({ isEdit, product, onClose, onSuccess, varieties, vari
   const quickAddVariety = (varietyName) => {
     const data = varietyData[varietyName];
     if (data) {
+      // Default to 8 months old plant
+      const eightMonthsAgo = new Date(Date.now() - 8 * 30 * 24 * 60 * 60 * 1000);
       setForm({
         name: varietyName,
         type: data.type,
@@ -356,6 +364,12 @@ function ProductFormModal({ isEdit, product, onClose, onSuccess, varieties, vari
         price: data.price.toString(),
         stock: '50',
         image: '',
+        propagationMethod: 'Rooted Cutting',
+        propagationDate: eightMonthsAgo.toISOString().split('T')[0],
+        maturityMonths: '24',
+        bloomingMonths: '4,5,6',
+        locationRegion: 'Kerala',
+        locationClimate: 'Tropical',
       });
     }
   };
@@ -377,10 +391,25 @@ function ProductFormModal({ isEdit, product, onClose, onSuccess, varieties, vari
     setLoading(true);
     setError('');
     try {
+      // Transform form data for API
+      const apiData = {
+        ...form,
+        maturityMonths: Number(form.maturityMonths),
+        bloomingMonths: form.bloomingMonths.split(',').map(m => Number(m.trim())),
+        location: {
+          region: form.locationRegion,
+          climate: form.locationClimate
+        }
+      };
+      
+      // Remove transformed fields
+      delete apiData.locationRegion;
+      delete apiData.locationClimate;
+      
       if (isEdit) {
-        await productService.updateProduct(product._id || product.id, form);
+        await productService.updateProduct(product._id || product.id, apiData);
       } else {
-        await productService.createProduct(form);
+        await productService.createProduct(apiData);
       }
       onSuccess();
     } catch (e) {
@@ -535,6 +564,104 @@ function ProductFormModal({ isEdit, product, onClose, onSuccess, varieties, vari
               required
               style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px', resize: 'vertical' }}
             />
+          </div>
+
+          {/* Product Specifications Section */}
+          <div style={{ marginBottom: '1rem', padding: '1rem', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+            <h4 style={{ margin: '0 0 1rem 0', color: '#166534', fontSize: '1rem' }}>🌱 Product Specifications (Dynamic)</h4>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.875rem' }}>Propagation Method</label>
+                <select
+                  name="propagationMethod"
+                  value={form.propagationMethod}
+                  onChange={handleChange}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                >
+                  <option value="Rooted Cutting">Rooted Cutting</option>
+                  <option value="Grafted">Grafted</option>
+                  <option value="Layering">Layering</option>
+                  <option value="Seed">Seed</option>
+                  <option value="Tissue Culture">Tissue Culture</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.875rem' }}>Propagation Date *</label>
+                <input
+                  type="date"
+                  name="propagationDate"
+                  value={form.propagationDate}
+                  onChange={handleChange}
+                  max={new Date().toISOString().split('T')[0]}
+                  required
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                />
+                <span style={{ fontSize: '0.75rem', color: '#666' }}>Age will be calculated automatically</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.875rem' }}>Maturity Period (months)</label>
+                <input
+                  type="number"
+                  name="maturityMonths"
+                  value={form.maturityMonths}
+                  onChange={handleChange}
+                  min="12"
+                  max="60"
+                  required
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                />
+                <span style={{ fontSize: '0.75rem', color: '#666' }}>Total months to reach maturity (e.g., 24 = 2 years)</span>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.875rem' }}>Blooming Months</label>
+                <input
+                  type="text"
+                  name="bloomingMonths"
+                  value={form.bloomingMonths}
+                  onChange={handleChange}
+                  placeholder="e.g., 4,5,6 for Apr-Jun"
+                  pattern="[0-9,]+"
+                  required
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                />
+                <span style={{ fontSize: '0.75rem', color: '#666' }}>Months when it blooms (1=Jan, 12=Dec)</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.875rem' }}>Location/Region</label>
+                <select
+                  name="locationRegion"
+                  value={form.locationRegion}
+                  onChange={handleChange}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                >
+                  <option value="Kerala">Kerala</option>
+                  <option value="Karnataka">Karnataka</option>
+                  <option value="Tamil Nadu">Tamil Nadu</option>
+                  <option value="Goa">Goa</option>
+                  <option value="Other South India">Other South India</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.875rem' }}>Climate</label>
+                <select
+                  name="locationClimate"
+                  value={form.locationClimate}
+                  onChange={handleChange}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                >
+                  <option value="Tropical">Tropical</option>
+                  <option value="Subtropical">Subtropical</option>
+                  <option value="Temperate">Temperate</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>

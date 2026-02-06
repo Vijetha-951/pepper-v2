@@ -3078,10 +3078,28 @@ export default function Dashboard() {
                   background: 'white'
                 }}>
                   {[
-                    { label: 'Propagation Method', value: selectedProduct.propagationMethod || 'Cutting', icon: '🌱' },
-                    { label: 'Maturity Duration', value: selectedProduct.maturityDuration || '1.5 years', icon: '⏳' },
-                    { label: 'Blooming Season', value: selectedProduct.bloomingSeason || 'All season', icon: '🌸' },
-                    { label: 'Plant Age', value: selectedProduct.plantAge || '3 Months', icon: '🌿' }
+                    { 
+                      label: 'Propagation Method', 
+                      value: selectedProduct.propagationMethod || 'Rooted Cutting', 
+                      icon: '🌱' 
+                    },
+                    { 
+                      label: 'Plant Age', 
+                      value: selectedProduct.plantAge || '8 months', 
+                      icon: '🌿'
+                    },
+                    { 
+                      label: 'Blooming Season', 
+                      value: selectedProduct.bloomingSeason || 'April-June', 
+                      icon: selectedProduct.isCurrentlyBlooming ? '🌸' : '🌺',
+                      highlight: selectedProduct.isCurrentlyBlooming
+                    },
+                    { 
+                      label: 'Maturity Status', 
+                      value: selectedProduct.maturityDuration || '24 months', 
+                      icon: selectedProduct.isMature ? '✅' : '⏳',
+                      highlight: selectedProduct.isMature
+                    }
                   ].map((spec, index) => (
                     <div 
                       key={index}
@@ -3090,14 +3108,15 @@ export default function Dashboard() {
                         borderBottom: index < 3 ? '1px solid #e5e7eb' : 'none',
                         fontSize: '0.875rem',
                         transition: 'all 0.3s ease',
-                        animation: `specSlideIn 0.5s ease ${0.4 + index * 0.1}s both`
+                        animation: `specSlideIn 0.5s ease ${0.4 + index * 0.1}s both`,
+                        backgroundColor: spec.highlight ? 'rgba(16, 185, 129, 0.05)' : 'transparent'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.05)';
+                        e.currentTarget.style.backgroundColor = spec.highlight ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.05)';
                         e.currentTarget.style.transform = 'translateX(5px)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.backgroundColor = spec.highlight ? 'rgba(16, 185, 129, 0.05)' : 'transparent';
                         e.currentTarget.style.transform = 'translateX(0)';
                       }}
                     >
@@ -3118,13 +3137,19 @@ export default function Dashboard() {
                         flex: 1,
                         padding: '0.75rem',
                         borderLeft: '1px solid #e5e7eb',
-                        color: '#1f2937',
-                        fontWeight: '700',
+                        color: spec.highlight ? '#10b981' : '#1f2937',
+                        fontWeight: spec.highlight ? '800' : '700',
                         fontSize: '0.9rem',
                         display: 'flex',
-                        alignItems: 'center'
+                        flexDirection: 'column',
+                        justifyContent: 'center'
                       }}>
-                        {spec.value}
+                        <div>{spec.value}</div>
+                        {spec.subtext && (
+                          <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                            {spec.subtext}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

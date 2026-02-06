@@ -103,7 +103,10 @@ class SeasonalSuitabilityService {
    * @private
    */
   _ruleBasedFallback(params) {
-    const { month, district, variety, temperature, rainfall, humidity, waterAvailability } = params;
+    const { 
+      month, district, variety, temperature, rainfall, humidity, waterAvailability, 
+      isMature, isCurrentlyBlooming 
+    } = params;
 
     // Planting season logic
     const isPlantingSeason = [6, 7].includes(month); // June-July
@@ -120,6 +123,23 @@ class SeasonalSuitabilityService {
 
     // Scoring system
     let score = 0;
+
+    // Plant maturity bonus (mature plants are more resilient)
+    // If maturity data is missing, assume neutral (don't penalize old products)
+    if (isMature === true) {
+      score += 2; // Mature plants handle conditions better
+    } else if (isMature === false) {
+      score -= 1; // Only penalize if we know it's young
+    }
+    // If undefined/null, no adjustment (neutral for backward compatibility)
+
+    // Blooming season consideration
+    if (isCurrentlyBlooming === true) {
+      score += 1; // Blooming indicates good conditions
+      if (isSummer && waterAvailability === 'Low') {
+        score -= 2; // But needs water during bloom
+      }
+    }
 
     // Temperature scoring (optimal: 20-30°C)
     if (temperature >= 20 && temperature <= 30) {
@@ -177,14 +197,14 @@ class SeasonalSuitabilityService {
       score += 1;
     }
 
-    // Determine suitability
+    // Determine suitability (adjusted thresholds for year-round growing)
     let suitability;
     let confidence;
 
-    if (score >= 6) {
+    if (score >= 4) {
       suitability = 'Recommended';
       confidence = 0.85;
-    } else if (score >= 2) {
+    } else if (score >= 0) {
       suitability = 'Plant with Care';
       confidence = 0.70;
     } else {
@@ -283,7 +303,22 @@ class SeasonalSuitabilityService {
    */
   _getContextualTips(params, suitability) {
     const tips = [];
-    const { month, temperature, rainfall, waterAvailability } = params;
+    const { month, temperature, rainfall, waterAvailability, isMature, isCurrentlyBlooming, plantAge } = params;
+
+    // Plant age and maturity specific tips (only if data exists)
+    if (isMature === true) {
+      tips.push('✅ Mature plant - more resilient to weather variations');
+    } else if (isMature === false && plantAge) {
+      tips.push('🌱 Young plant - requires consistent care and monitoring');
+    }
+
+    // Blooming season tips (only if currently blooming)
+    if (isCurrentlyBlooming === true) {
+      tips.push('🌸 Currently blooming - ensure adequate water and nutrients');
+      if (waterAvailability === 'Low') {
+        tips.push('⚠️ Critical: Increase watering during bloom period');
+      }
+    }
 
     // Seasonal tips
     if ([6, 7].includes(month)) {
@@ -295,6 +330,9 @@ class SeasonalSuitabilityService {
     // Temperature tips
     if (temperature < 20) {
       tips.push('Cooler temperatures may slow initial growth');
+      if (isMature === false) {
+        tips.push('Young plants especially sensitive to cold - protect if needed');
+      }
     } else if (temperature > 30) {
       tips.push('Provide shade during hottest hours');
     }

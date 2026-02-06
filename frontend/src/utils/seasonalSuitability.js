@@ -29,7 +29,12 @@ class SeasonalSuitabilityHelper {
           rainfall: userLocation.rainfall || this.getDefaultRainfall(currentDate.getMonth() + 1),
           humidity: userLocation.humidity || 75,
           waterAvailability: userLocation.waterAvailability || 'Medium',
-          productId: product._id
+          productId: product._id,
+          // Include dynamic plant specifications
+          plantAge: product.plantAge,
+          isMature: product.isMature,
+          isCurrentlyBlooming: product.isCurrentlyBlooming,
+          maturityDuration: product.maturityDuration
         })
       });
 
