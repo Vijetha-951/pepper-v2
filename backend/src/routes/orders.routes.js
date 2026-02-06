@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler';
 import Order from '../models/Order.js';
 import User from '../models/User.js';
 import Product from '../models/Product.js';
+import Notification from '../models/Notification.js';
 import { requireAuth } from '../middleware/auth.js';
 import { createOrderDispatchedNotification, createOrderDeliveredNotification } from '../services/notificationService.js';
 
@@ -36,11 +37,17 @@ router.get('/stats', requireAuth, asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 })
     .limit(3);
   
+  // Get unread notifications count for this user
+  const newNotifications = await Notification.countDocuments({
+    recipient: user._id,
+    isRead: false
+  });
+  
   res.status(200).json({
     totalOrders,
     pendingDeliveries,
     totalProducts,
-    newNotifications: 0, // Placeholder for future notifications system
+    newNotifications,
     recentActivity: recentOrders.map(order => ({
       _id: order._id,
       type: 'order',

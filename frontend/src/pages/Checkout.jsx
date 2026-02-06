@@ -95,7 +95,7 @@ const Checkout = () => {
           line2: '',
           district: userData.district || '',
           state: '',
-          pincode: userData.pincode || '',
+          pincode: '', // Always start empty for checkout
           phone: userData.phone || ''
         };
         const safe = normalizeAddress(addr);

@@ -5,6 +5,7 @@ import Product from '../models/Product.js';
 import Order from '../models/Order.js';
 import Review from '../models/Review.js';
 import Hub from '../models/Hub.js';
+import Notification from '../models/Notification.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import admin from '../config/firebase.js';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -572,6 +573,14 @@ router.get('/stats', asyncHandler(async (_req, res) => {
   // Get active customers (placed at least one order)
   const activeCustomers = await Order.distinct('user').then(users => users.length);
   
+  // Get unread notifications count for admins
+  const adminUsers = await User.find({ role: 'admin' });
+  const adminIds = adminUsers.map(u => u._id);
+  const newNotifications = await Notification.countDocuments({
+    recipient: { $in: adminIds },
+    isRead: false
+  });
+  
   // Get recent orders for activity feed
   const recentOrders = await Order.find({})
     .populate('user', 'firstName lastName email')
@@ -585,7 +594,7 @@ router.get('/stats', asyncHandler(async (_req, res) => {
     pendingDeliveries,
     totalProducts,
     lowStockProducts,
-    newNotifications: 0, // Placeholder
+    newNotifications,
     
     // Order stats
     todayOrders,
