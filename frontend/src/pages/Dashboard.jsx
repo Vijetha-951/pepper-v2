@@ -2173,79 +2173,601 @@ export default function Dashboard() {
         );
       case 'profile':
         return (
-          <div style={cardStyle}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' }}>
-              Profile Information
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#374151', fontWeight: '500' }}>
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  value={user.firstName || 'N/A'}
-                  readOnly
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    background: '#f9fafb'
-                  }}
-                />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* Profile Header Card */}
+            <div style={{
+              ...cardStyle,
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              color: 'white',
+              padding: '2rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                <div style={{
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '50%',
+                  background: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '3rem',
+                  fontWeight: 'bold',
+                  color: '#10b981',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                  border: '4px solid rgba(255,255,255,0.3)'
+                }}>
+                  {user.profilePicture ? (
+                    <img src={user.profilePicture} alt="Profile" style={{
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: '50%',
+                      objectFit: 'cover'
+                    }} />
+                  ) : (
+                    `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`
+                  )}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h2 style={{ 
+                    fontSize: '2rem', 
+                    fontWeight: 'bold', 
+                    marginBottom: '0.5rem',
+                    textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}>
+                    {user.firstName} {user.lastName}
+                  </h2>
+                  <p style={{ 
+                    fontSize: '1.1rem', 
+                    opacity: 0.9,
+                    marginBottom: '0.5rem'
+                  }}>
+                    {user.email}
+                  </p>
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <span style={{
+                      background: 'rgba(255,255,255,0.2)',
+                      padding: '0.4rem 1rem',
+                      borderRadius: '20px',
+                      fontSize: '0.9rem',
+                      fontWeight: '500',
+                      textTransform: 'capitalize'
+                    }}>
+                      {user.role === 'hubmanager' ? 'Hub Manager' : user.role === 'deliveryboy' ? 'Delivery Boy' : user.role}
+                    </span>
+                    {user.createdAt && (
+                      <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                        Member since {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#374151', fontWeight: '500' }}>
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  value={user.lastName || 'N/A'}
-                  readOnly
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    background: '#f9fafb'
-                  }}
-                />
+            </div>
+
+            {/* Quick Stats */}
+            {user.role !== 'admin' && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                <div style={{
+                  ...cardStyle,
+                  textAlign: 'center',
+                  background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                  border: '2px solid #86efac'
+                }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📦</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#059669', marginBottom: '0.25rem' }}>
+                    {stats.totalOrders}
+                  </div>
+                  <div style={{ color: '#047857', fontSize: '0.9rem', fontWeight: '500' }}>Total Orders</div>
+                </div>
+                <div style={{
+                  ...cardStyle,
+                  textAlign: 'center',
+                  background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                  border: '2px solid #fcd34d'
+                }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>⏳</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#d97706', marginBottom: '0.25rem' }}>
+                    {stats.pendingDeliveries}
+                  </div>
+                  <div style={{ color: '#b45309', fontSize: '0.9rem', fontWeight: '500' }}>Pending</div>
+                </div>
+                <div style={{
+                  ...cardStyle,
+                  textAlign: 'center',
+                  background: 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
+                  border: '2px solid #f9a8d4'
+                }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>❤️</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#db2777', marginBottom: '0.25rem' }}>
+                    {wishlist?.items?.length || 0}
+                  </div>
+                  <div style={{ color: '#be185d', fontSize: '0.9rem', fontWeight: '500' }}>Wishlist Items</div>
+                </div>
+                <div style={{
+                  ...cardStyle,
+                  textAlign: 'center',
+                  background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                  border: '2px solid #93c5fd'
+                }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🛒</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2563eb', marginBottom: '0.25rem' }}>
+                    {cart?.items?.length || 0}
+                  </div>
+                  <div style={{ color: '#1e40af', fontSize: '0.9rem', fontWeight: '500' }}>Cart Items</div>
+                </div>
               </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#374151', fontWeight: '500' }}>
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={user.email || 'N/A'}
-                  readOnly
-                  style={{
-                    width: '100%',
+            )}
+
+            {/* Personal Information */}
+            <div style={cardStyle}>
+              <h3 style={{ 
+                fontSize: '1.3rem', 
+                fontWeight: 'bold', 
+                color: '#1f2937', 
+                marginBottom: '1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <User size={24} style={{ color: '#10b981' }} />
+                Personal Information
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+                <div>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    color: '#6b7280', 
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    First Name
+                  </label>
+                  <div style={{
                     padding: '0.75rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    background: '#f9fafb'
-                  }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#374151', fontWeight: '500' }}>
-                  Role
-                </label>
-                <input
-                  type="text"
-                  value={user.role || 'user'}
-                  readOnly
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #d1d5db',
+                    border: '2px solid #e5e7eb',
                     borderRadius: '8px',
                     background: '#f9fafb',
+                    color: '#1f2937',
+                    fontWeight: '500',
+                    fontSize: '1rem'
+                  }}>
+                    {user.firstName || 'Not provided'}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    color: '#6b7280', 
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    Last Name
+                  </label>
+                  <div style={{
+                    padding: '0.75rem',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    background: '#f9fafb',
+                    color: '#1f2937',
+                    fontWeight: '500',
+                    fontSize: '1rem'
+                  }}>
+                    {user.lastName || 'Not provided'}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    color: '#6b7280', 
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    Email Address
+                  </label>
+                  <div style={{
+                    padding: '0.75rem',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    background: '#f9fafb',
+                    color: '#1f2937',
+                    fontWeight: '500',
+                    fontSize: '1rem'
+                  }}>
+                    {user.email}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    color: '#6b7280', 
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    Phone Number
+                  </label>
+                  <div style={{
+                    padding: '0.75rem',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    background: '#f9fafb',
+                    color: '#1f2937',
+                    fontWeight: '500',
+                    fontSize: '1rem'
+                  }}>
+                    {user.phone || 'Not provided'}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    color: '#6b7280', 
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    Place
+                  </label>
+                  <div style={{
+                    padding: '0.75rem',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    background: '#f9fafb',
+                    color: '#1f2937',
+                    fontWeight: '500',
+                    fontSize: '1rem'
+                  }}>
+                    {user.place || 'Not provided'}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    color: '#6b7280', 
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    District
+                  </label>
+                  <div style={{
+                    padding: '0.75rem',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    background: '#f9fafb',
+                    color: '#1f2937',
+                    fontWeight: '500',
+                    fontSize: '1rem'
+                  }}>
+                    {user.district || 'Not provided'}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    color: '#6b7280', 
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    Pincode
+                  </label>
+                  <div style={{
+                    padding: '0.75rem',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    background: '#f9fafb',
+                    color: '#1f2937',
+                    fontWeight: '500',
+                    fontSize: '1rem'
+                  }}>
+                    {user.pincode || 'Not provided'}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    color: '#6b7280', 
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    Account Type
+                  </label>
+                  <div style={{
+                    padding: '0.75rem',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    background: '#f9fafb',
+                    color: '#1f2937',
+                    fontWeight: '500',
+                    fontSize: '1rem',
                     textTransform: 'capitalize'
+                  }}>
+                    {user.role === 'hubmanager' ? 'Hub Manager' : user.role === 'deliveryboy' ? 'Delivery Boy' : user.role}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Address Book */}
+            {user.addresses && user.addresses.length > 0 && (
+              <div style={cardStyle}>
+                <h3 style={{ 
+                  fontSize: '1.3rem', 
+                  fontWeight: 'bold', 
+                  color: '#1f2937', 
+                  marginBottom: '1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <Package size={24} style={{ color: '#10b981' }} />
+                  Saved Addresses ({user.addresses.length})
+                </h3>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  {user.addresses.map((address, index) => (
+                    <div key={address._id || index} style={{
+                      padding: '1rem',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#10b981';
+                      e.currentTarget.style.background = '#f0fdf4';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#e5e7eb';
+                      e.currentTarget.style.background = '#f9fafb';
+                    }}
+                    >
+                      <div style={{ fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem', fontSize: '1rem' }}>
+                        Address {index + 1}
+                      </div>
+                      <div style={{ color: '#4b5563', lineHeight: '1.6' }}>
+                        {address.line1 && <div>{address.line1}</div>}
+                        {address.line2 && <div>{address.line2}</div>}
+                        <div>
+                          {[address.district, address.state, address.pincode].filter(Boolean).join(', ')}
+                        </div>
+                        {address.phone && (
+                          <div style={{ marginTop: '0.5rem', color: '#10b981', fontWeight: '500' }}>
+                            📞 {address.phone}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Quick Actions */}
+            <div style={cardStyle}>
+              <h3 style={{ 
+                fontSize: '1.3rem', 
+                fontWeight: 'bold', 
+                color: '#1f2937', 
+                marginBottom: '1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <Sparkles size={24} style={{ color: '#10b981' }} />
+                Quick Actions
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                <button
+                  onClick={() => setActiveTab('orders')}
+                  style={{
+                    padding: '1rem',
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
                   }}
-                />
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                  }}
+                >
+                  <ShoppingCart size={20} />
+                  View Orders
+                </button>
+                <button
+                  onClick={() => setActiveTab('products')}
+                  style={{
+                    padding: '1rem',
+                    background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                  }}
+                >
+                  <Package size={20} />
+                  Browse Products
+                </button>
+                <button
+                  onClick={() => setActiveTab('wishlist')}
+                  style={{
+                    padding: '1rem',
+                    background: 'linear-gradient(135deg, #ec4899, #db2777)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(236, 72, 153, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(236, 72, 153, 0.3)';
+                  }}
+                >
+                  <Heart size={20} />
+                  My Wishlist
+                </button>
+                <button
+                  onClick={() => setActiveTab('reviews')}
+                  style={{
+                    padding: '1rem',
+                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(245, 158, 11, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.3)';
+                  }}
+                >
+                  <Sparkles size={20} />
+                  My Reviews
+                </button>
+              </div>
+            </div>
+
+            {/* Account Status */}
+            <div style={cardStyle}>
+              <h3 style={{ 
+                fontSize: '1.3rem', 
+                fontWeight: 'bold', 
+                color: '#1f2937', 
+                marginBottom: '1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <CheckCircle size={24} style={{ color: '#10b981' }} />
+                Account Status
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+                <div style={{
+                  padding: '1rem',
+                  background: user.isActive === true ? '#f0fdf4' : user.isActive === false ? '#fef2f2' : '#fef3c7',
+                  border: `2px solid ${user.isActive === true ? '#86efac' : user.isActive === false ? '#fca5a5' : '#fde68a'}`,
+                  borderRadius: '8px'
+                }}>
+                  <div style={{ fontWeight: '600', color: '#1f2937', marginBottom: '0.25rem' }}>Account Status</div>
+                  <div style={{ 
+                    color: user.isActive === true ? '#059669' : user.isActive === false ? '#dc2626' : '#d97706',
+                    fontWeight: '600',
+                    fontSize: '1.1rem'
+                  }}>
+                    {user.isActive === true ? '✓ Active' : user.isActive === false ? '✗ Inactive' : '⏳ Pending'}
+                  </div>
+                </div>
+                <div style={{
+                  padding: '1rem',
+                  background: '#f0fdf4',
+                  border: '2px solid #86efac',
+                  borderRadius: '8px'
+                }}>
+                  <div style={{ fontWeight: '600', color: '#1f2937', marginBottom: '0.25rem' }}>Authentication Provider</div>
+                  <div style={{ 
+                    color: '#059669',
+                    fontWeight: '600',
+                    fontSize: '1.1rem',
+                    textTransform: 'capitalize'
+                  }}>
+                    {user.provider || 'Firebase'}
+                  </div>
+                </div>
+                {user.createdAt && (
+                  <div style={{
+                    padding: '1rem',
+                    background: '#eff6ff',
+                    border: '2px solid #93c5fd',
+                    borderRadius: '8px'
+                  }}>
+                    <div style={{ fontWeight: '600', color: '#1f2937', marginBottom: '0.25rem' }}>Member Since</div>
+                    <div style={{ 
+                      color: '#2563eb',
+                      fontWeight: '600',
+                      fontSize: '1.1rem'
+                    }}>
+                      {new Date(user.createdAt).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
