@@ -180,6 +180,16 @@ export default function Dashboard() {
     }
   }, [activeTab, user?.role]); // Only depend on the role property, not the whole user object
 
+  // Fetch profile data when profile tab is active
+  useEffect(() => {
+    if (activeTab === 'profile' && user) {
+      console.log('👤 Profile tab active - fetching stats, cart, and wishlist');
+      fetchDashboardStats();
+      fetchCart();
+      fetchWishlist();
+    }
+  }, [activeTab, user?.uid]);
+
   // Fetch recommendations when recommendations tab is active
   useEffect(() => {
     if (activeTab === 'recommendations') {
