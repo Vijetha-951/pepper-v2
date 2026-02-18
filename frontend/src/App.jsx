@@ -26,6 +26,7 @@ import AdminVideoAnalytics from "./pages/AdminVideoAnalytics.jsx";
 import UserVideos from "./pages/UserVideos.jsx";
 import DeliveryBoyStatus from "./pages/DeliveryBoyStatus.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
+import DiseaseDetection from "./pages/DiseaseDetection.jsx";
 
 // Shopping flow pages
 import Cart from "./pages/Cart.jsx";
@@ -117,6 +118,12 @@ function App() {
         <Route path="/admin-video-analytics" element={<AdminVideoAnalytics />} />
         <Route path="/videos" element={<UserVideos />} />
         <Route path="/user/videos" element={<UserVideos />} />
+        <Route path="/disease-detection" element={
+          <>
+            <Navbar />
+            <DiseaseDetection />
+          </>
+        } />
         <Route path="/admin-orders" element={<AdminAllOrders />} />
         <Route path="/admin/orders" element={<AdminAllOrders />} />
         <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />

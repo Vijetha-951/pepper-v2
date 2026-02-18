@@ -26,6 +26,7 @@ import wishlistRouter from './routes/wishlist.routes.js';
 import videosRouter from './routes/videos.routes.js';
 import invoiceRouter from './routes/invoice.routes.js';
 import seasonalSuitabilityRouter from './routes/seasonalSuitability.routes.js';
+import diseaseDetectionRouter from './routes/diseaseDetection.routes.js';
 
 // Get directory path for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -76,6 +77,7 @@ app.use('/api/wishlist', wishlistRouter);
 app.use('/api/videos', videosRouter);
 app.use('/api/invoices', invoiceRouter);
 app.use('/api/seasonal-suitability', seasonalSuitabilityRouter);
+app.use('/api/disease-detection', diseaseDetectionRouter);
 app.use('/api/admin', updateHubCoordinatesRouter);
 app.use('/api', stockRouter);
 
@@ -101,3 +103,4 @@ connectDB()
     console.error('❌ Failed to connect to DB:', err);
     process.exit(1);
   });
+

@@ -26,7 +26,7 @@ class PlantDiseaseDetector:
     - Nutrient Deficiency
     """
     
-    def __init__(self, model_path='backend/python/models/disease_model.pkl'):
+    def __init__(self, model_path='backend/python/models/disease_model_real.pkl'):
         self.model_path = model_path
         self.model = None
         self.scaler = StandardScaler()
