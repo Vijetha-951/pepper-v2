@@ -1,0 +1,2758 @@
+{
+  "config": {
+    "configFile": "C:\\xampp\\htdocs\\PEPPER\\playwright.config.js",
+    "rootDir": "C:/xampp/htdocs/PEPPER/e2e-tests",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/xampp/htdocs/PEPPER/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/xampp/htdocs/PEPPER/e2e-tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/xampp/htdocs/PEPPER/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "C:/xampp/htdocs/PEPPER/e2e-tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/xampp/htdocs/PEPPER/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "C:/xampp/htdocs/PEPPER/e2e-tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/xampp/htdocs/PEPPER/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Mobile Chrome",
+        "name": "Mobile Chrome",
+        "testDir": "C:/xampp/htdocs/PEPPER/e2e-tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/xampp/htdocs/PEPPER/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Mobile Safari",
+        "name": "Mobile Safari",
+        "testDir": "C:/xampp/htdocs/PEPPER/e2e-tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        null
+      ],
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/test-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "runAgents": "none",
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.58.2",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "admin.spec.js",
+      "file": "admin.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Admin Dashboard",
+          "file": "admin.spec.js",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should require authentication for admin routes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10543,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Route /admin: Protected = false\n"
+                        },
+                        {
+                          "text": "Route /admin/orders: Protected = true\n"
+                        },
+                        {
+                          "text": "Route /admin/products: Protected = false\n"
+                        },
+                        {
+                          "text": "Route /admin/users: Protected = false\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:10:26.997Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73482573f1568b679d78-66eeded588d8e846d829",
+              "file": "admin.spec.js",
+              "line": 10,
+              "column": 7
+            },
+            {
+              "title": "should display admin navigation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1555,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:10:50.419Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73482573f1568b679d78-651916009028e2f2ae86",
+              "file": "admin.spec.js",
+              "line": 34,
+              "column": 7
+            },
+            {
+              "title": "should show order management link",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1430,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:10:52.000Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73482573f1568b679d78-bfb519be3082c4772654",
+              "file": "admin.spec.js",
+              "line": 46,
+              "column": 7
+            },
+            {
+              "title": "should show product management link",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1521,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:10:53.446Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73482573f1568b679d78-ef22c0f3070089c25838",
+              "file": "admin.spec.js",
+              "line": 58,
+              "column": 7
+            },
+            {
+              "title": "should show user management link",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1515,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:10:54.984Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73482573f1568b679d78-4c8a627e17f2d16b1fc3",
+              "file": "admin.spec.js",
+              "line": 70,
+              "column": 7
+            },
+            {
+              "title": "should show analytics or statistics",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1488,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 0 statistics elements\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:10:56.515Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73482573f1568b679d78-ea94a5eef011ce464c7a",
+              "file": "admin.spec.js",
+              "line": 82,
+              "column": 7
+            },
+            {
+              "title": "should display hub management for hub managers",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1502,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Hub manager dashboard URL: http://localhost:3000/hub-manager-dashboard\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:10:58.022Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73482573f1568b679d78-23d99e009d6b015468e4",
+              "file": "admin.spec.js",
+              "line": 93,
+              "column": 7
+            },
+            {
+              "title": "should show video analytics page",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 6809,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('body')\nExpected: visible\nReceived: hidden\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('body')\u001b[22m\n\u001b[2m    9 × locator resolved to <body>…</body>\u001b[22m\n\u001b[2m      - unexpected value \"hidden\"\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('body')\nExpected: visible\nReceived: hidden\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('body')\u001b[22m\n\u001b[2m    9 × locator resolved to <body>…</body>\u001b[22m\n\u001b[2m      - unexpected value \"hidden\"\u001b[22m\n\n    at C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\admin.spec.js:108:27",
+                        "location": {
+                          "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\admin.spec.js",
+                          "column": 27,
+                          "line": 108
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 106 |\u001b[39m     \u001b[90m// Video analytics should have some content\u001b[39m\n \u001b[90m 107 |\u001b[39m     \u001b[36mconst\u001b[39m content \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'body'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 108 |\u001b[39m     \u001b[36mawait\u001b[39m expect(content)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                           \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 109 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 110 |\u001b[39m\n \u001b[90m 111 |\u001b[39m   test(\u001b[32m'should show seasonal suitability features'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\admin.spec.js",
+                            "column": 27,
+                            "line": 108
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('body')\nExpected: visible\nReceived: hidden\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('body')\u001b[22m\n\u001b[2m    9 × locator resolved to <body>…</body>\u001b[22m\n\u001b[2m      - unexpected value \"hidden\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 106 |\u001b[39m     \u001b[90m// Video analytics should have some content\u001b[39m\n \u001b[90m 107 |\u001b[39m     \u001b[36mconst\u001b[39m content \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'body'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 108 |\u001b[39m     \u001b[36mawait\u001b[39m expect(content)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                           \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 109 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 110 |\u001b[39m\n \u001b[90m 111 |\u001b[39m   test(\u001b[32m'should show seasonal suitability features'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\admin.spec.js:108:27\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:10:59.543Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\admin-Admin-Dashboard-should-show-video-analytics-page-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\admin-Admin-Dashboard-should-show-video-analytics-page-chromium\\video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\admin.spec.js",
+                        "column": 27,
+                        "line": 108
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "73482573f1568b679d78-743b1d8a3e99f76f96e9",
+              "file": "admin.spec.js",
+              "line": 102,
+              "column": 7
+            },
+            {
+              "title": "should show seasonal suitability features",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2174,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 0 seasonal elements\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:11:08.502Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73482573f1568b679d78-4f56201566f7bc4ee24c",
+              "file": "admin.spec.js",
+              "line": 111,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "api.spec.js",
+      "file": "api.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Backend API",
+          "file": "api.spec.js",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should have backend server running",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 82,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Health check status: 200\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:11:10.866Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8747e39b871de0524be5-f902b6d64d621a91e878",
+              "file": "api.spec.js",
+              "line": 10,
+              "column": 7
+            },
+            {
+              "title": "should fetch products from API",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1874,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "API returned 22 products\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:11:10.970Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8747e39b871de0524be5-ca1c377cdd95335f7c44",
+              "file": "api.spec.js",
+              "line": 26,
+              "column": 7
+            },
+            {
+              "title": "should handle seasonal suitability API",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 25,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Seasonal API status: 404\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:11:12.873Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8747e39b871de0524be5-a0a65025f97979ca198e",
+              "file": "api.spec.js",
+              "line": 41,
+              "column": 7
+            },
+            {
+              "title": "should handle disease detection prediction endpoint",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 20,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Disease prediction endpoint status: 404\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:11:12.926Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8747e39b871de0524be5-9303a6f92da35e66e9ea",
+              "file": "api.spec.js",
+              "line": 56,
+              "column": 7
+            },
+            {
+              "title": "should fetch hub information",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 17,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Hubs API status: 404\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:11:12.967Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8747e39b871de0524be5-580a32f5081ba2e7ca86",
+              "file": "api.spec.js",
+              "line": 70,
+              "column": 7
+            },
+            {
+              "title": "should handle video API endpoints",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Videos API status: 401\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:11:13.003Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8747e39b871de0524be5-1357d2094d118a5c6871",
+              "file": "api.spec.js",
+              "line": 85,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "auth.spec.js",
+      "file": "auth.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Authentication",
+          "file": "auth.spec.js",
+          "line": 8,
+          "column": 6,
+          "specs": [],
+          "suites": [
+            {
+              "title": "Login Page",
+              "file": "auth.spec.js",
+              "line": 10,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should navigate to login page",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 1,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1697,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-02-18T10:11:13.050Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "d5ed79a6b333c2ba7209-38f6f240303dd7d3cb5d",
+                  "file": "auth.spec.js",
+                  "line": 12,
+                  "column": 9
+                },
+                {
+                  "title": "should display login form",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 1,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1543,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-02-18T10:11:14.770Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "d5ed79a6b333c2ba7209-f311c609171c3f183823",
+                  "file": "auth.spec.js",
+                  "line": 30,
+                  "column": 9
+                },
+                {
+                  "title": "should show validation error for empty form",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 1,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 2544,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-02-18T10:11:16.333Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "d5ed79a6b333c2ba7209-d8f2b58ea5de28eb160d",
+                  "file": "auth.spec.js",
+                  "line": 46,
+                  "column": 9
+                },
+                {
+                  "title": "should have link to register page",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 1,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1680,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-02-18T10:11:18.895Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "d5ed79a6b333c2ba7209-63972718069e27973b8f",
+                  "file": "auth.spec.js",
+                  "line": 66,
+                  "column": 9
+                },
+                {
+                  "title": "should have forgot password link",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 1,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1528,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-02-18T10:11:20.591Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "d5ed79a6b333c2ba7209-75a09f86e0250c31ea7f",
+                  "file": "auth.spec.js",
+                  "line": 77,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "Register Page",
+              "file": "auth.spec.js",
+              "line": 90,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should navigate to register page",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 1,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1647,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-02-18T10:11:22.134Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "d5ed79a6b333c2ba7209-a4a29877908823c1dc6f",
+                  "file": "auth.spec.js",
+                  "line": 92,
+                  "column": 9
+                },
+                {
+                  "title": "should display registration form",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 1,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 6833,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('input[type=\"email\"], input[name=\"email\"]').first()\nExpected: visible\nReceived: hidden\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[type=\"email\"], input[name=\"email\"]').first()\u001b[22m\n\u001b[2m    9 × locator resolved to <input type=\"email\" autocomplete=\"off\"/>\u001b[22m\n\u001b[2m      - unexpected value \"hidden\"\u001b[22m\n",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('input[type=\"email\"], input[name=\"email\"]').first()\nExpected: visible\nReceived: hidden\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[type=\"email\"], input[name=\"email\"]').first()\u001b[22m\n\u001b[2m    9 × locator resolved to <input type=\"email\" autocomplete=\"off\"/>\u001b[22m\n\u001b[2m      - unexpected value \"hidden\"\u001b[22m\n\n    at C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\auth.spec.js:117:32",
+                            "location": {
+                              "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\auth.spec.js",
+                              "column": 32,
+                              "line": 117
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 115 |\u001b[39m       \u001b[90m// Should have email input\u001b[39m\n \u001b[90m 116 |\u001b[39m       \u001b[36mconst\u001b[39m emailInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[type=\"email\"], input[name=\"email\"]'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 117 |\u001b[39m       \u001b[36mawait\u001b[39m expect(emailInput)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 118 |\u001b[39m       \n \u001b[90m 119 |\u001b[39m       \u001b[90m// Should have password input\u001b[39m\n \u001b[90m 120 |\u001b[39m       \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[type=\"password\"]'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\auth.spec.js",
+                                "column": 32,
+                                "line": 117
+                              },
+                              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('input[type=\"email\"], input[name=\"email\"]').first()\nExpected: visible\nReceived: hidden\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[type=\"email\"], input[name=\"email\"]').first()\u001b[22m\n\u001b[2m    9 × locator resolved to <input type=\"email\" autocomplete=\"off\"/>\u001b[22m\n\u001b[2m      - unexpected value \"hidden\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 115 |\u001b[39m       \u001b[90m// Should have email input\u001b[39m\n \u001b[90m 116 |\u001b[39m       \u001b[36mconst\u001b[39m emailInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[type=\"email\"], input[name=\"email\"]'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 117 |\u001b[39m       \u001b[36mawait\u001b[39m expect(emailInput)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 118 |\u001b[39m       \n \u001b[90m 119 |\u001b[39m       \u001b[90m// Should have password input\u001b[39m\n \u001b[90m 120 |\u001b[39m       \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[type=\"password\"]'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\auth.spec.js:117:32\u001b[22m"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-02-18T10:11:23.801Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\auth-Authentication-Regist-7ffd9-d-display-registration-form-chromium\\test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\auth-Authentication-Regist-7ffd9-d-display-registration-form-chromium\\video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\auth-Authentication-Regist-7ffd9-d-display-registration-form-chromium\\error-context.md"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\auth.spec.js",
+                            "column": 32,
+                            "line": 117
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "d5ed79a6b333c2ba7209-831517d0720dc822f4dd",
+                  "file": "auth.spec.js",
+                  "line": 108,
+                  "column": 9
+                },
+                {
+                  "title": "should have link back to login page",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 2,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1661,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-02-18T10:11:32.471Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "d5ed79a6b333c2ba7209-57bdecd684a6f270dff0",
+                  "file": "auth.spec.js",
+                  "line": 124,
+                  "column": 9
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "cart.spec.js",
+      "file": "cart.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Shopping Cart",
+          "file": "cart.spec.js",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should navigate to cart page",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 6764,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveURL\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/cart/i\u001b[39m\nReceived string:  \u001b[31m\"http://localhost:3000/login\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveURL\" with timeout 5000ms\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/login\" navigation to finish...\u001b[22m\n\u001b[2m    - navigated to \"http://localhost:3000/login\"\u001b[22m\n\u001b[2m    7 × unexpected value \"http://localhost:3000/login\"\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveURL\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/cart/i\u001b[39m\nReceived string:  \u001b[31m\"http://localhost:3000/login\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveURL\" with timeout 5000ms\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/login\" navigation to finish...\u001b[22m\n\u001b[2m    - navigated to \"http://localhost:3000/login\"\u001b[22m\n\u001b[2m    7 × unexpected value \"http://localhost:3000/login\"\u001b[22m\n\n    at C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\cart.spec.js:22:26",
+                        "location": {
+                          "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\cart.spec.js",
+                          "column": 26,
+                          "line": 22
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 20 |\u001b[39m       \u001b[90m// Try direct navigation\u001b[39m\n \u001b[90m 21 |\u001b[39m       \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/cart'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 22 |\u001b[39m       \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveURL(\u001b[35m/cart/i\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 23 |\u001b[39m     }\n \u001b[90m 24 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 25 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\cart.spec.js",
+                            "column": 26,
+                            "line": 22
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveURL\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/cart/i\u001b[39m\nReceived string:  \u001b[31m\"http://localhost:3000/login\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveURL\" with timeout 5000ms\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/login\" navigation to finish...\u001b[22m\n\u001b[2m    - navigated to \"http://localhost:3000/login\"\u001b[22m\n\u001b[2m    7 × unexpected value \"http://localhost:3000/login\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 20 |\u001b[39m       \u001b[90m// Try direct navigation\u001b[39m\n \u001b[90m 21 |\u001b[39m       \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/cart'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 22 |\u001b[39m       \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveURL(\u001b[35m/cart/i\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 23 |\u001b[39m     }\n \u001b[90m 24 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 25 |\u001b[39m\u001b[0m\n\u001b[2m    at C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\cart.spec.js:22:26\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:11:34.325Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\cart-Shopping-Cart-should-navigate-to-cart-page-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\cart-Shopping-Cart-should-navigate-to-cart-page-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\cart-Shopping-Cart-should-navigate-to-cart-page-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\cart.spec.js",
+                        "column": 26,
+                        "line": 22
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ceb0bea1dd12be5aadb7-1b1032bd482ff718d459",
+              "file": "cart.spec.js",
+              "line": 10,
+              "column": 7
+            },
+            {
+              "title": "should show empty cart message when no items",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 2327,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\cart.spec.js:37:36",
+                        "location": {
+                          "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\cart.spec.js",
+                          "column": 36,
+                          "line": 37
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 35 |\u001b[39m     \u001b[36mconst\u001b[39m showsEmpty \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m emptyMessage\u001b[33m.\u001b[39mcount() \u001b[33m>\u001b[39m \u001b[35m0\u001b[39m\u001b[33m;\u001b[39m\n \u001b[90m 36 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 37 |\u001b[39m     expect(hasItems \u001b[33m||\u001b[39m showsEmpty)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 38 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 39 |\u001b[39m\n \u001b[90m 40 |\u001b[39m   test(\u001b[32m'should update quantity in cart'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\cart.spec.js",
+                            "column": 36,
+                            "line": 37
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n\u001b[0m \u001b[90m 35 |\u001b[39m     \u001b[36mconst\u001b[39m showsEmpty \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m emptyMessage\u001b[33m.\u001b[39mcount() \u001b[33m>\u001b[39m \u001b[35m0\u001b[39m\u001b[33m;\u001b[39m\n \u001b[90m 36 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 37 |\u001b[39m     expect(hasItems \u001b[33m||\u001b[39m showsEmpty)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 38 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 39 |\u001b[39m\n \u001b[90m 40 |\u001b[39m   test(\u001b[32m'should update quantity in cart'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\cart.spec.js:37:36\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:11:42.841Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\cart-Shopping-Cart-should--ff111--cart-message-when-no-items-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\cart-Shopping-Cart-should--ff111--cart-message-when-no-items-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\cart-Shopping-Cart-should--ff111--cart-message-when-no-items-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\cart.spec.js",
+                        "column": 36,
+                        "line": 37
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ceb0bea1dd12be5aadb7-3f384350779b005747de",
+              "file": "cart.spec.js",
+              "line": 26,
+              "column": 7
+            },
+            {
+              "title": "should update quantity in cart",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2329,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:11:47.019Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ceb0bea1dd12be5aadb7-1d30529589713cf41561",
+              "file": "cart.spec.js",
+              "line": 40,
+              "column": 7
+            },
+            {
+              "title": "should remove item from cart",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2148,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:11:49.516Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ceb0bea1dd12be5aadb7-987142fb3067cf52c9e5",
+              "file": "cart.spec.js",
+              "line": 60,
+              "column": 7
+            },
+            {
+              "title": "should display cart summary",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2179,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:11:51.685Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ceb0bea1dd12be5aadb7-1a1fae046abf05a6c50c",
+              "file": "cart.spec.js",
+              "line": 84,
+              "column": 7
+            },
+            {
+              "title": "should proceed to checkout",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2120,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:11:53.882Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ceb0bea1dd12be5aadb7-071a8b63f6539f1d0b58",
+              "file": "cart.spec.js",
+              "line": 98,
+              "column": 7
+            },
+            {
+              "title": "should persist cart items on page reload",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2858,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:11:56.017Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ceb0bea1dd12be5aadb7-3d1e33f137724ad660ff",
+              "file": "cart.spec.js",
+              "line": 116,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "disease-detection.spec.js",
+      "file": "disease-detection.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Disease Detection Feature",
+          "file": "disease-detection.spec.js",
+          "line": 9,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should navigate to disease detection page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1535,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:11:58.903Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "26df7a7921cccbbfe4cd-da75dad3f1c76ee4db12",
+              "file": "disease-detection.spec.js",
+              "line": 11,
+              "column": 7
+            },
+            {
+              "title": "should display file upload interface",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2321,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:00.457Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "26df7a7921cccbbfe4cd-ce34394dea63f232f697",
+              "file": "disease-detection.spec.js",
+              "line": 27,
+              "column": 7
+            },
+            {
+              "title": "should show instructions or help text",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2371,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:02.797Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "26df7a7921cccbbfe4cd-c811207171f91b798224",
+              "file": "disease-detection.spec.js",
+              "line": 39,
+              "column": 7
+            },
+            {
+              "title": "should accept image file selection",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2792,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:05.198Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "26df7a7921cccbbfe4cd-ec3ebd0c5fd16548f32d",
+              "file": "disease-detection.spec.js",
+              "line": 51,
+              "column": 7
+            },
+            {
+              "title": "should display image preview after upload",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2546,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:08.020Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "26df7a7921cccbbfe4cd-e172a1366b41457a5a4e",
+              "file": "disease-detection.spec.js",
+              "line": 67,
+              "column": 7
+            },
+            {
+              "title": "should have analyze/detect button",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2294,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:10.591Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "26df7a7921cccbbfe4cd-72552afebb496f296ada",
+              "file": "disease-detection.spec.js",
+              "line": 81,
+              "column": 7
+            },
+            {
+              "title": "should show loading state during analysis",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2464,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 0 loading indicators\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:12.906Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "26df7a7921cccbbfe4cd-abb45b79a5248e64820e",
+              "file": "disease-detection.spec.js",
+              "line": 93,
+              "column": 7
+            },
+            {
+              "title": "should display results area",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2335,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 0 result areas\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:15.391Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "26df7a7921cccbbfe4cd-5995b7482a2c2d584723",
+              "file": "disease-detection.spec.js",
+              "line": 105,
+              "column": 7
+            },
+            {
+              "title": "should be responsive on mobile",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2363,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:17.745Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "26df7a7921cccbbfe4cd-3686dc8418256d3a4691",
+              "file": "disease-detection.spec.js",
+              "line": 116,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "home.spec.js",
+      "file": "home.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Home Page",
+          "file": "home.spec.js",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should load the home page successfully",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 7002,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/PEPPER|Pepper|pepper/i\u001b[39m\nReceived string:  \u001b[31m\"React App\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m    8 × unexpected value \"React App\"\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/PEPPER|Pepper|pepper/i\u001b[39m\nReceived string:  \u001b[31m\"React App\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m    8 × unexpected value \"React App\"\u001b[22m\n\n    at C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\home.spec.js:14:24",
+                        "location": {
+                          "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\home.spec.js",
+                          "column": 24,
+                          "line": 14
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 12 |\u001b[39m     \n \u001b[90m 13 |\u001b[39m     \u001b[90m// Check if page title is correct\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 14 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveTitle(\u001b[35m/PEPPER|Pepper|pepper/i\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 15 |\u001b[39m     \n \u001b[90m 16 |\u001b[39m     \u001b[90m// Page should be visible\u001b[39m\n \u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'body'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\home.spec.js",
+                            "column": 24,
+                            "line": 14
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/PEPPER|Pepper|pepper/i\u001b[39m\nReceived string:  \u001b[31m\"React App\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m    8 × unexpected value \"React App\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 12 |\u001b[39m     \n \u001b[90m 13 |\u001b[39m     \u001b[90m// Check if page title is correct\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 14 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveTitle(\u001b[35m/PEPPER|Pepper|pepper/i\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 15 |\u001b[39m     \n \u001b[90m 16 |\u001b[39m     \u001b[90m// Page should be visible\u001b[39m\n \u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'body'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\home.spec.js:14:24\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:20.133Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\home-Home-Page-should-load-the-home-page-successfully-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\home-Home-Page-should-load-the-home-page-successfully-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\home-Home-Page-should-load-the-home-page-successfully-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\home.spec.js",
+                        "column": 24,
+                        "line": 14
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "379953442ddfc3019abd-6f4694785404200f881b",
+              "file": "home.spec.js",
+              "line": 10,
+              "column": 7
+            },
+            {
+              "title": "should display navigation menu",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1766,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:28.790Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "379953442ddfc3019abd-73ae4cf121aa5866e793",
+              "file": "home.spec.js",
+              "line": 20,
+              "column": 7
+            },
+            {
+              "title": "should have working links in navigation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1728,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:30.732Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "379953442ddfc3019abd-44270c2006224b134438",
+              "file": "home.spec.js",
+              "line": 28,
+              "column": 7
+            },
+            {
+              "title": "should display products or product categories",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 2172,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\home.spec.js:51:44",
+                        "location": {
+                          "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\home.spec.js",
+                          "column": 44,
+                          "line": 51
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 49 |\u001b[39m     \u001b[36mconst\u001b[39m hasEmptyMessage \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=/no products|empty|coming soon/i'\u001b[39m)\u001b[33m.\u001b[39mcount() \u001b[33m>\u001b[39m \u001b[35m0\u001b[39m\u001b[33m;\u001b[39m\n \u001b[90m 50 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 51 |\u001b[39m     expect(hasProducts \u001b[33m||\u001b[39m hasEmptyMessage)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                            \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 52 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 53 |\u001b[39m\n \u001b[90m 54 |\u001b[39m   test(\u001b[32m'should be responsive on mobile'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\home.spec.js",
+                            "column": 44,
+                            "line": 51
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n\u001b[0m \u001b[90m 49 |\u001b[39m     \u001b[36mconst\u001b[39m hasEmptyMessage \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=/no products|empty|coming soon/i'\u001b[39m)\u001b[33m.\u001b[39mcount() \u001b[33m>\u001b[39m \u001b[35m0\u001b[39m\u001b[33m;\u001b[39m\n \u001b[90m 50 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 51 |\u001b[39m     expect(hasProducts \u001b[33m||\u001b[39m hasEmptyMessage)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                            \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 52 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 53 |\u001b[39m\n \u001b[90m 54 |\u001b[39m   test(\u001b[32m'should be responsive on mobile'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\home.spec.js:51:44\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:32.485Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\home-Home-Page-should-display-products-or-product-categories-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\home-Home-Page-should-display-products-or-product-categories-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\home-Home-Page-should-display-products-or-product-categories-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\home.spec.js",
+                        "column": 44,
+                        "line": 51
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "379953442ddfc3019abd-4159f40f6c9a31fbbf7c",
+              "file": "home.spec.js",
+              "line": 38,
+              "column": 7
+            },
+            {
+              "title": "should be responsive on mobile",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1370,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:36.535Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "379953442ddfc3019abd-d130c9d39cf647ff419b",
+              "file": "home.spec.js",
+              "line": 54,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "products.spec.js",
+      "file": "products.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Product Browsing",
+          "file": "products.spec.js",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display products on home page",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 2186,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\products.spec.js:24:42",
+                        "location": {
+                          "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\products.spec.js",
+                          "column": 42,
+                          "line": 24
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 22 |\u001b[39m     \u001b[36mconst\u001b[39m hasEmptyState \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=/no products|empty|coming soon/i'\u001b[39m)\u001b[33m.\u001b[39mcount() \u001b[33m>\u001b[39m \u001b[35m0\u001b[39m\u001b[33m;\u001b[39m\n \u001b[90m 23 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 24 |\u001b[39m     expect(hasProducts \u001b[33m||\u001b[39m hasEmptyState)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 25 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 26 |\u001b[39m\n \u001b[90m 27 |\u001b[39m   test(\u001b[32m'should be able to click on a product'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\products.spec.js",
+                            "column": 42,
+                            "line": 24
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n\u001b[0m \u001b[90m 22 |\u001b[39m     \u001b[36mconst\u001b[39m hasEmptyState \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=/no products|empty|coming soon/i'\u001b[39m)\u001b[33m.\u001b[39mcount() \u001b[33m>\u001b[39m \u001b[35m0\u001b[39m\u001b[33m;\u001b[39m\n \u001b[90m 23 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 24 |\u001b[39m     expect(hasProducts \u001b[33m||\u001b[39m hasEmptyState)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 25 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 26 |\u001b[39m\n \u001b[90m 27 |\u001b[39m   test(\u001b[32m'should be able to click on a product'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\products.spec.js:24:42\u001b[22m"
+                        }
+                      ],
+                      "stdout": [
+                        {
+                          "text": "Found 0 product elements\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:38.080Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\products-Product-Browsing--999a4-splay-products-on-home-page-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\products-Product-Browsing--999a4-splay-products-on-home-page-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\products-Product-Browsing--999a4-splay-products-on-home-page-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\products.spec.js",
+                        "column": 42,
+                        "line": 24
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "85a36a0156a63dbd112b-0080b29a1413cf582113",
+              "file": "products.spec.js",
+              "line": 10,
+              "column": 7
+            },
+            {
+              "title": "should be able to click on a product",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2108,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:42.038Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "85a36a0156a63dbd112b-b253d3064539d417ad29",
+              "file": "products.spec.js",
+              "line": 27,
+              "column": 7
+            },
+            {
+              "title": "should search for products",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1684,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:44.300Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "85a36a0156a63dbd112b-bf3b1e0242c3635d6007",
+              "file": "products.spec.js",
+              "line": 46,
+              "column": 7
+            },
+            {
+              "title": "should filter products by category",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2203,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:46.005Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "85a36a0156a63dbd112b-11afd13a8bde693407ce",
+              "file": "products.spec.js",
+              "line": 61,
+              "column": 7
+            },
+            {
+              "title": "should add product to cart",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2043,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:48.235Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "85a36a0156a63dbd112b-e43b80871b8631d352eb",
+              "file": "products.spec.js",
+              "line": 77,
+              "column": 7
+            },
+            {
+              "title": "should add product to wishlist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2094,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:50.300Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "85a36a0156a63dbd112b-a645089402f46d844690",
+              "file": "products.spec.js",
+              "line": 99,
+              "column": 7
+            },
+            {
+              "title": "should view product details",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1981,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:52.418Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "85a36a0156a63dbd112b-bce4458f6ee49f48794b",
+              "file": "products.spec.js",
+              "line": 112,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "videos.spec.js",
+      "file": "videos.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Video Features",
+          "file": "videos.spec.js",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should navigate to videos page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2119,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:54.427Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4edd99a9e5f871441acf-2b3437fd11f9dd0e22c3",
+              "file": "videos.spec.js",
+              "line": 10,
+              "column": 7
+            },
+            {
+              "title": "should display video list or gallery",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2429,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:56.570Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4edd99a9e5f871441acf-11b974608b2e96bb48fe",
+              "file": "videos.spec.js",
+              "line": 26,
+              "column": 7
+            },
+            {
+              "title": "should show video thumbnails",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2431,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 0 video thumbnails\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:12:59.016Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4edd99a9e5f871441acf-cda771aae8a059cea4c2",
+              "file": "videos.spec.js",
+              "line": 40,
+              "column": 7
+            },
+            {
+              "title": "should display video metadata",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2190,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:13:01.467Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4edd99a9e5f871441acf-f3fad1e1bf68fbe51bf8",
+              "file": "videos.spec.js",
+              "line": 51,
+              "column": 7
+            },
+            {
+              "title": "should show video views count",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2160,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 0 view count displays\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:13:03.672Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4edd99a9e5f871441acf-7b3a2efdcda84623a4c0",
+              "file": "videos.spec.js",
+              "line": 63,
+              "column": 7
+            },
+            {
+              "title": "should show like/unlike functionality",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2243,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 0 like buttons\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:13:05.846Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4edd99a9e5f871441acf-aae1a171f77b57d9dd17",
+              "file": "videos.spec.js",
+              "line": 74,
+              "column": 7
+            },
+            {
+              "title": "should play video on click",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2178,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:13:08.109Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4edd99a9e5f871441acf-b4323423f13e28922fc3",
+              "file": "videos.spec.js",
+              "line": 85,
+              "column": 7
+            },
+            {
+              "title": "should filter videos by category",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2202,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Found 2 category filters\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:13:10.301Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4edd99a9e5f871441acf-40378791f5e984829b39",
+              "file": "videos.spec.js",
+              "line": 102,
+              "column": 7
+            },
+            {
+              "title": "should navigate to admin video management",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1458,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Video management URL: http://localhost:3000/admin/video-management\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:13:12.521Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4edd99a9e5f871441acf-cd046c92422ca4834baf",
+              "file": "videos.spec.js",
+              "line": 113,
+              "column": 7
+            },
+            {
+              "title": "should show video analytics for admin",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 1437,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\videos.spec.js:130:40",
+                        "location": {
+                          "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\videos.spec.js",
+                          "column": 40,
+                          "line": 130
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 128 |\u001b[39m     \u001b[36mconst\u001b[39m needsLogin \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=/login|sign in/i'\u001b[39m)\u001b[33m.\u001b[39mcount() \u001b[33m>\u001b[39m \u001b[35m0\u001b[39m\u001b[33m;\u001b[39m\n \u001b[90m 129 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 130 |\u001b[39m     expect(hasAnalytics \u001b[33m||\u001b[39m needsLogin)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 131 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 132 |\u001b[39m\n \u001b[90m 133 |\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\videos.spec.js",
+                            "column": 40,
+                            "line": 130
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n\u001b[0m \u001b[90m 128 |\u001b[39m     \u001b[36mconst\u001b[39m needsLogin \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=/login|sign in/i'\u001b[39m)\u001b[33m.\u001b[39mcount() \u001b[33m>\u001b[39m \u001b[35m0\u001b[39m\u001b[33m;\u001b[39m\n \u001b[90m 129 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 130 |\u001b[39m     expect(hasAnalytics \u001b[33m||\u001b[39m needsLogin)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 131 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 132 |\u001b[39m\n \u001b[90m 133 |\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\videos.spec.js:130:40\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T10:13:13.996Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\videos-Video-Features-should-show-video-analytics-for-admin-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\xampp\\htdocs\\PEPPER\\test-results\\videos-Video-Features-should-show-video-analytics-for-admin-chromium\\video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\xampp\\htdocs\\PEPPER\\e2e-tests\\videos.spec.js",
+                        "column": 40,
+                        "line": 130
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "4edd99a9e5f871441acf-2ea3ae5073bd44838ab6",
+              "file": "videos.spec.js",
+              "line": 122,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-02-18T10:10:24.813Z",
+    "duration": 170741.10700000002,
+    "expected": 53,
+    "skipped": 0,
+    "unexpected": 8,
+    "flaky": 0
+  }
+}

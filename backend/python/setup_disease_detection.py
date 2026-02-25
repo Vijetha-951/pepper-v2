@@ -166,7 +166,7 @@ def main():
     
     # Test model
     print("\n❓ Do you want to test the model? (y/n): ", end='')
-    if input().lower() == 'y'):
+    if input().lower() == 'y':
         test_model()
     
     # Summary

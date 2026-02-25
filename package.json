@@ -3,14 +3,21 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently -n backend,frontend -c green,blue \"npm run dev --prefix backend\" \"npm start --prefix frontend\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "concurrently -n flask,node,react -c magenta,green,blue \"npm run flask --prefix backend\" \"npm run dev --prefix backend\" \"npm start --prefix frontend\"",
+    "backend": "npm run dev:all --prefix backend",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:chrome": "playwright test --project=chromium",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "concurrently": "^9.2.0",
     "nodemon": "^3.1.10"
   },

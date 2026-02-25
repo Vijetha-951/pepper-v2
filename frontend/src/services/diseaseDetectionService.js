@@ -95,7 +95,7 @@ class DiseaseDetectionService {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ imageUrl })
+        body: JSON.stringify({ image_url: imageUrl })
       });
 
       return await response.json();

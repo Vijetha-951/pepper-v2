@@ -11,6 +11,8 @@ const DiseaseDetection = () => {
   const [history, setHistory] = useState([]);
   const [diseasesInfo, setDiseasesInfo] = useState([]);
   const [showInfo, setShowInfo] = useState(false);
+  const [uploadMode, setUploadMode] = useState('file'); // 'file' or 'url'
+  const [imageUrl, setImageUrl] = useState('');
   const [metadata, setMetadata] = useState({
     plantAge: '',
     variety: '',
@@ -75,8 +77,13 @@ const DiseaseDetection = () => {
   };
 
   const handleAnalyze = async () => {
-    if (!selectedImage) {
+    if (uploadMode === 'file' && !selectedImage) {
       setError('Please select an image first');
+      return;
+    }
+
+    if (uploadMode === 'url' && !imageUrl.trim()) {
+      setError('Please enter an image URL');
       return;
     }
 
@@ -84,15 +91,38 @@ const DiseaseDetection = () => {
     setError(null);
 
     try {
-      const result = await diseaseDetectionService.predictFromImage(selectedImage, metadata);
+      let result;
+      
+      if (uploadMode === 'url') {
+        result = await diseaseDetectionService.predictFromUrl(imageUrl);
+      } else {
+        result = await diseaseDetectionService.predictFromImage(selectedImage, metadata);
+      }
 
-      if (result.success) {
+      if (result.success && result.prediction) {
         setPrediction(result.prediction);
         loadHistory(); // Refresh history
       } else {
-        setError(result.error || 'Prediction failed');
+        // Clear any previous prediction
+        setPrediction(null);
+        
+        // Handle validation errors or other failures
+        if (result.error === 'Invalid Image') {
+          setError(
+            <div>
+              <strong>{result.error}</strong>
+              <p>{result.message}</p>
+              {result.suggestion && <p className="suggestion">💡 {result.suggestion}</p>}
+            </div>
+          );
+        } else if (result.message) {
+          setError(`${result.error}: ${result.message}`);
+        } else {
+          setError(result.error || 'Prediction failed');
+        }
       }
     } catch (error) {
+      setPrediction(null);
       setError('Failed to analyze image. Please try again.');
       console.error('Analysis error:', error);
     } finally {
@@ -105,6 +135,7 @@ const DiseaseDetection = () => {
     setImagePreview(null);
     setPrediction(null);
     setError(null);
+    setImageUrl('');
     setMetadata({
       plantAge: '',
       variety: '',
@@ -113,6 +144,20 @@ const DiseaseDetection = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const handleUrlLoad = () => {
+    if (imageUrl.trim()) {
+      setImagePreview(imageUrl);
+      setSelectedImage(null);
+      setPrediction(null);
+      setError(null);
+    }
+  };
+
+  const handleModeChange = (mode) => {
+    setUploadMode(mode);
+    handleReset();
   };
 
   const getSeverityColor = (severity) => {
@@ -137,39 +182,90 @@ const DiseaseDetection = () => {
       <div className="disease-detection-content">
         {/* Left Column - Upload & Analysis */}
         <div className="detection-main">
-          {/* Upload Area */}
-          <div 
-            className="upload-area"
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {imagePreview ? (
-              <div className="image-preview">
-                <img src={imagePreview} alt="Leaf preview" />
-              </div>
-            ) : (
-              <div className="upload-placeholder">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
-                <p>Click or drag image here</p>
-                <span>Supports: JPG, PNG, GIF, BMP</span>
-              </div>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageSelect}
-              style={{ display: 'none' }}
-            />
+          {/* Upload Mode Toggle */}
+          <div className="upload-mode-toggle">
+            <button 
+              className={`mode-btn ${uploadMode === 'file' ? 'active' : ''}`}
+              onClick={() => handleModeChange('file')}
+            >
+              📁 Upload File
+            </button>
+            <button 
+              className={`mode-btn ${uploadMode === 'url' ? 'active' : ''}`}
+              onClick={() => handleModeChange('url')}
+            >
+              🔗 Image URL
+            </button>
           </div>
 
+          {/* Upload Area - File Mode */}
+          {uploadMode === 'file' && (
+            <div 
+              className="upload-area"
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {imagePreview ? (
+                <div className="image-preview">
+                  <img src={imagePreview} alt="Leaf preview" />
+                </div>
+              ) : (
+                <div className="upload-placeholder">
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  <p>Click or drag image here</p>
+                  <span>Supports: JPG, PNG, GIF, BMP</span>
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                style={{ display: 'none' }}
+              />
+            </div>
+          )}
+
+          {/* URL Input Mode */}
+          {uploadMode === 'url' && (
+            <div className="url-input-area">
+              {imagePreview ? (
+                <div className="image-preview">
+                  <img src={imagePreview} alt="Leaf preview" />
+                </div>
+              ) : (
+                <div className="url-input-container">
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                  </svg>
+                  <p>Enter image URL from Google Images or any website</p>
+                  <input
+                    type="text"
+                    placeholder="https://example.com/pepper-leaf.jpg"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    className="url-input"
+                  />
+                  <button 
+                    className="btn btn-secondary"
+                    onClick={handleUrlLoad}
+                    disabled={!imageUrl.trim()}
+                  >
+                    Load Preview
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Metadata Form */}
-          {selectedImage && !prediction && (
+          {((uploadMode === 'file' && selectedImage) || (uploadMode === 'url' && imagePreview)) && !prediction && (
             <div className="metadata-form">
               <h3>Additional Information (Optional)</h3>
               <div className="form-group">
@@ -211,7 +307,7 @@ const DiseaseDetection = () => {
 
           {/* Action Buttons */}
           <div className="action-buttons">
-            {selectedImage && !prediction && (
+            {((uploadMode === 'file' && selectedImage) || (uploadMode === 'url' && imagePreview)) && !prediction && (
               <>
                 <button 
                   className="btn btn-primary"
@@ -267,7 +363,7 @@ const DiseaseDetection = () => {
                 <div className="result-item">
                   <span className="result-label">Confidence:</span>
                   <span className="result-value confidence">
-                    {prediction.confidence.toFixed(1)}%
+                    {prediction.confidence?.toFixed(1) || '0.0'}%
                   </span>
                 </div>
                 <div className="result-item">

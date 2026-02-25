@@ -16,7 +16,9 @@ const diseaseDetectionSchema = new mongoose.Schema(
     // Image Information
     imagePath: {
       type: String,
-      required: true
+      required: function() {
+        return !this.imageUrl; // Required ONLY if imageUrl is NOT present
+      }
     },
     imageUrl: {
       type: String,

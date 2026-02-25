@@ -27,7 +27,20 @@ class PlantDiseaseDetector:
     """
     
     def __init__(self, model_path='backend/python/models/disease_model_real.pkl'):
-        self.model_path = model_path
+        # Prefer real image model if it exists, fallback to synthetic
+        real_model_path = 'backend/python/models/disease_model_real.pkl'
+        synthetic_model_path = 'backend/python/models/disease_model.pkl'
+        
+        if os.path.exists(real_model_path):
+            self.model_path = real_model_path
+            self.model_type = 'real'
+        elif os.path.exists(synthetic_model_path):
+            self.model_path = synthetic_model_path
+            self.model_type = 'synthetic'
+        else:
+            self.model_path = model_path
+            self.model_type = 'unknown'
+        
         self.model = None
         self.scaler = StandardScaler()
         self.is_trained = False
@@ -103,6 +116,141 @@ class PlantDiseaseDetector:
         }
         
         self.load_model()
+    
+    def is_valid_plant_image(self, image_path):
+        """
+        Validate if the image is actually a plant/leaf photo
+        Returns (is_valid, reason, confidence)
+        """
+        try:
+            img = cv2.imread(image_path)
+            if img is None:
+                return False, "Could not read image", 0
+            
+            img = cv2.resize(img, (256, 256))
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+            total_pixels = img.shape[0] * img.shape[1]
+            
+            # Check 1: Green color presence (plants should have green)
+            green_mask = cv2.inRange(hsv, np.array([35, 30, 30]), np.array([85, 255, 255]))
+            green_pct = (np.sum(green_mask > 0) / total_pixels) * 100
+            
+            # Check 2: White/Gray percentage (screenshots/documents have lots of white)
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            white_mask = gray > 240
+            white_pct = (np.sum(white_mask) / total_pixels) * 100
+            
+            # Check 3: Color saturation (natural images have good saturation)
+            avg_saturation = np.mean(hsv[:, :, 1])
+            
+            # Check 4: Blue color (screenshots/UI often have blue)
+            blue_mask = cv2.inRange(hsv, np.array([100, 50, 50]), np.array([130, 255, 255]))
+            blue_pct = (np.sum(blue_mask > 0) / total_pixels) * 100
+            
+            # Check 5: Texture complexity (screenshots/text have different texture)
+            edges = cv2.Canny(gray, 50, 150)
+            edge_pct = (np.sum(edges > 0) / total_pixels) * 100
+            
+            # Check 6: PEPPER-SPECIFIC - Check for pepper leaf characteristics
+            # Pepper leaves are typically elongated with smooth edges
+            # Look for leaf shape and aspect ratio
+            contours, _ = cv2.findContours(green_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            pepper_like = False
+            aspect_ratio = 0
+            
+            if contours:
+                # Find largest green contour (likely the leaf)
+                largest_contour = max(contours, key=cv2.contourArea)
+                if cv2.contourArea(largest_contour) > 1000:  # Significant size
+                    x, y, w, h = cv2.boundingRect(largest_contour)
+                    aspect_ratio = float(w) / h if h > 0 else 0
+                    # Pepper leaves typically have aspect ratio between 0.4-0.8 (elongated)
+                    # Other plants like potato have different ratios
+                    if 0.35 < aspect_ratio < 0.85:
+                        pepper_like = True
+            
+            # Check 7: Color distribution - peppers have specific green tones
+            # Check for dark green (mature pepper leaves)
+            dark_green_mask = cv2.inRange(hsv, np.array([40, 40, 30]), np.array([75, 255, 120]))
+            dark_green_pct = (np.sum(dark_green_mask > 0) / total_pixels) * 100
+            
+            # Scoring system
+            score = 0
+            reasons = []
+            pepper_score = 0
+            
+            # Green presence (most important for plants)
+            if green_pct < 10:
+                reasons.append(f"Very low green content ({green_pct:.1f}%)")
+            elif green_pct < 20:
+                score += 30
+                reasons.append(f"Low green content ({green_pct:.1f}%)")
+            else:
+                score += 100
+            
+            # White/Screenshot detection
+            if white_pct > 50:
+                reasons.append(f"Too much white/background ({white_pct:.1f}%)")
+            elif white_pct > 30:
+                score += 40
+            else:
+                score += 80
+            
+            # Saturation check
+            if avg_saturation < 30:
+                reasons.append(f"Low color saturation ({avg_saturation:.1f})")
+            elif avg_saturation < 50:
+                score += 50
+            else:
+                score += 80
+            
+            # Blue UI elements check
+            if blue_pct > 15:
+                reasons.append(f"Contains UI-like blue colors ({blue_pct:.1f}%)")
+            else:
+                score += 60
+            
+            # Natural texture check
+            if edge_pct > 50:
+                reasons.append(f"Too many edges/text-like patterns ({edge_pct:.1f}%)")
+            elif edge_pct < 5:
+                reasons.append(f"Too smooth/artificial ({edge_pct:.1f}%)")
+            else:
+                score += 80
+            
+            # PEPPER-SPECIFIC CHECKS
+            if pepper_like:
+                pepper_score += 50
+            else:
+                if aspect_ratio > 0:  # If we detected a leaf but it's not pepper-like
+                    reasons.append(f"Leaf shape not typical of pepper (aspect ratio: {aspect_ratio:.2f})")
+            
+            if dark_green_pct > 15:
+                pepper_score += 30
+            else:
+                reasons.append(f"Color tone doesn't match pepper leaves")
+            
+            # Add warning if it looks like a plant but not pepper-specific
+            if score > 200 and pepper_score < 40:
+                reasons.append("Looks like a plant leaf, but NOT pepper-specific characteristics")
+            
+            # Calculate confidence
+            max_score = 480  # Updated with pepper checks
+            total_score = score + pepper_score
+            confidence = (total_score / max_score) * 100
+            
+            # Decision threshold - stricter now
+            is_valid = confidence >= 55
+            
+            if not is_valid:
+                reason = "Not a valid pepper leaf image: " + ", ".join(reasons)
+            else:
+                reason = "Valid pepper leaf image"
+            
+            return is_valid, reason, round(confidence, 1)
+            
+        except Exception as e:
+            return False, f"Validation error: {str(e)}", 0
     
     def extract_features(self, image_path):
         """
@@ -331,11 +479,23 @@ class PlantDiseaseDetector:
             }
         
         try:
-            # Extract features
+            # STEP 1: Validate if image is actually a plant/leaf
+            is_valid, reason, validation_confidence = self.is_valid_plant_image(image_path)
+            
+            if not is_valid:
+                return {
+                    'success': False,
+                    'error': 'Invalid Image',
+                    'message': reason,
+                    'validation_confidence': validation_confidence,
+                    'suggestion': 'Please upload a clear photo of a pepper plant leaf'
+                }
+            
+            # STEP 2: Extract features
             features = self.extract_features(image_path)
             features_scaled = self.scaler.transform(features.reshape(1, -1))
             
-            # Predict
+            # STEP 3: Predict
             prediction = self.model.predict(features_scaled)[0]
             probabilities = self.model.predict_proba(features_scaled)[0]
             
@@ -348,6 +508,55 @@ class PlantDiseaseDetector:
             # Get confidence
             confidence = float(max(probabilities)) * 100
             
+            # STEP 4: Advanced validation checks
+            CONFIDENCE_THRESHOLD = 70.0  # Minimum confidence required
+            MAX_UNCERTAINTY = 0.4  # Maximum allowed uncertainty (closer probs = more uncertain)
+            
+            # Calculate uncertainty (entropy-like measure)
+            # If probabilities are similar (e.g., 55% vs 45%), model is uncertain
+            prob_diff = abs(probabilities[0] - probabilities[1]) if len(probabilities) >= 2 else 1.0
+            
+            # Check 1: Low confidence
+            if confidence < CONFIDENCE_THRESHOLD:
+                return {
+                    'success': False,
+                    'error': 'Low Confidence Detection',
+                    'message': f'Model confidence too low ({confidence:.1f}%). This may not be a pepper leaf, or the image quality is poor.',
+                    'confidence': round(confidence, 1),
+                    'validation_confidence': validation_confidence,
+                    'probabilities': prob_dict,
+                    'suggestion': 'Please ensure you are uploading a clear photo of a PEPPER plant leaf. Other plant species may not be recognized correctly.',
+                    'detected_as': prediction
+                }
+            
+            # Check 2: High uncertainty (probabilities too similar)
+            if prob_diff < MAX_UNCERTAINTY:
+                return {
+                    'success': False,
+                    'error': 'Uncertain Detection',
+                    'message': f'Model is uncertain about this image. The probabilities are too close ({confidence:.1f}% vs {(100-confidence):.1f}%).',
+                    'confidence': round(confidence, 1),
+                    'validation_confidence': validation_confidence,
+                    'probabilities': prob_dict,
+                    'suggestion': 'This might not be a pepper leaf, or the image is unclear. Please upload a clear photo of a PEPPER plant leaf.',
+                    'detected_as': prediction,
+                    'probability_difference': round(prob_diff * 100, 1)
+                }
+            
+            # Check 3: Validation confidence vs prediction confidence mismatch
+            # If validation confidence is low but prediction confidence is high, suspicious
+            if validation_confidence < 60 and confidence > 80:
+                return {
+                    'success': False,
+                    'error': 'Suspicious Image',
+                    'message': 'Image validation confidence is low, suggesting this may not be a typical plant photo.',
+                    'confidence': round(confidence, 1),
+                    'validation_confidence': validation_confidence,
+                    'probabilities': prob_dict,
+                    'suggestion': 'Please upload a clear, well-lit photo of a pepper plant leaf.',
+                    'detected_as': prediction
+                }
+            
             # Get disease info
             disease_data = self.disease_info.get(prediction, {})
             
@@ -355,6 +564,7 @@ class PlantDiseaseDetector:
                 'success': True,
                 'prediction': prediction,
                 'confidence': round(confidence, 1),
+                'validation_confidence': validation_confidence,
                 'probabilities': prob_dict,
                 'disease_info': disease_data,
                 'all_predictions': [
@@ -396,6 +606,9 @@ class PlantDiseaseDetector:
                     self.model = data['model']
                     self.scaler = data['scaler']
                     self.is_trained = data.get('is_trained', False)
+                
+                model_type = getattr(self, 'model_type', 'unknown')
+                print(f"✅ Loaded {model_type} model from: {self.model_path}")
                 return True
             else:
                 self.is_trained = False

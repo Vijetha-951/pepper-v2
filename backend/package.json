@@ -7,6 +7,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "flask": "cd python && python disease_detection_api_fast.py",
+    "dev:all": "concurrently -n flask,node -c magenta,green \"npm run flask\" \"npm run dev\"",
     "test": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest",
     "test:watch": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest --watch",
     "seed": "node scripts/seed.js",
@@ -32,6 +34,7 @@
     "@babel/preset-env": "^7.28.3",
     "@eslint/js": "^9.35.0",
     "babel-jest": "^30.1.2",
+    "concurrently": "^9.2.1",
     "cross-env": "^10.0.0",
     "eslint": "^9.35.0",
     "eslint-config-prettier": "^10.1.8",

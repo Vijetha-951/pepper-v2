@@ -46,6 +46,90 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* Upload Mode Toggle */
+.upload-mode-toggle {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  background: #f7fafc;
+  padding: 5px;
+  border-radius: 10px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: transparent;
+  color: #718096;
+}
+
+.mode-btn.active {
+  background: white;
+  color: #667eea;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mode-btn:hover:not(.active) {
+  background: #edf2f7;
+}
+
+/* URL Input Area */
+.url-input-area {
+  border: 3px dashed #cbd5e0;
+  border-radius: 15px;
+  padding: 40px;
+  text-align: center;
+  background: #f7fafc;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.url-input-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  color: #718096;
+}
+
+.url-input-container svg {
+  color: #4299e1;
+}
+
+.url-input-container p {
+  font-size: 1.1rem;
+  margin: 0;
+  color: #2d3748;
+}
+
+.url-input {
+  width: 100%;
+  max-width: 500px;
+  padding: 12px 16px;
+  border: 2px solid #cbd5e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.url-input:focus {
+  outline: none;
+  border-color: #4299e1;
+}
+
+.url-input-container .btn {
+  max-width: 200px;
+}
+
 /* Upload Area */
 .upload-area {
   border: 3px dashed #cbd5e0;
@@ -198,12 +282,40 @@
 /* Error Message */
 .error-message {
   margin-top: 20px;
-  padding: 15px;
+  padding: 15px 20px;
   background: #fff5f5;
-  border: 1px solid #fc8181;
+  border: 2px solid #fc8181;
   border-radius: 8px;
   color: #c53030;
-  text-align: center;
+  text-align: left;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.error-message div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.error-message strong {
+  font-size: 1.1rem;
+  display: block;
+}
+
+.error-message p {
+  margin: 0;
+  color: #742a2a;
+}
+
+.error-message .suggestion {
+  background: #fff;
+  padding: 10px;
+  border-radius: 6px;
+  border-left: 4px solid #f6ad55;
+  margin-top: 5px;
+  color: #2d3748;
+  font-weight: 500;
 }
 
 /* Loading Indicator */

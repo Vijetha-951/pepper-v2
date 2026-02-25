@@ -10,7 +10,7 @@ import DiseaseDetection from '../models/DiseaseDetection.js';
 
 class DiseaseDetectionService {
   constructor() {
-    this.apiUrl = process.env.DISEASE_API_URL || 'http://localhost:5002';
+    this.apiUrl = process.env.DISEASE_API_URL || 'http://localhost:5001';
     this.timeout = 30000; // 30 seconds for image processing
   }
 
@@ -74,6 +74,9 @@ class DiseaseDetectionService {
       return response.data;
     } catch (error) {
       console.error('Disease prediction failed:', error.message);
+      if (error.response && error.response.data) {
+        return error.response.data; // Return the structured error from Python API
+      }
       throw new Error(`Failed to predict disease: ${error.message}`);
     }
   }
@@ -98,6 +101,9 @@ class DiseaseDetectionService {
       return response.data;
     } catch (error) {
       console.error('URL prediction failed:', error.message);
+      if (error.response && error.response.data) {
+        return error.response.data;
+      }
       throw new Error(`Failed to predict from URL: ${error.message}`);
     }
   }
@@ -126,6 +132,9 @@ class DiseaseDetectionService {
       return response.data;
     } catch (error) {
       console.error('Batch prediction failed:', error.message);
+      if (error.response && error.response.data) {
+        return error.response.data;
+      }
       throw new Error(`Failed to batch predict: ${error.message}`);
     }
   }
@@ -171,23 +180,48 @@ class DiseaseDetectionService {
         throw new Error('Cannot save failed prediction');
       }
 
+      // Extract prediction data from Flask response structure
+      const pred = predictionResult.prediction || {};
+      const diseaseInfo = pred.disease_info || {};
+      
+      // Convert technical disease name to display name
+      const convertDiseaseName = (technicalName) => {
+        if (!technicalName) return 'Unknown';
+        if (technicalName.toLowerCase().includes('healthy')) return 'Healthy';
+        if (technicalName.toLowerCase().includes('bacterial_spot')) return 'Bacterial Spot';
+        if (technicalName.toLowerCase().includes('yellow_leaf_curl')) return 'Yellow Leaf Curl';
+        if (technicalName.toLowerCase().includes('nutrient_deficiency')) return 'Nutrient Deficiency';
+        return technicalName.replace(/Pepper__bell___/g, '').replace(/_/g, ' ').trim();
+      };
+      
+      const displayName = convertDiseaseName(diseaseInfo.name || pred.disease);
+      const severity = diseaseInfo.severity || 'None';
+      
+      // Validate severity is in allowed enum values
+      const validSeverities = ['None', 'Low', 'Low to Moderate', 'Moderate', 'Moderate to High', 'High'];
+      const finalSeverity = validSeverities.includes(severity) ? severity : 'None';
+
       const detectionData = {
         userId: metadata.userId || null,
         userEmail: metadata.userEmail || null,
-        imagePath: predictionResult.metadata?.filename || metadata.imagePath,
-        imageUrl: metadata.imageUrl || null,
-        originalFilename: metadata.originalFilename || predictionResult.metadata?.filename,
-        fileSize: predictionResult.metadata?.file_size || 0,
+        imagePath: predictionResult.metadata?.filename || pred.metadata?.filename || metadata.imagePath || (metadata.imageUrl ? 'url_image' : null),
+        imageUrl: metadata.imageUrl || predictionResult.metadata?.image_url || pred.metadata?.image_url || null,
+        originalFilename: metadata.originalFilename || predictionResult.metadata?.filename || pred.metadata?.filename || 'image.jpg',
+        fileSize: predictionResult.metadata?.file_size || pred.metadata?.file_size || 0,
         
-        prediction: predictionResult.prediction,
-        confidence: predictionResult.confidence,
-        probabilities: predictionResult.probabilities,
+        prediction: displayName,
+        confidence: pred.confidence || 0,
+        probabilities: pred.all_predictions ? 
+          pred.all_predictions.reduce((acc, p) => {
+            acc[convertDiseaseName(p.disease)] = p.probability;
+            return acc;
+          }, {}) : {},
         
-        diseaseName: predictionResult.disease_info?.name || predictionResult.prediction,
-        severity: predictionResult.disease_info?.severity || 'Unknown',
-        description: predictionResult.disease_info?.description || '',
-        treatment: predictionResult.disease_info?.treatment || [],
-        prevention: predictionResult.disease_info?.prevention || [],
+        diseaseName: displayName,
+        severity: finalSeverity,
+        description: diseaseInfo.description || '',
+        treatment: diseaseInfo.treatment || [],
+        prevention: diseaseInfo.prevention || [],
         
         location: metadata.location || null,
         plantAge: metadata.plantAge || null,
@@ -223,6 +257,24 @@ class DiseaseDetectionService {
     } catch (error) {
       console.error('Failed to get user detections:', error.message);
       throw new Error(`Failed to fetch detection history: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get recent detections from all users
+   * @param {number} limit - Number of records to fetch
+   */
+  async getRecentDetections(limit = 20) {
+    try {
+      const detections = await DiseaseDetection.find({})
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .lean();
+      
+      return detections;
+    } catch (error) {
+      console.error('Failed to get recent detections:', error.message);
+      throw new Error(`Failed to fetch recent detections: ${error.message}`);
     }
   }
 

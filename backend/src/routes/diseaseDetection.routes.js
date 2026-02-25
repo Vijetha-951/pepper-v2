@@ -167,16 +167,19 @@ router.post('/predict', upload.single('image'), async (req, res) => {
       notes: metadata.notes
     });
 
-    // Save to database if prediction was successful
-    let savedDetection = null;
-    if (prediction.success) {
-      savedDetection = await diseaseDetectionService.saveDetection(prediction, metadata);
+    // Check for validation errors or other failures returned as objects
+    if (!prediction.success) {
+      return res.status(400).json(prediction);
     }
 
+    // Save to database if prediction was successful
+    let savedDetection = await diseaseDetectionService.saveDetection(prediction, metadata);
+
+    // Return Flask prediction structure directly
     res.json({
       success: true,
       message: 'Disease detection completed',
-      prediction,
+      prediction: prediction.prediction, // Extract nested prediction from Flask response
       detection: savedDetection ? {
         id: savedDetection._id,
         createdAt: savedDetection.createdAt
@@ -200,37 +203,45 @@ router.post('/predict', upload.single('image'), async (req, res) => {
  */
 router.post('/predict-url', async (req, res) => {
   try {
-    const { imageUrl } = req.body;
+    console.log('📥 Received predict-url request:', req.body);
+    const { imageUrl, image_url } = req.body;
+    const finalImageUrl = imageUrl || image_url;
 
-    if (!imageUrl) {
+    if (!finalImageUrl) {
+      console.log('❌ No URL provided');
       return res.status(400).json({
         success: false,
         message: 'Image URL is required'
       });
     }
 
-    const prediction = await diseaseDetectionService.predictFromUrl(imageUrl);
+    console.log('🔗 Calling Flask with URL:', finalImageUrl);
+    const prediction = await diseaseDetectionService.predictFromUrl(finalImageUrl);
+    console.log('✅ Got Flask response:', prediction);
+
+    // Check for validation errors or other failures
+    if (!prediction.success) {
+      return res.status(400).json(prediction);
+    }
 
     // Optionally save to database
     const metadata = {
       userId: req.user?.id || null,
       userEmail: req.user?.email || null,
-      imageUrl: imageUrl,
+      imageUrl: finalImageUrl,
       originalFilename: 'url_image.jpg'
     };
 
-    let savedDetection = null;
-    if (prediction.success) {
-      savedDetection = await diseaseDetectionService.saveDetection(prediction, metadata);
-    }
+    const savedDetection = await diseaseDetectionService.saveDetection(prediction, metadata);
 
     res.json({
       success: true,
-      prediction,
+      prediction: prediction.prediction,
       detection: savedDetection
     });
 
   } catch (error) {
+    console.error('❌ predict-url error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to predict from URL',
@@ -273,22 +284,23 @@ router.post('/batch-predict', upload.array('images', 10), async (req, res) => {
 
 /**
  * @route   GET /api/disease-detection/history
- * @desc    Get detection history for current user
- * @access  Private
+ * @desc    Get detection history for current user or recent detections
+ * @access  Public/Private
  */
 router.get('/history', async (req, res) => {
   try {
     const userId = req.user?.id || req.query.userId;
     const limit = parseInt(req.query.limit) || 20;
 
+    let detections;
+    
     if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: 'User ID is required'
-      });
+      // If no userId provided, return recent detections from all users
+      detections = await diseaseDetectionService.getRecentDetections(limit);
+    } else {
+      // If userId provided, return user-specific history
+      detections = await diseaseDetectionService.getUserDetections(userId, limit);
     }
-
-    const detections = await diseaseDetectionService.getUserDetections(userId, limit);
 
     res.json({
       success: true,

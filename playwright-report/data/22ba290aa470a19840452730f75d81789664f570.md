@@ -1,0 +1,65 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - button [ref=e6] [cursor=pointer]:
+      - img [ref=e7]
+    - generic [ref=e9]:
+      - img [ref=e11]
+      - heading "Join Our Family!" [level=1] [ref=e14]
+      - paragraph [ref=e15]: Thekkevayalil Pepper Nursery
+      - paragraph [ref=e16]: Start your journey with premium pepper plants and expert cultivation guidance. Join thousands of satisfied customers who trust us for quality plants.
+  - generic [ref=e18]:
+    - generic [ref=e19]:
+      - img [ref=e21]
+      - heading "Create Account" [level=2] [ref=e24]
+      - paragraph [ref=e25]: Fill in your details to get started
+    - generic [ref=e26]:
+      - generic [ref=e27]: Select role for Google signup
+      - combobox [ref=e28]:
+        - option "User" [selected]
+        - option "Delivery Boy"
+    - button "Sign up with Google" [ref=e29] [cursor=pointer]:
+      - img [ref=e30]
+      - text: Sign up with Google
+    - generic [ref=e37]: Or register with email
+    - generic [ref=e39]:
+      - generic [ref=e40]:
+        - generic [ref=e42]:
+          - img [ref=e43]
+          - textbox "First Name" [ref=e46]
+        - generic [ref=e48]:
+          - img [ref=e49]
+          - textbox "Last Name" [ref=e52]
+      - generic [ref=e54]:
+        - img [ref=e55]
+        - textbox "Email Address" [ref=e58]
+      - generic [ref=e60]:
+        - img [ref=e61]
+        - textbox "Password" [ref=e64]
+        - button [ref=e65] [cursor=pointer]:
+          - img [ref=e66]
+      - generic [ref=e69]:
+        - generic [ref=e71]:
+          - img [ref=e72]
+          - textbox "Phone Number" [ref=e74]
+        - combobox [ref=e76]:
+          - option "User" [selected]
+          - option "Delivery Boy"
+      - generic [ref=e77]:
+        - generic [ref=e79]:
+          - img [ref=e80]
+          - textbox "Place/Area" [ref=e83]
+        - generic [ref=e85]:
+          - img [ref=e86]
+          - textbox "District" [ref=e89]
+      - generic [ref=e91]:
+        - img [ref=e92]
+        - textbox "Pincode" [ref=e95]
+      - button "Create Account" [ref=e96] [cursor=pointer]
+    - paragraph [ref=e97]:
+      - text: Already have an account?
+      - link "Sign in here" [ref=e98] [cursor=pointer]:
+        - /url: /login
+```

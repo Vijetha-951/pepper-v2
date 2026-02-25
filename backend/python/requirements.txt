@@ -14,6 +14,9 @@ Flask-CORS==4.0.0
 opencv-python==4.8.1.78
 Pillow==10.1.0
 
+# Deep Learning (for CNN disease detection)
+tensorflow==2.13.0  # Or tensorflow-cpu for CPU-only version
+
 # Kaggle API (for downloading datasets)
 kaggle==1.5.16
 
