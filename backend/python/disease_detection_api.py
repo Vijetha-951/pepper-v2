@@ -247,15 +247,15 @@ def predict_disease():
         result = detector.predict(filepath)
         print(f"✅ Prediction result: {result}")
         
-        # Check for validation errors from detector
-        if not result.get('success', True) and result.get('error') == 'Invalid Image':
-            print(f"❌ ERROR: Image validation failed: {result.get('message')}")
+        # Check for validation errors from detector (handles both validation and confidence checks)
+        if not result.get('success', True) and result.get('error') in ['Invalid Image', 'Not a Pepper Plant Leaf']:
+            print(f"❌ ERROR: Image validation/identification failed: {result.get('message')}")
             return jsonify({
                 'success': False,
                 'error': result.get('error'),
                 'message': result.get('message'),
                 'suggestion': result.get('suggestion'),
-                'confidence': result.get('validation_confidence')
+                'confidence': result.get('validation_confidence', result.get('model_confidence'))
             }), 400
         
         # Transform result to match frontend expectations
@@ -427,15 +427,15 @@ def predict_from_url():
         result = detector.predict(filepath)
         print(f"✅ Prediction result: {result}")
         
-        # Check for validation errors from detector
-        if not result.get('success', True) and result.get('error') == 'Invalid Image':
-            print(f"❌ ERROR: Image validation failed: {result.get('message')}")
+        # Check for validation errors from detector (handles both validation and confidence checks)
+        if not result.get('success', True) and result.get('error') in ['Invalid Image', 'Not a Pepper Plant Leaf']:
+            print(f"❌ ERROR: Image validation/identification failed: {result.get('message')}")
             return jsonify({
                 'success': False,
                 'error': result.get('error'),
                 'message': result.get('message'),
                 'suggestion': result.get('suggestion'),
-                'confidence': result.get('validation_confidence')
+                'confidence': result.get('validation_confidence', result.get('model_confidence'))
             }), 400
         
         # Transform result

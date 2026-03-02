@@ -172,8 +172,14 @@ router.post('/predict', upload.single('image'), async (req, res) => {
       return res.status(400).json(prediction);
     }
 
-    // Save to database if prediction was successful
-    let savedDetection = await diseaseDetectionService.saveDetection(prediction, metadata);
+    // Try to save to database if prediction was successful (but don't fail if MongoDB is unavailable)
+    let savedDetection = null;
+    try {
+      savedDetection = await diseaseDetectionService.saveDetection(prediction, metadata);
+    } catch (dbError) {
+      console.warn('⚠️  Could not save to database (MongoDB may not be running):', dbError.message);
+      // Continue anyway - we can still return the prediction without saving it
+    }
 
     // Return Flask prediction structure directly
     res.json({
