@@ -76,9 +76,21 @@ export async function apiFetch(input, init = {}) {
   const API_URL = process.env.REACT_APP_API_URL || '';
   let url = input;
   
+  // Debug logging
+  console.log('🔍 API Debug:', {
+    'REACT_APP_API_URL': process.env.REACT_APP_API_URL,
+    'API_URL': API_URL,
+    'input': input,
+    'typeof input': typeof input,
+    'startsWith /api': typeof input === 'string' && input.startsWith('/api')
+  });
+  
   // If we have an API_URL and the input is a relative path starting with /api
   if (API_URL && typeof input === 'string' && input.startsWith('/api')) {
     url = `${API_URL}${input}`;
+    console.log('✅ Using backend URL:', url);
+  } else {
+    console.log('⚠️ Using relative URL:', url);
   }
 
   return fetch(url, finalInit);
