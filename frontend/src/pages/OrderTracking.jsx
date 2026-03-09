@@ -1,12 +1,20 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../services/api';
 import { useAuthState } from 'react-firebase-hooks/auth';
+import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
+import { apiFetch } from '../services/api';
 import { useNavigate, useParams } from 'react-router-dom';
+import { apiFetch } from '../services/api';
 import { ArrowLeft, MapPin, Clock, CheckCircle, XCircle, Truck, Package, AlertCircle, Cog, User, Phone, Mail, CreditCard, ShoppingBag } from 'lucide-react';
+import { apiFetch } from '../services/api';
 import { HUB_LAUNCH_DATE } from '../config/constants';
+import { apiFetch } from '../services/api';
 import OrderTrackingMap from '../components/OrderTrackingMap';
+import { apiFetch } from '../services/api';
 import './OrderTracking.css';
+import { apiFetch } from '../services/api';
 
 const OrderTracking = () => {
   const [user] = useAuthState(auth);
@@ -39,7 +47,7 @@ const OrderTracking = () => {
     try {
       setLoading(true);
       const token = await user.getIdToken();
-      const response = await fetch(`/api/user/orders/${orderId}`, {
+      const response = await apiFetch(`/api/user/orders/${orderId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -65,7 +73,7 @@ const OrderTracking = () => {
   const fetchRouteDetails = async () => {
     try {
       const token = await user.getIdToken();
-      const response = await fetch(`/api/user/orders/${orderId}/route`, {
+      const response = await apiFetch(`/api/user/orders/${orderId}/route`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -759,3 +767,4 @@ const OrderTracking = () => {
 };
 
 export default OrderTracking;
+

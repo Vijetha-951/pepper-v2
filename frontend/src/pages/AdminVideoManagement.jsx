@@ -1,8 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
+import { apiFetch } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '../services/api';
 import { Video, Plus, Edit, Trash2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
+import { apiFetch } from '../services/api';
 import './AdminVideoManagement.css';
+import { apiFetch } from '../services/api';
 
 export default function AdminVideoManagement() {
   const navigate = useNavigate();
@@ -40,7 +45,7 @@ export default function AdminVideoManagement() {
       }
 
       const token = await auth.currentUser.getIdToken();
-      const response = await fetch('/api/videos/admin/all', {
+      const response = await apiFetch('/api/videos/admin/all', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -79,7 +84,7 @@ export default function AdminVideoManagement() {
       const token = await auth.currentUser.getIdToken();
       console.log('📊 Fetching stats with token:', token.substring(0, 20) + '...');
       
-      const response = await fetch('/api/videos/admin/stats', {
+      const response = await apiFetch('/api/videos/admin/stats', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -175,7 +180,7 @@ export default function AdminVideoManagement() {
         tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : []
       };
       
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method,
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -297,7 +302,7 @@ export default function AdminVideoManagement() {
     
     try {
       const token = await auth.currentUser.getIdToken();
-      const response = await fetch(`/api/videos/admin/${videoId}`, {
+      const response = await apiFetch(`/api/videos/admin/${videoId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -337,7 +342,7 @@ export default function AdminVideoManagement() {
   const toggleActive = async (video) => {
     try {
       const token = await auth.currentUser.getIdToken();
-      const response = await fetch(`/api/videos/admin/${video._id}`, {
+      const response = await apiFetch(`/api/videos/admin/${video._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -800,3 +805,4 @@ export default function AdminVideoManagement() {
     </div>
   );
 }
+

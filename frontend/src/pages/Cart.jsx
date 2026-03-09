@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { apiFetch } from '../services/api';
 import { useAuthState } from 'react-firebase-hooks/auth';
+import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
+import { apiFetch } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '../services/api';
 import { ShoppingCart, Plus, Minus, Trash2, AlertCircle } from 'lucide-react';
+import { apiFetch } from '../services/api';
 
 const Cart = () => {
   const [user] = useAuthState(auth);
@@ -15,7 +20,7 @@ const Cart = () => {
   const fetchCart = useCallback(async () => {
     try {
       const token = await user.getIdToken();
-      const response = await fetch(`/api/cart/${user.uid}`, {
+      const response = await apiFetch(`/api/cart/${user.uid}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -48,7 +53,7 @@ const Cart = () => {
     
     try {
       const token = await user.getIdToken();
-      const response = await fetch(`/api/cart/item/${productId}`, {
+      const response = await apiFetch(`/api/cart/item/${productId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -76,7 +81,7 @@ const Cart = () => {
     
     try {
       const token = await user.getIdToken();
-      const response = await fetch(`/api/cart/item/${productId}`, {
+      const response = await apiFetch(`/api/cart/item/${productId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -297,3 +302,4 @@ const Cart = () => {
 };
 
 export default Cart;
+

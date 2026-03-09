@@ -1,10 +1,16 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '../services/api';
 import { Package, Truck, MapPin, Clock, Search, RefreshCw, X, AlertCircle, CheckCircle, ScanLine, Bell } from 'lucide-react';
+import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
+import { apiFetch } from '../services/api';
 import { onAuthStateChanged } from 'firebase/auth';
+import { apiFetch } from '../services/api';
 import './HubManagerDashboard.css';
+import { apiFetch } from '../services/api';
 
 const HubManagerDashboard = () => {
   const navigate = useNavigate();
@@ -119,7 +125,7 @@ const HubManagerDashboard = () => {
       const headers = await getApiHeaders(firebaseUser);
 
       // First, fetch hub details
-      const hubResponse = await fetch('/api/hub/my-hub', { headers });
+      const hubResponse = await apiFetch('/api/hub/my-hub', { headers });
 
       if (hubResponse.ok) {
         const hubData = await hubResponse.json();
@@ -321,7 +327,7 @@ const HubManagerDashboard = () => {
   const fetchNotifications = async (firebaseUser) => {
     try {
       const token = await firebaseUser.getIdToken();
-      const response = await fetch('/api/notifications?limit=10', {
+      const response = await apiFetch('/api/notifications?limit=10', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -337,7 +343,7 @@ const HubManagerDashboard = () => {
           // If notification has an orderId, check if the order is still active
           if (notification.metadata?.orderId) {
             try {
-              const orderResponse = await fetch(`/api/hub-collection/orders/${notification.metadata.orderId}/details`, {
+              const orderResponse = await apiFetch(`/api/hub-collection/orders/${notification.metadata.orderId}/details`, {
                 headers: {
                   'Authorization': `Bearer ${token}`,
                   'Content-Type': 'application/json'
@@ -368,7 +374,7 @@ const HubManagerDashboard = () => {
       }
 
       // Fetch unread count
-      const countResponse = await fetch('/api/notifications/unread-count', {
+      const countResponse = await apiFetch('/api/notifications/unread-count', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -389,7 +395,7 @@ const HubManagerDashboard = () => {
     try {
       if (!notification.isRead) {
         const token = await user.getIdToken();
-        await fetch(`/api/notifications/${notification._id}/read`, {
+        await apiFetch(`/api/notifications/${notification._id}/read`, {
           method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -433,7 +439,7 @@ const HubManagerDashboard = () => {
       const token = await user.getIdToken();
       
       // Delete the notification permanently
-      const response = await fetch(`/api/notifications/${notificationId}`, {
+      const response = await apiFetch(`/api/notifications/${notificationId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -468,7 +474,7 @@ const HubManagerDashboard = () => {
   const handleMarkAllAsRead = async () => {
     try {
       const token = await user.getIdToken();
-      await fetch('/api/notifications/read-all', {
+      await apiFetch('/api/notifications/read-all', {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -501,7 +507,7 @@ const HubManagerDashboard = () => {
       setActionSuccess('');
 
       const headers = await getApiHeaders(user);
-      const response = await fetch('/api/hub/scan-in', {
+      const response = await apiFetch('/api/hub/scan-in', {
         method: 'POST',
         headers,
         body: JSON.stringify({ orderId: finalOrderId })
@@ -555,7 +561,7 @@ const HubManagerDashboard = () => {
       // Load next hub
       let nextHubId = '';
       try {
-        const nextHubResponse = await fetch(`/api/hub/next-hub/${orderId}`, {
+        const nextHubResponse = await apiFetch(`/api/hub/next-hub/${orderId}`, {
           headers
         });
 
@@ -571,7 +577,7 @@ const HubManagerDashboard = () => {
       let deliveryBoys = [];
       if (hub?.type === 'LOCAL_HUB') {
         try {
-          const boysResponse = await fetch('/api/hub/available-delivery-boys', {
+          const boysResponse = await apiFetch('/api/hub/available-delivery-boys', {
             headers
           });
 
@@ -636,7 +642,7 @@ const HubManagerDashboard = () => {
       setActionSuccess('');
 
       const headers = await getApiHeaders(user);
-      const response = await fetch('/api/hub/dispatch', {
+      const response = await apiFetch('/api/hub/dispatch', {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -652,7 +658,7 @@ const HubManagerDashboard = () => {
         setOrders(prev => prev.filter(o => o._id !== orderId));
         
         // Refresh dispatched orders to include the newly dispatched order
-        const dispatchedResponse = await fetch('/api/hub/dispatched-orders', {
+        const dispatchedResponse = await apiFetch('/api/hub/dispatched-orders', {
           headers
         });
 
@@ -720,7 +726,7 @@ const HubManagerDashboard = () => {
       setActionSuccess('');
 
       const headers = await getApiHeaders(user);
-      const response = await fetch(`/api/hub-collection/orders/${orderId}/arrived-at-hub`, {
+      const response = await apiFetch(`/api/hub-collection/orders/${orderId}/arrived-at-hub`, {
         method: 'PATCH',
         headers
       });
@@ -777,7 +783,7 @@ const HubManagerDashboard = () => {
       setActionSuccess('');
 
       const headers = await getApiHeaders(user);
-      const response = await fetch(`/api/hub-collection/orders/${orderId}/ready-for-collection`, {
+      const response = await apiFetch(`/api/hub-collection/orders/${orderId}/ready-for-collection`, {
         method: 'PATCH',
         headers
       });
@@ -1529,3 +1535,4 @@ const HubManagerDashboard = () => {
 };
 
 export default HubManagerDashboard;
+

@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { apiFetch } from '../services/api';
 import { Package, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
+import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
+import { apiFetch } from '../services/api';
 import { onAuthStateChanged } from 'firebase/auth';
+import { apiFetch } from '../services/api';
 
 export default function AdminHubInventory() {
   const [user, setUser] = useState(null);
@@ -32,7 +36,7 @@ export default function AdminHubInventory() {
   const fetchHubs = useCallback(async () => {
     try {
       const headers = await getAuthHeaders();
-      const response = await fetch('/api/hub-inventory/hubs/available', { headers });
+      const response = await apiFetch('/api/hub-inventory/hubs/available', { headers });
       
       if (response.ok) {
         const data = await response.json();
@@ -53,7 +57,7 @@ export default function AdminHubInventory() {
     try {
       setInventoryLoading(true);
       const headers = await getAuthHeaders();
-      const response = await fetch(`/api/hub-inventory/hubs/${hubId}/inventory`, { headers });
+      const response = await apiFetch(`/api/hub-inventory/hubs/${hubId}/inventory`, { headers });
       
       if (response.ok) {
         const data = await response.json();
@@ -70,7 +74,7 @@ export default function AdminHubInventory() {
   const fetchRestockRequests = useCallback(async () => {
     try {
       const headers = await getAuthHeaders();
-      const response = await fetch('/api/hub-inventory/admin/restock-requests', { headers });
+      const response = await apiFetch('/api/hub-inventory/admin/restock-requests', { headers });
       
       if (response.ok) {
         const data = await response.json();
@@ -149,7 +153,7 @@ export default function AdminHubInventory() {
       
       const headers = await getAuthHeaders();
       
-      const response = await fetch(`/api/hub-inventory/admin/restock-requests/${requestId}`, {
+      const response = await apiFetch(`/api/hub-inventory/admin/restock-requests/${requestId}`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify({ action: 'APPROVE', approvedQuantity: qty })
@@ -185,7 +189,7 @@ export default function AdminHubInventory() {
       setSuccess('');
       const headers = await getAuthHeaders();
       
-      const response = await fetch(`/api/hub-inventory/admin/restock-requests/${requestId}`, {
+      const response = await apiFetch(`/api/hub-inventory/admin/restock-requests/${requestId}`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify({ action: 'REJECT' })
@@ -711,3 +715,4 @@ export default function AdminHubInventory() {
     </div>
   );
 }
+

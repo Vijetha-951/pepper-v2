@@ -1,11 +1,18 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../services/api';
 import { useAuthState } from 'react-firebase-hooks/auth';
+import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
+import { apiFetch } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '../services/api';
 import { Package, Eye, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, Star, Download } from 'lucide-react';
+import { apiFetch } from '../services/api';
 import ReviewModal from '../components/ReviewModal';
+import { apiFetch } from '../services/api';
 import './Orders.css';
+import { apiFetch } from '../services/api';
 
 const Orders = () => {
   const [user] = useAuthState(auth);
@@ -34,7 +41,7 @@ const Orders = () => {
   const fetchOrders = async () => {
     try {
       const token = await user.getIdToken();
-      const response = await fetch('/api/user/orders', {
+      const response = await apiFetch('/api/user/orders', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -113,7 +120,7 @@ const Orders = () => {
   const handleDownloadInvoice = async (orderId) => {
     try {
       const token = await user.getIdToken();
-      const response = await fetch(`/api/invoices/${orderId}`, {
+      const response = await apiFetch(`/api/invoices/${orderId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -145,7 +152,7 @@ const Orders = () => {
   const confirmCancelOrder = async () => {
     try {
       const token = await user.getIdToken();
-      const response = await fetch(`/api/user/orders/${orderToCancel}`, {
+      const response = await apiFetch(`/api/user/orders/${orderToCancel}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -523,3 +530,4 @@ const Orders = () => {
 };
 
 export default Orders;
+

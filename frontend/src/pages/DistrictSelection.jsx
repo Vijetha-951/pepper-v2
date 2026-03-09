@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '../services/api';
 import { MapPin, Building2, Loader, ArrowRight, LogOut, Bell, Package, Truck, CheckCircle, X } from 'lucide-react';
+import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
+import { apiFetch } from '../services/api';
 import { signOut } from 'firebase/auth';
+import { apiFetch } from '../services/api';
 import './DistrictSelection.css';
+import { apiFetch } from '../services/api';
 
 const DistrictSelection = () => {
   const navigate = useNavigate();
@@ -33,7 +39,7 @@ const DistrictSelection = () => {
         return;
       }
 
-      const response = await fetch('/api/hub/districts', {
+      const response = await apiFetch('/api/hub/districts', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -65,7 +71,7 @@ const DistrictSelection = () => {
       console.log('Token obtained:', token ? 'Yes' : 'No');
 
       console.log('Making API call to /api/hub/select-district...');
-      const response = await fetch('/api/hub/select-district', {
+      const response = await apiFetch('/api/hub/select-district', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -110,7 +116,7 @@ const DistrictSelection = () => {
       const token = await auth.currentUser?.getIdToken();
       if (!token) return;
 
-      const response = await fetch('/api/notifications?limit=10', {
+      const response = await apiFetch('/api/notifications?limit=10', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -123,7 +129,7 @@ const DistrictSelection = () => {
       }
 
       // Fetch unread count
-      const countResponse = await fetch('/api/notifications/unread-count', {
+      const countResponse = await apiFetch('/api/notifications/unread-count', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -143,7 +149,7 @@ const DistrictSelection = () => {
     try {
       if (!notification.isRead) {
         const token = await auth.currentUser?.getIdToken();
-        await fetch(`/api/notifications/${notification._id}/read`, {
+        await apiFetch(`/api/notifications/${notification._id}/read`, {
           method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -170,7 +176,7 @@ const DistrictSelection = () => {
   const handleMarkAllAsRead = async () => {
     try {
       const token = await auth.currentUser?.getIdToken();
-      await fetch('/api/notifications/read-all', {
+      await apiFetch('/api/notifications/read-all', {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -358,3 +364,4 @@ const DistrictSelection = () => {
 };
 
 export default DistrictSelection;
+

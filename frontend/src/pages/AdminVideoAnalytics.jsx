@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '../services/api';
 import { 
+import { apiFetch } from '../services/api';
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
 import { 
+import { apiFetch } from '../services/api';
   TrendingUp, Eye, Heart, Users, Video, ArrowLeft,
   Award, Activity
 } from 'lucide-react';
 import { auth } from '../config/firebase';
+import { apiFetch } from '../services/api';
 import './AdminVideoAnalytics.css';
+import { apiFetch } from '../services/api';
 
 export default function AdminVideoAnalytics() {
   const navigate = useNavigate();
@@ -30,7 +36,7 @@ export default function AdminVideoAnalytics() {
       }
 
       const token = await auth.currentUser.getIdToken();
-      const response = await fetch('/api/videos/admin/stats', {
+      const response = await apiFetch('/api/videos/admin/stats', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -49,7 +55,7 @@ export default function AdminVideoAnalytics() {
   const fetchVideoAnalytics = async (videoId) => {
     try {
       const token = await auth.currentUser.getIdToken();
-      const response = await fetch(`/api/videos/admin/${videoId}/analytics`, {
+      const response = await apiFetch(`/api/videos/admin/${videoId}/analytics`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -353,3 +359,4 @@ export default function AdminVideoAnalytics() {
     </div>
   );
 }
+

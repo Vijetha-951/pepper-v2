@@ -1,6 +1,8 @@
 // Seasonal Suitability Frontend Helper
 // Add this to your frontend utilities
 
+import { apiFetch } from '../services/api';
+
 class SeasonalSuitabilityHelper {
   constructor() {
     this.analyticsId = null;
@@ -17,7 +19,7 @@ class SeasonalSuitabilityHelper {
     try {
       const currentDate = new Date();
       
-      const response = await fetch(`${this.apiUrl}/predict`, {
+      const response = await apiFetch(`${this.apiUrl}/predict`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

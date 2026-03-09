@@ -1,19 +1,30 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
+import { apiFetch } from '../services/api';
 import { 
+import { apiFetch } from '../services/api';
   User, Package, ShoppingCart, Truck, LogOut, Bell, Search, 
   Package2, AlertCircle, CheckCircle, Sparkles, Target, 
   Heart, Video as VideoIcon, Play, DollarSign 
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { apiFetch } from '../services/api';
 import { auth } from "../config/firebase";
+import { apiFetch } from '../services/api';
 import authService from "../services/authService";
+import { apiFetch } from '../services/api';
 import customerProductService from "../services/customerProductService";
+import { apiFetch } from '../services/api';
 import RecommendedProducts from "../components/RecommendedProducts";
+import { apiFetch } from '../services/api';
 import MyReviews from "./MyReviews";
+import { apiFetch } from '../services/api';
 import Orders from "./Orders";
+import { apiFetch } from '../services/api';
 import Wishlist from "./Wishlist";
+import { apiFetch } from '../services/api';
 import SeasonalSuitabilityHelper from "../utils/seasonalSuitability";
+import { apiFetch } from '../services/api';
 
 const seasonalHelper = new SeasonalSuitabilityHelper();
 
@@ -404,7 +415,7 @@ export default function Dashboard() {
     if (!user?.uid || !auth.currentUser) return;
     try {
       const token = await auth.currentUser.getIdToken();
-      const response = await fetch(`/api/wishlist/${user.uid}`, {
+      const response = await apiFetch(`/api/wishlist/${user.uid}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -425,7 +436,7 @@ export default function Dashboard() {
     setNotificationsLoading(true);
     try {
       const token = await auth.currentUser.getIdToken();
-      const response = await fetch('/api/notifications?limit=10', {
+      const response = await apiFetch('/api/notifications?limit=10', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -458,7 +469,7 @@ export default function Dashboard() {
       
       if (isInWishlist) {
         // Remove from wishlist
-        const response = await fetch(`/api/wishlist/item/${productId}`, {
+        const response = await apiFetch(`/api/wishlist/item/${productId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -471,7 +482,7 @@ export default function Dashboard() {
         }
       } else {
         // Add to wishlist
-        const response = await fetch('/api/wishlist/add', {
+        const response = await apiFetch('/api/wishlist/add', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -506,7 +517,7 @@ export default function Dashboard() {
       const token = await auth.currentUser.getIdToken();
       const category = videoCategory !== 'all' ? `?category=${videoCategory}` : '';
       console.log('📹 Fetching videos with category:', videoCategory);
-      const response = await fetch(`/api/videos${category}`, {
+      const response = await apiFetch(`/api/videos${category}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -536,7 +547,7 @@ export default function Dashboard() {
   const handleVideoLike = async (videoId) => {
     try {
       const token = await auth.currentUser.getIdToken();
-      const response = await fetch(`/api/videos/${videoId}/like`, {
+      const response = await apiFetch(`/api/videos/${videoId}/like`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -568,7 +579,7 @@ export default function Dashboard() {
     try {
       const token = await auth.currentUser.getIdToken();
       // Call GET endpoint which tracks the view and returns updated video data
-      const response = await fetch(`/api/videos/${video._id}`, {
+      const response = await apiFetch(`/api/videos/${video._id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -4143,3 +4154,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

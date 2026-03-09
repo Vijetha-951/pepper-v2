@@ -1,9 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { apiFetch } from '../services/api';
 import { useAuthState } from 'react-firebase-hooks/auth';
+import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
+import { apiFetch } from '../services/api';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { apiFetch } from '../services/api';
 import { CreditCard, MapPin, AlertCircle, CheckCircle, Store } from 'lucide-react';
+import { apiFetch } from '../services/api';
 import './Checkout.css';
+import { apiFetch } from '../services/api';
 
 const emptyAddress = { line1: '', line2: '', district: '', state: '', pincode: '', phone: '' };
 
@@ -42,7 +48,7 @@ const Checkout = () => {
   const fetchCart = useCallback(async () => {
     try {
       const token = await user.getIdToken();
-      const response = await fetch(`/api/cart/${user.uid}`, {
+      const response = await apiFetch(`/api/cart/${user.uid}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -70,7 +76,7 @@ const Checkout = () => {
   const loadUserAddress = useCallback(async () => {
     try {
       const token = await user.getIdToken();
-      const response = await fetch('/api/user/me', {
+      const response = await apiFetch('/api/user/me', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -107,7 +113,7 @@ const Checkout = () => {
   const loadAddressBook = useCallback(async () => {
     try {
       const token = await user.getIdToken();
-      const res = await fetch('/api/user/addresses', {
+      const res = await apiFetch('/api/user/addresses', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) return;
@@ -146,7 +152,7 @@ const Checkout = () => {
         pincode: shippingAddress.pincode || '',
         phone: shippingAddress.phone || ''
       };
-      const response = await fetch('/api/user/me', {
+      const response = await apiFetch('/api/user/me', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -202,7 +208,7 @@ const Checkout = () => {
       const token = await user.getIdToken();
       
       // Call the API to find nearest hub
-      const response = await fetch('/api/hub-location/find-nearest-hub', {
+      const response = await apiFetch('/api/hub-location/find-nearest-hub', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -323,7 +329,7 @@ const Checkout = () => {
 
       // Hub Collection Order Flow - COD
       if (isHubCollection && assignedHub && paymentMethod === 'COD') {
-        const createRes = await fetch('/api/hub-collection/orders/hub-collection', {
+        const createRes = await apiFetch('/api/hub-collection/orders/hub-collection', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -364,7 +370,7 @@ const Checkout = () => {
         }
 
         // Create order on backend with hub collection flag
-        const orderResponse = await fetch('/api/payment/create-order', {
+        const orderResponse = await apiFetch('/api/payment/create-order', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -401,7 +407,7 @@ const Checkout = () => {
           handler: async (response) => {
             try {
               // Verify payment on backend with hub collection info
-              const verifyResponse = await fetch('/api/payment/verify', {
+              const verifyResponse = await apiFetch('/api/payment/verify', {
                 method: 'POST',
                 headers: {
                   'Authorization': `Bearer ${token}`,
@@ -454,7 +460,7 @@ const Checkout = () => {
 
       // Regular Home Delivery - COD flow
       if (paymentMethod === 'COD') {
-        const createRes = await fetch('/api/user/orders', {
+        const createRes = await apiFetch('/api/user/orders', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -490,7 +496,7 @@ const Checkout = () => {
       }
 
       // Create order on backend
-      const orderResponse = await fetch('/api/payment/create-order', {
+      const orderResponse = await apiFetch('/api/payment/create-order', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -520,7 +526,7 @@ const Checkout = () => {
         handler: async (response) => {
           try {
             // Verify payment on backend
-            const verifyResponse = await fetch('/api/payment/verify', {
+            const verifyResponse = await apiFetch('/api/payment/verify', {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`,
@@ -739,7 +745,7 @@ const Checkout = () => {
                         if (!id) return;
                         const token = await user.getIdToken();
                         try {
-                          const res = await fetch(`/api/user/addresses/${id}/select`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                          const res = await apiFetch(`/api/user/addresses/${id}/select`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
                           if (res.ok) {
                             const { primary } = await res.json();
                             const safePrimary = normalizeAddress(primary);
@@ -897,7 +903,7 @@ const Checkout = () => {
                       if (!validateAddress()) return;
                       try {
                         const token = await user.getIdToken();
-                        const res = await fetch('/api/user/addresses', {
+                        const res = await apiFetch('/api/user/addresses', {
                           method: 'POST',
                           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                           body: JSON.stringify(normalizeAddress(shippingAddress))
@@ -1013,3 +1019,4 @@ const Checkout = () => {
 };
 
 export default Checkout;
+

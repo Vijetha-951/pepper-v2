@@ -1,10 +1,16 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '../services/api';
 import { Video as VideoIcon, Play, Eye, Heart, Filter, Search, ArrowLeft } from 'lucide-react';
+import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
+import { apiFetch } from '../services/api';
 import VideoLikeButton from '../components/VideoLikeButton';
+import { apiFetch } from '../services/api';
 import './UserVideos.css';
+import { apiFetch } from '../services/api';
 
 export default function UserVideos() {
   const navigate = useNavigate();
@@ -32,7 +38,7 @@ export default function UserVideos() {
         token = await auth.currentUser.getIdToken();
       }
       
-      const response = await fetch('/api/videos/categories/list', {
+      const response = await apiFetch('/api/videos/categories/list', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -53,7 +59,7 @@ export default function UserVideos() {
         token = await auth.currentUser.getIdToken();
       }
 
-      const response = await fetch('/api/videos', {
+      const response = await apiFetch('/api/videos', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -94,7 +100,7 @@ export default function UserVideos() {
         token = await auth.currentUser.getIdToken();
       }
 
-      const response = await fetch(`/api/videos/${video._id}`, {
+      const response = await apiFetch(`/api/videos/${video._id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -277,3 +283,4 @@ export default function UserVideos() {
     </div>
   );
 }
+

@@ -1,9 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { apiFetch } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '../services/api';
 import { Search, Star, Trash2, Eye, EyeOff, ChevronLeft, ChevronRight, AlertCircle, ArrowLeft, MessageCircle } from 'lucide-react';
+import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
+import { apiFetch } from '../services/api';
 import { onAuthStateChanged } from 'firebase/auth';
+import { apiFetch } from '../services/api';
 import './AdminCustomerReviews.css';
+import { apiFetch } from '../services/api';
 
 const AdminCustomerReviews = () => {
   const [user, setUser] = useState(null);
@@ -48,7 +54,7 @@ const AdminCustomerReviews = () => {
       if (ratingFilter !== 'all') params.append('ratingFilter', ratingFilter);
       if (complaintFilter !== 'all') params.append('complaintFilter', complaintFilter);
 
-      const response = await fetch(`/api/admin/reviews?${params}`, {
+      const response = await apiFetch(`/api/admin/reviews?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -74,7 +80,7 @@ const AdminCustomerReviews = () => {
     try {
       if (!firebaseUser) return;
       const token = await firebaseUser.getIdToken();
-      const response = await fetch('/api/admin/reviews/stats/overview', {
+      const response = await apiFetch('/api/admin/reviews/stats/overview', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -171,7 +177,7 @@ const AdminCustomerReviews = () => {
         return;
       }
       const token = await user.getIdToken();
-      const response = await fetch(`/api/admin/reviews/${reviewId}/publish`, {
+      const response = await apiFetch(`/api/admin/reviews/${reviewId}/publish`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -203,7 +209,7 @@ const AdminCustomerReviews = () => {
         return;
       }
       const token = await user.getIdToken();
-      const response = await fetch(`/api/admin/reviews/${reviewId}`, {
+      const response = await apiFetch(`/api/admin/reviews/${reviewId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -586,3 +592,4 @@ const AdminCustomerReviews = () => {
 };
 
 export default AdminCustomerReviews;
+

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
+import { apiFetch } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { Heart, ShoppingCart, Trash2, AlertCircle, Sparkles, ArrowLeft } from 'lucide-react';
 
@@ -24,7 +25,7 @@ const Wishlist = () => {
   const fetchWishlist = async () => {
     try {
       const token = await user.getIdToken();
-      const response = await fetch(`/api/wishlist/${user.uid}`, {
+      const response = await apiFetch(`/api/wishlist/${user.uid}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -51,7 +52,7 @@ const Wishlist = () => {
     
     try {
       const token = await user.getIdToken();
-      const response = await fetch(`/api/wishlist/item/${productId}`, {
+      const response = await apiFetch(`/api/wishlist/item/${productId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -78,7 +79,7 @@ const Wishlist = () => {
     setAdding(prev => ({ ...prev, [product._id]: true }));
     try {
       const token = await user.getIdToken();
-      const response = await fetch('/api/cart/add', {
+      const response = await apiFetch('/api/cart/add', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

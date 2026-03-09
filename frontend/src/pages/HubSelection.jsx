@@ -38,7 +38,7 @@ export default function HubSelection() {
     try {
       setLoading(true);
       const token = await user.getIdToken();
-      const response = await fetch('/api/hub-inventory/hubs/available', {
+      const response = await apiFetch('/api/hub-inventory/hubs/available', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { apiFetch } from '../services/api';
 import { auth } from "../config/firebase";
+import { apiFetch } from '../services/api';
 import { useAuthState } from "react-firebase-hooks/auth";
+import { apiFetch } from '../services/api';
 
 export default function AddProducts() {
   const [user] = useAuthState(auth);
@@ -16,7 +19,7 @@ export default function AddProducts() {
     setLoading(true);
     try {
       const token = await user.getIdToken();
-      const response = await fetch('/api/user/products', {
+      const response = await apiFetch('/api/user/products', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -66,7 +69,7 @@ export default function AddProducts() {
   const addToCart = async (productId, productName) => {
     try {
       const token = await user.getIdToken();
-      const response = await fetch('/api/cart', {
+      const response = await apiFetch('/api/cart', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -607,3 +610,4 @@ export default function AddProducts() {
     </div>
   );
 }
+
