@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { 
   User, Package, ShoppingCart, Truck, LogOut, Bell, Search, 
-  Plus, Package2, AlertCircle, CheckCircle, Sparkles, Target, 
+  Package2, AlertCircle, CheckCircle, Sparkles, Target, 
   Heart, Video as VideoIcon, Play, DollarSign 
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -13,7 +13,6 @@ import RecommendedProducts from "../components/RecommendedProducts";
 import MyReviews from "./MyReviews";
 import Orders from "./Orders";
 import Wishlist from "./Wishlist";
-import DemandPredictionWidget from "../components/DemandPredictionWidget";
 import SeasonalSuitabilityHelper from "../utils/seasonalSuitability";
 
 const seasonalHelper = new SeasonalSuitabilityHelper();

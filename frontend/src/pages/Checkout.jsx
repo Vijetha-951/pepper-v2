@@ -5,6 +5,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { CreditCard, MapPin, AlertCircle, CheckCircle, Store } from 'lucide-react';
 import './Checkout.css';
 
+const emptyAddress = { line1: '', line2: '', district: '', state: '', pincode: '', phone: '' };
+
 const Checkout = () => {
   const [user] = useAuthState(auth);
   const [cart, setCart] = useState({ items: [], total: 0 });
@@ -20,12 +22,11 @@ const Checkout = () => {
   const isHubCollection = hubCollectionData.deliveryType === 'HUB_COLLECTION';
   
   // Normalize address objects so all fields exist and are strings
-  const emptyAddress = { line1: '', line2: '', district: '', state: '', pincode: '', phone: '' };
-  const normalizeAddress = (addr) => {
+  const normalizeAddress = useCallback((addr) => {
     const merged = { ...emptyAddress, ...(addr || {}) };
     Object.keys(merged).forEach((k) => { if (merged[k] == null) merged[k] = ''; });
     return merged;
-  };
+  }, []);
 
   const [shippingAddress, setShippingAddress] = useState(emptyAddress);
   const [paymentMethod, setPaymentMethod] = useState('COD'); // 'COD' | 'ONLINE'
@@ -64,7 +65,7 @@ const Checkout = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, navigate]);
 
   const loadUserAddress = useCallback(async () => {
     try {
@@ -101,7 +102,7 @@ const Checkout = () => {
       const cached = localStorage.getItem('shippingAddress');
       if (cached) setShippingAddress(normalizeAddress(JSON.parse(cached)));
     }
-  }, [user]);
+  }, [user, normalizeAddress]);
 
   const loadAddressBook = useCallback(async () => {
     try {

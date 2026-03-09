@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Search, Package2, TrendingUp, AlertTriangle, Plus, Filter, RefreshCw, Loader2, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
 import productService from '../services/productService';
 

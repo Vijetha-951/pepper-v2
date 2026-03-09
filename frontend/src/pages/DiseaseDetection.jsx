@@ -9,10 +9,13 @@ const DiseaseDetection = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [history, setHistory] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [diseasesInfo, setDiseasesInfo] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [showInfo, setShowInfo] = useState(false);
   const [uploadMode, setUploadMode] = useState('file'); // 'file' or 'url'
   const [imageUrl, setImageUrl] = useState('');
+  // eslint-disable-next-line no-unused-vars
   const [pepperType, setPepperType] = useState('black_pepper'); // 'bell_pepper' or 'black_pepper'
   const [metadata, setMetadata] = useState({
     plantAge: '',
@@ -67,7 +70,7 @@ const DiseaseDetection = () => {
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
-
+    
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
       setSelectedImage(file);
@@ -93,7 +96,7 @@ const DiseaseDetection = () => {
 
     try {
       let result;
-
+      
       if (uploadMode === 'url') {
         result = await diseaseDetectionService.predictFromUrl(imageUrl, pepperType);
       } else {
@@ -106,7 +109,7 @@ const DiseaseDetection = () => {
       } else {
         // Clear any previous prediction
         setPrediction(null);
-
+        
         // Handle validation errors or model rejections
         if (result.error && result.message) {
           setError(
@@ -190,13 +193,13 @@ const DiseaseDetection = () => {
         <div className="detection-main">
           {/* Upload Mode Toggle */}
           <div className="upload-mode-toggle">
-            <button
+            <button 
               className={`mode-btn ${uploadMode === 'file' ? 'active' : ''}`}
               onClick={() => handleModeChange('file')}
             >
               📁 Upload File
             </button>
-            <button
+            <button 
               className={`mode-btn ${uploadMode === 'url' ? 'active' : ''}`}
               onClick={() => handleModeChange('url')}
             >
@@ -204,10 +207,34 @@ const DiseaseDetection = () => {
             </button>
           </div>
 
+          {/* Pepper Type Selector */}
+          <div className="pepper-type-selector">
+            <label htmlFor="pepperType" style={{ fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>
+              🌶️ Select Pepper Type:
+            </label>
+            <select 
+              id="pepperType"
+              value={pepperType} 
+              onChange={(e) => setPepperType(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                fontSize: '16px',
+                borderRadius: '8px',
+                border: '2px solid #4CAF50',
+                backgroundColor: 'white',
+                cursor: 'pointer',
+                marginBottom: '20px'
+              }}
+            >
+              <option value="black_pepper">🫚 Black Pepper (Piper nigrum) - For peppercorn plants</option>
+              <option value="bell_pepper">🫑 Bell Pepper (Capsicum) - For bell pepper/chili plants</option>
+            </select>
+          </div>
 
           {/* Upload Area - File Mode */}
           {uploadMode === 'file' && (
-            <div
+            <div 
               className="upload-area"
               onDragOver={handleDragOver}
               onDrop={handleDrop}
@@ -259,7 +286,7 @@ const DiseaseDetection = () => {
                     onChange={(e) => setImageUrl(e.target.value)}
                     className="url-input"
                   />
-                  <button
+                  <button 
                     className="btn btn-secondary"
                     onClick={handleUrlLoad}
                     disabled={!imageUrl.trim()}
@@ -316,14 +343,14 @@ const DiseaseDetection = () => {
           <div className="action-buttons">
             {((uploadMode === 'file' && selectedImage) || (uploadMode === 'url' && imagePreview)) && !prediction && (
               <>
-                <button
+                <button 
                   className="btn btn-primary"
                   onClick={handleAnalyze}
                   disabled={loading}
                 >
                   {loading ? 'Analyzing...' : '🔬 Analyze Image'}
                 </button>
-                <button
+                <button 
                   className="btn btn-secondary"
                   onClick={handleReset}
                   disabled={loading}
@@ -333,7 +360,7 @@ const DiseaseDetection = () => {
               </>
             )}
             {prediction && (
-              <button
+              <button 
                 className="btn btn-primary"
                 onClick={handleReset}
               >
@@ -361,7 +388,7 @@ const DiseaseDetection = () => {
           {prediction && (
             <div className="prediction-results">
               <h2>🔬 Analysis Results</h2>
-
+              
               <div className="result-summary">
                 <div className="result-item">
                   <span className="result-label">Disease:</span>
@@ -375,7 +402,7 @@ const DiseaseDetection = () => {
                 </div>
                 <div className="result-item">
                   <span className="result-label">Severity:</span>
-                  <span
+                  <span 
                     className="result-value severity"
                     style={{ color: getSeverityColor(prediction.disease_info?.severity) }}
                   >
@@ -439,7 +466,7 @@ const DiseaseDetection = () => {
                       <div key={index} className="probability-item">
                         <span className="prob-label">{pred.disease}</span>
                         <div className="prob-bar-container">
-                          <div
+                          <div 
                             className="prob-bar"
                             style={{ width: `${pred.probability}%` }}
                           />
@@ -457,6 +484,25 @@ const DiseaseDetection = () => {
         {/* Right Column - Info & History */}
         <div className="detection-sidebar">
           {/* Disease Info */}
+          <div className="info-section">
+            <h3 onClick={() => setShowInfo(!showInfo)} style={{ cursor: 'pointer' }}>
+              ℹ️ About Disease Detection {showInfo ? '▼' : '▶'}
+            </h3>
+            {showInfo && (
+              <div className="info-content">
+                <p>Our AI-powered system can detect the following conditions:</p>
+                <ul>
+                  {diseasesInfo.map((disease, index) => (
+                    <li key={index}>
+                      <strong>{disease.name}</strong>
+                      <br />
+                      <small>{disease.description}</small>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
 
           {/* Detection History */}
           {history.length > 0 && (
