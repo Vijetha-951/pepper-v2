@@ -71,7 +71,15 @@ export async function apiFetch(input, init = {}) {
     headers,
   };
 
-  // Ensure relative URLs starting with /api are handled by the proxy
-  // The proxy in package.json will forward these to http://localhost:5000
-  return fetch(input, finalInit);
+  // In production, prepend API_URL from environment variable
+  // In development, use proxy defined in package.json
+  const API_URL = process.env.REACT_APP_API_URL || '';
+  let url = input;
+  
+  // If we have an API_URL and the input is a relative path starting with /api
+  if (API_URL && typeof input === 'string' && input.startsWith('/api')) {
+    url = `${API_URL}${input}`;
+  }
+
+  return fetch(url, finalInit);
 }

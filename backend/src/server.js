@@ -41,8 +41,27 @@ console.log('RAZORPAY_KEY_ID:', process.env.RAZORPAY_KEY_ID);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ====== Middlewares ======
-app.use(cors({ origin: true, credentials: true })); // Allow all origins in development
+// ====== CORS Configuration ======
+const allowedOrigins = process.env.FRONTEND_URL 
+  ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
+  : ['http://localhost:3000'];
+
+console.log('Allowed CORS origins:', allowedOrigins);
+
+app.use(cors({ 
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true 
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 
