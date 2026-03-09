@@ -2,17 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../services/api';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
-import { apiFetch } from '../services/api';
 import { useNavigate } from 'react-router-dom';
-import { apiFetch } from '../services/api';
 import { Package, Eye, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, Star, Download } from 'lucide-react';
-import { apiFetch } from '../services/api';
 import ReviewModal from '../components/ReviewModal';
-import { apiFetch } from '../services/api';
 import './Orders.css';
-import { apiFetch } from '../services/api';
 
 const Orders = () => {
   const [user] = useAuthState(auth);
@@ -530,4 +524,5 @@ const Orders = () => {
 };
 
 export default Orders;
+
 

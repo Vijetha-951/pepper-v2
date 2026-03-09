@@ -1,8 +1,8 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../services/api';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
-import { apiFetch } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { Heart, ShoppingCart, Trash2, AlertCircle, Sparkles, ArrowLeft } from 'lucide-react';
 
@@ -614,3 +614,4 @@ const Wishlist = () => {
 };
 
 export default Wishlist;
+

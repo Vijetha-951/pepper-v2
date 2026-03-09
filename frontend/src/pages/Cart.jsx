@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../services/api';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
-import { apiFetch } from '../services/api';
 import { useNavigate } from 'react-router-dom';
-import { apiFetch } from '../services/api';
 import { ShoppingCart, Plus, Minus, Trash2, AlertCircle } from 'lucide-react';
-import { apiFetch } from '../services/api';
 
 const Cart = () => {
   const [user] = useAuthState(auth);
@@ -302,4 +298,5 @@ const Cart = () => {
 };
 
 export default Cart;
+
 

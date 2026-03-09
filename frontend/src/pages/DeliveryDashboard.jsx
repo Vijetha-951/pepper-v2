@@ -1,9 +1,9 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
+import { apiFetch } from '../services/api';
 import { Truck, Package, MapPin, CheckCircle, Clock, LogOut, Loader, AlertCircle, DollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import authService from "../services/authService";
-import { apiFetch } from "../services/api";
 
 export default function DeliveryDashboard() {
   const navigate = useNavigate();
@@ -796,3 +796,4 @@ export default function DeliveryDashboard() {
     </div>
   );
 }
+

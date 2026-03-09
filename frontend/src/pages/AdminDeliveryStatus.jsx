@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
+import { apiFetch } from '../services/api';
 import { Truck, Power, Package, RefreshCw, ArrowLeft, Phone, Mail, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import authService from "../services/authService";
-import { apiFetch } from "../services/api";
 
 export default function AdminDeliveryStatus() {
   const navigate = useNavigate();
@@ -407,3 +407,4 @@ export default function AdminDeliveryStatus() {
     </div>
   );
 }
+

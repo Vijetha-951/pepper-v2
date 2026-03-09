@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../services/api';
 import { useNavigate } from 'react-router-dom';
-import { apiFetch } from '../services/api';
 import { MapPin, Building2, Loader, ArrowRight, LogOut, Bell, Package, Truck, CheckCircle, X } from 'lucide-react';
-import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
-import { apiFetch } from '../services/api';
 import { signOut } from 'firebase/auth';
-import { apiFetch } from '../services/api';
 import './DistrictSelection.css';
-import { apiFetch } from '../services/api';
 
 const DistrictSelection = () => {
   const navigate = useNavigate();
@@ -364,4 +359,5 @@ const DistrictSelection = () => {
 };
 
 export default DistrictSelection;
+
 

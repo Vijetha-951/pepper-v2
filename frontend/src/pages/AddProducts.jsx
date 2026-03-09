@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { apiFetch } from '../services/api';
 import { auth } from "../config/firebase";
-import { apiFetch } from '../services/api';
 import { useAuthState } from "react-firebase-hooks/auth";
 import { apiFetch } from '../services/api';
 
@@ -610,4 +608,5 @@ export default function AddProducts() {
     </div>
   );
 }
+
 

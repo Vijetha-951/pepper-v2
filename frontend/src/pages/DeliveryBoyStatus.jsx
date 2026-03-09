@@ -1,9 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
+import { apiFetch } from '../services/api';
 import { Power, Truck, Package, LogOut, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import authService from "../services/authService";
-import { apiFetch } from "../services/api";
 
 export default function DeliveryBoyStatus() {
   const navigate = useNavigate();
@@ -382,3 +382,4 @@ export default function DeliveryBoyStatus() {
     </div>
   );
 }
+

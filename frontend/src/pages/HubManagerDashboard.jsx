@@ -2,15 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../services/api';
 import { useNavigate } from 'react-router-dom';
-import { apiFetch } from '../services/api';
 import { Package, Truck, MapPin, Clock, Search, RefreshCw, X, AlertCircle, CheckCircle, ScanLine, Bell } from 'lucide-react';
-import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
-import { apiFetch } from '../services/api';
 import { onAuthStateChanged } from 'firebase/auth';
-import { apiFetch } from '../services/api';
 import './HubManagerDashboard.css';
-import { apiFetch } from '../services/api';
 
 const HubManagerDashboard = () => {
   const navigate = useNavigate();
@@ -1535,4 +1530,5 @@ const HubManagerDashboard = () => {
 };
 
 export default HubManagerDashboard;
+
 

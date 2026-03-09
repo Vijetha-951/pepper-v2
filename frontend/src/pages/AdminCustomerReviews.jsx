@@ -1,15 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../services/api';
 import { useNavigate } from 'react-router-dom';
-import { apiFetch } from '../services/api';
 import { Search, Star, Trash2, Eye, EyeOff, ChevronLeft, ChevronRight, AlertCircle, ArrowLeft, MessageCircle } from 'lucide-react';
-import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
-import { apiFetch } from '../services/api';
 import { onAuthStateChanged } from 'firebase/auth';
-import { apiFetch } from '../services/api';
 import './AdminCustomerReviews.css';
-import { apiFetch } from '../services/api';
 
 const AdminCustomerReviews = () => {
   const [user, setUser] = useState(null);
@@ -592,4 +587,5 @@ const AdminCustomerReviews = () => {
 };
 
 export default AdminCustomerReviews;
+
 

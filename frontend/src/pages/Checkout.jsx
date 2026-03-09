@@ -1,15 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../services/api';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
-import { apiFetch } from '../services/api';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { apiFetch } from '../services/api';
 import { CreditCard, MapPin, AlertCircle, CheckCircle, Store } from 'lucide-react';
-import { apiFetch } from '../services/api';
 import './Checkout.css';
-import { apiFetch } from '../services/api';
 
 const emptyAddress = { line1: '', line2: '', district: '', state: '', pincode: '', phone: '' };
 
@@ -1019,4 +1014,5 @@ const Checkout = () => {
 };
 
 export default Checkout;
+
 

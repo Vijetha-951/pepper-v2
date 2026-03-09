@@ -1,15 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../services/api';
 import { useNavigate } from 'react-router-dom';
-import { apiFetch } from '../services/api';
 import { Eye, Package, DollarSign, Clock, ChevronLeft, ChevronRight, ArrowLeft, MapPin, Home, Building2, Download } from 'lucide-react';
-import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
-import { apiFetch } from '../services/api';
 import { onAuthStateChanged } from 'firebase/auth';
-import { apiFetch } from '../services/api';
 import './AdminAllOrders.css';
-import { apiFetch } from '../services/api';
 
 const AdminAllOrders = () => {
   const [user, setUser] = useState(null);
@@ -444,4 +439,5 @@ const AdminAllOrders = () => {
 };
 
 export default AdminAllOrders;
+
 

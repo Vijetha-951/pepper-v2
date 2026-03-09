@@ -2,15 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../services/api';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { apiFetch } from '../services/api';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { apiFetch } from '../services/api';
 import { auth } from '../config/firebase';
-import { apiFetch } from '../services/api';
 import { CheckCircle, Package, Calendar, MapPin } from 'lucide-react';
-import { apiFetch } from '../services/api';
 import './PaymentSuccess.css';
-import { apiFetch } from '../services/api';
 
 const PaymentSuccess = () => {
   const [user] = useAuthState(auth);
@@ -320,4 +315,5 @@ const PaymentSuccess = () => {
 };
 
 export default PaymentSuccess;
+
 

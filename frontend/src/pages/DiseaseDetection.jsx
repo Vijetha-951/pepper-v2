@@ -530,3 +530,4 @@ const DiseaseDetection = () => {
 };
 
 export default DiseaseDetection;
+

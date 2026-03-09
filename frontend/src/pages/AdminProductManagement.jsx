@@ -687,3 +687,4 @@ function ProductFormModal({ isEdit, product, onClose, onSuccess, varieties, vari
     </div>
   );
 }
+

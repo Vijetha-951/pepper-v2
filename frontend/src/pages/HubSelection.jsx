@@ -1,10 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../services/api';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { MapPin, Package, Store, AlertCircle } from 'lucide-react';
-import { apiFetch } from '../services/api';
 
 export default function HubSelection() {
   const [user] = useAuthState(auth);
@@ -288,3 +288,4 @@ export default function HubSelection() {
     </div>
   );
 }
+

@@ -2,29 +2,19 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from '../services/api';
 import { 
-import { apiFetch } from '../services/api';
   User, Package, ShoppingCart, Truck, LogOut, Bell, Search, 
   Package2, AlertCircle, CheckCircle, Sparkles, Target, 
   Heart, Video as VideoIcon, Play, DollarSign 
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { apiFetch } from '../services/api';
 import { auth } from "../config/firebase";
-import { apiFetch } from '../services/api';
 import authService from "../services/authService";
-import { apiFetch } from '../services/api';
 import customerProductService from "../services/customerProductService";
-import { apiFetch } from '../services/api';
 import RecommendedProducts from "../components/RecommendedProducts";
-import { apiFetch } from '../services/api';
 import MyReviews from "./MyReviews";
-import { apiFetch } from '../services/api';
 import Orders from "./Orders";
-import { apiFetch } from '../services/api';
 import Wishlist from "./Wishlist";
-import { apiFetch } from '../services/api';
 import SeasonalSuitabilityHelper from "../utils/seasonalSuitability";
-import { apiFetch } from '../services/api';
 
 const seasonalHelper = new SeasonalSuitabilityHelper();
 
@@ -4154,4 +4144,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
 

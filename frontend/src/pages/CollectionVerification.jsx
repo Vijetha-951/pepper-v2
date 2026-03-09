@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { apiFetch } from '../services/api';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Package, CheckCircle, AlertCircle } from 'lucide-react';
-import { apiFetch } from '../services/api';
 
 export default function CollectionVerification() {
   const [user] = useAuthState(auth);
@@ -290,3 +290,4 @@ export default function CollectionVerification() {
     </div>
   );
 }
+
