@@ -92,7 +92,7 @@ export default function AdminStockManagement() {
     } catch (err) {
       console.warn('Failed to fetch low stock alerts:', err);
     }
-  };
+  }, []);
 
   const handleRestock = async (productId, quantity, reason) => {
     setPendingActions(prev => ({ ...prev, [productId]: 'restock' }));
