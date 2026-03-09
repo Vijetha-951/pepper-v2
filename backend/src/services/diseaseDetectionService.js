@@ -49,13 +49,17 @@ class DiseaseDetectionService {
   /**
    * Predict disease from image file
    * @param {string} imagePath - Path to the image file
-   * @param {Object} metadata - Additional metadata (userId, location, notes, etc.)
+   * @param {Object} metadata - Additional metadata (userId, location, notes, pepperType, etc.)
    */
   async predictFromFile(imagePath, metadata = {}) {
     try {
       // Create form data
       const formData = new FormData();
       formData.append('image', fs.createReadStream(imagePath));
+      
+      // Add pepper_type (defaults to black_pepper if not specified)
+      const pepperType = metadata.pepper_type || metadata.pepperType || 'black_pepper';
+      formData.append('pepper_type', pepperType);
       
       // Add metadata
       if (metadata.user_id) formData.append('user_id', metadata.user_id);
@@ -84,12 +88,16 @@ class DiseaseDetectionService {
   /**
    * Predict disease from image URL
    * @param {string} imageUrl - URL of the image
+   * @param {string} pepperType - Type of pepper (bell_pepper or black_pepper)
    */
-  async predictFromUrl(imageUrl) {
+  async predictFromUrl(imageUrl, pepperType = 'black_pepper') {
     try {
       const response = await axios.post(
         `${this.apiUrl}/predict-url`,
-        { image_url: imageUrl },
+        { 
+          image_url: imageUrl,
+          pepper_type: pepperType
+        },
         {
           timeout: this.timeout,
           headers: {

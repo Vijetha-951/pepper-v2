@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Star, Trash2, Eye, EyeOff, ChevronLeft, ChevronRight, AlertCircle, ArrowLeft, MessageCircle } from 'lucide-react';
 import { auth } from '../config/firebase';
@@ -29,26 +29,7 @@ const AdminCustomerReviews = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
-        fetchReviews(firebaseUser);
-        fetchStats(firebaseUser);
-      } else {
-        setLoading(false);
-        setError('Please sign in to view reviews');
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    filterReviews();
-  }, [reviews, searchTerm, ratingFilter, complaintFilter, sortBy]);
-
-  const fetchReviews = async (firebaseUser = user) => {
+  const fetchReviews = useCallback(async (firebaseUser = user) => {
     try {
       setLoading(true);
       if (!firebaseUser) {
@@ -87,9 +68,9 @@ const AdminCustomerReviews = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, currentPage, reviewsPerPage, sortBy, searchTerm, ratingFilter, complaintFilter]);
 
-  const fetchStats = async (firebaseUser = user) => {
+  const fetchStats = useCallback(async (firebaseUser = user) => {
     try {
       if (!firebaseUser) return;
       const token = await firebaseUser.getIdToken();
@@ -107,9 +88,9 @@ const AdminCustomerReviews = () => {
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
-  };
+  }, [user]);
 
-  const filterReviews = () => {
+  const filterReviews = useCallback(() => {
     let filtered = [...reviews];
 
     // Search filter
@@ -142,7 +123,26 @@ const AdminCustomerReviews = () => {
 
     setFilteredReviews(filtered);
     setCurrentPage(1);
-  };
+  }, [reviews, searchTerm, ratingFilter, complaintFilter]);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        fetchReviews(firebaseUser);
+        fetchStats(firebaseUser);
+      } else {
+        setLoading(false);
+        setError('Please sign in to view reviews');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [fetchReviews, fetchStats]);
+
+  useEffect(() => {
+    filterReviews();
+  }, [filterReviews]);
 
   const renderStars = (rating) => {
     return (

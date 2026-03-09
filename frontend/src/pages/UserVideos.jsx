@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Video as VideoIcon, Play, Eye, Heart, Filter, Search, ArrowLeft } from 'lucide-react';

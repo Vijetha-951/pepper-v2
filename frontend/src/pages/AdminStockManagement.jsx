@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Search, Package2, TrendingUp, AlertTriangle, RotateCcw, Eye, Plus, Filter, RefreshCw, Loader2, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { Search, Package2, TrendingUp, AlertTriangle, Plus, Filter, RefreshCw, Loader2, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
 import productService from '../services/productService';
 
 // CSS for animations
@@ -66,15 +66,7 @@ export default function AdminStockManagement() {
   const [lowStockAlerts, setLowStockAlerts] = useState([]);
   const [pendingActions, setPendingActions] = useState({}); // {productId: 'restock'|'refresh'}
 
-  useEffect(() => {
-    fetchStockData();
-  }, [filters.search, filters.status, filters.type, filters.sortBy, filters.sortOrder, filters.page, filters.limit]);
-
-  useEffect(() => {
-    fetchLowStockAlerts();
-  }, [filters.status]); // Only refetch alerts when status filter changes
-
-  const fetchStockData = async () => {
+  const fetchStockData = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -89,9 +81,9 @@ export default function AdminStockManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
-  const fetchLowStockAlerts = async () => {
+  const fetchLowStockAlerts = useCallback(async () => {
     try {
       const response = await productService.getLowStockAlerts(5);
       if (response.success) {

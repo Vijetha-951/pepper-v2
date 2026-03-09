@@ -349,4 +349,5 @@ class FirebaseAuthService {
   }
 }
 
-export default new FirebaseAuthService();
+const firebaseAuthServiceInstance = new FirebaseAuthService();
+export default firebaseAuthServiceInstance;

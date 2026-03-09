@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, jsx-a11y/no-redundant-roles */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Mail, Lock, Phone, MapPin, Eye, EyeOff, ArrowLeft, UserPlus, Leaf } from "lucide-react";

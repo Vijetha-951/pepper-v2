@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/anchor-is-valid, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';

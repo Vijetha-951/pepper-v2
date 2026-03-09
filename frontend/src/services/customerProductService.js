@@ -419,4 +419,5 @@ class CustomerProductService {
   }
 }
 
-export default new CustomerProductService();
+const customerProductServiceInstance = new CustomerProductService();
+export default customerProductServiceInstance;

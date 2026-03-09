@@ -1,5 +1,6 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
-import { Truck, Package, MapPin, CheckCircle, Clock, LogOut, Loader, AlertCircle, MapPinIcon, DollarSign } from "lucide-react";
+import { Truck, Package, MapPin, CheckCircle, Clock, LogOut, Loader, AlertCircle, DollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import authService from "../services/authService";
 import { apiFetch } from "../services/api";

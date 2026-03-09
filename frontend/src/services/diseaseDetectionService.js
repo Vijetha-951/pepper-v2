@@ -57,6 +57,11 @@ class DiseaseDetectionService {
       const formData = new FormData();
       formData.append('image', imageFile);
 
+      // Add pepper type (defaults to black_pepper)
+      if (metadata.pepperType) {
+        formData.append('pepper_type', metadata.pepperType);
+      }
+
       // Add metadata
       if (metadata.location) {
         formData.append('location', JSON.stringify(metadata.location));
@@ -87,15 +92,19 @@ class DiseaseDetectionService {
   /**
    * Predict disease from image URL
    * @param {string} imageUrl - URL of the image
+   * @param {string} pepperType - 'bell_pepper' or 'black_pepper'
    */
-  async predictFromUrl(imageUrl) {
+  async predictFromUrl(imageUrl, pepperType = 'black_pepper') {
     try {
       const response = await apiFetch(`${DISEASE_API_URL}/predict-url`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ image_url: imageUrl })
+        body: JSON.stringify({ 
+          image_url: imageUrl,
+          pepper_type: pepperType
+        })
       });
 
       return await response.json();

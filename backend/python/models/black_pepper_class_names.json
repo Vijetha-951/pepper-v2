@@ -1,0 +1,13 @@
+{
+  "class_names": [
+    "black_pepper_healthy",
+    "black_pepper_leaf_blight",
+    "black_pepper_yellow_mottle_virus"
+  ],
+  "num_classes": 3,
+  "class_indices": {
+    "black_pepper_healthy": 0,
+    "black_pepper_leaf_blight": 1,
+    "black_pepper_yellow_mottle_virus": 2
+  }
+}

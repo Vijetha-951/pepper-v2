@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Video, Plus, Edit, Trash2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { auth } from '../config/firebase';
@@ -29,12 +29,7 @@ export default function AdminVideoManagement() {
     isActive: true
   });
 
-  useEffect(() => {
-    fetchVideos();
-    fetchStats();
-  }, []);
-
-  const fetchVideos = async () => {
+  const fetchVideos = useCallback(async () => {
     setLoading(true);
     try {
       if (!auth.currentUser) {
@@ -70,9 +65,9 @@ export default function AdminVideoManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       if (!auth.currentUser) {
         console.error('❌ No user logged in');
@@ -112,7 +107,12 @@ export default function AdminVideoManagement() {
       console.error('❌ Error fetching stats:', error);
       setErrorMessage('Error: ' + error.message);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    fetchVideos();
+    fetchStats();
+  }, [fetchVideos, fetchStats]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

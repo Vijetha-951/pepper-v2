@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -16,18 +16,7 @@ export default function CollectionVerification() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
-    if (orderId) {
-      fetchOrder();
-    }
-  }, [user, orderId]);
-
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiFetch(`/api/hub-collection/orders/${orderId}/details`);
@@ -44,7 +33,18 @@ export default function CollectionVerification() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderId]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    if (orderId) {
+      fetchOrder();
+    }
+  }, [user, orderId, navigate, fetchOrder]);
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();

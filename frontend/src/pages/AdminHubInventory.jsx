@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Package, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -18,6 +18,69 @@ export default function AdminHubInventory() {
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: '', requestId: null, message: '', requestedQuantity: 0 });
   const [approvedQuantity, setApprovedQuantity] = useState('');
 
+  const getAuthHeaders = useCallback(async () => {
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+    const token = await user.getIdToken();
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+  }, [user]);
+
+  const fetchHubs = useCallback(async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/hub-inventory/hubs/available', { headers });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setHubs(data.hubs);
+        if (data.hubs.length > 0) {
+          setSelectedHub(data.hubs[0]._id);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching hubs:', error);
+      setError('Failed to load hubs');
+    } finally {
+      setLoading(false);
+    }
+  }, [getAuthHeaders]);
+
+  const fetchHubInventory = useCallback(async (hubId) => {
+    try {
+      setInventoryLoading(true);
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/hub-inventory/hubs/${hubId}/inventory`, { headers });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setInventory(data.inventory);
+      }
+    } catch (error) {
+      console.error('Error fetching inventory:', error);
+      setError('Failed to load inventory');
+    } finally {
+      setInventoryLoading(false);
+    }
+  }, [getAuthHeaders]);
+
+  const fetchRestockRequests = useCallback(async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/hub-inventory/admin/restock-requests', { headers });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setRestockRequests(data.requests);
+      }
+    } catch (error) {
+      console.error('Error fetching restock requests:', error);
+    }
+  }, [getAuthHeaders]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
@@ -36,76 +99,13 @@ export default function AdminHubInventory() {
       fetchHubs();
       fetchRestockRequests();
     }
-  }, [user]);
+  }, [user, fetchHubs, fetchRestockRequests]);
 
   useEffect(() => {
     if (selectedHub && user) {
       fetchHubInventory(selectedHub);
     }
-  }, [selectedHub, user]);
-
-  const getAuthHeaders = async () => {
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-    const token = await user.getIdToken();
-    return {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    };
-  };
-
-  const fetchHubs = async () => {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch('/api/hub-inventory/hubs/available', { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setHubs(data.hubs);
-        if (data.hubs.length > 0) {
-          setSelectedHub(data.hubs[0]._id);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching hubs:', error);
-      setError('Failed to load hubs');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchHubInventory = async (hubId) => {
-    try {
-      setInventoryLoading(true);
-      const headers = await getAuthHeaders();
-      const response = await fetch(`/api/hub-inventory/hubs/${hubId}/inventory`, { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setInventory(data.inventory);
-      }
-    } catch (error) {
-      console.error('Error fetching inventory:', error);
-      setError('Failed to load inventory');
-    } finally {
-      setInventoryLoading(false);
-    }
-  };
-
-  const fetchRestockRequests = async () => {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch('/api/hub-inventory/admin/restock-requests', { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setRestockRequests(data.requests);
-      }
-    } catch (error) {
-      console.error('Error fetching restock requests:', error);
-    }
-  };
+  }, [selectedHub, user, fetchHubInventory]);
 
   const openApproveModal = (requestId, requestedQty) => {
     setApprovedQuantity(requestedQty.toString()); // Pre-fill with requested quantity

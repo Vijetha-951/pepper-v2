@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
 import { Power, Truck, Package, LogOut, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { auth } from "../config/firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 
@@ -12,32 +12,7 @@ export default function AddProducts() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showProductModal, setShowProductModal] = useState(false);
 
-  // Fetch all products on mount
-  useEffect(() => {
-    if (user) {
-      fetchProducts();
-    }
-  }, [user]);
-
-  // Filter products based on search and type filter
-  useEffect(() => {
-    let filtered = products;
-    
-    if (searchTerm) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-    }
-    
-    if (filterType !== "All") {
-      filtered = filtered.filter(product => product.type === filterType);
-    }
-    
-    setFilteredProducts(filtered);
-  }, [products, searchTerm, filterType]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const token = await user.getIdToken();
@@ -61,7 +36,32 @@ export default function AddProducts() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  // Fetch all products on mount
+  useEffect(() => {
+    if (user) {
+      fetchProducts();
+    }
+  }, [user, fetchProducts]);
+
+  // Filter products based on search and type filter
+  useEffect(() => {
+    let filtered = products;
+    
+    if (searchTerm) {
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+    
+    if (filterType !== "All") {
+      filtered = filtered.filter(product => product.type === filterType);
+    }
+    
+    setFilteredProducts(filtered);
+  }, [products, searchTerm, filterType]);
 
   const addToCart = async (productId, productName) => {
     try {

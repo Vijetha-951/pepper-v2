@@ -30,13 +30,23 @@ const storage = multer.diskStorage({
 
 const fileFilter = (req, file, cb) => {
   // Accept images only
-  const allowedTypes = /jpeg|jpg|png|gif|bmp/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
+  const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp'];
+  const allowedExtensions = /\.(jpeg|jpg|png|gif|bmp)$/i;
+  
+  const ext = path.extname(file.originalname).toLowerCase();
+  const mime = file.mimetype.toLowerCase();
+  
+  // Debug logging
+  console.log(`[Upload] File: ${file.originalname}, Extension: ${ext}, Mimetype: ${mime}`);
+  
+  const extMatch = allowedExtensions.test(file.originalname);
+  const mimeMatch = allowedMimeTypes.includes(mime);
 
-  if (mimetype && extname) {
+  if (mimeMatch && extMatch) {
+    console.log('[Upload] File accepted ✓');
     return cb(null, true);
   } else {
+    console.log(`[Upload] File rejected - Extension match: ${extMatch}, Mime match: ${mimeMatch}`);
     cb(new Error('Only image files are allowed (jpeg, jpg, png, gif, bmp)'));
   }
 };
@@ -156,6 +166,7 @@ router.post('/predict', upload.single('image'), async (req, res) => {
       plantAge: req.body.plantAge || null,
       variety: req.body.variety || null,
       notes: req.body.notes || null,
+      pepperType: req.body.pepper_type || req.body.pepperType || 'black_pepper',
       originalFilename: req.file.originalname,
       imagePath: req.file.path
     };
@@ -164,7 +175,8 @@ router.post('/predict', upload.single('image'), async (req, res) => {
     const prediction = await diseaseDetectionService.predictFromFile(imagePath, {
       user_id: metadata.userId,
       location: metadata.location?.address,
-      notes: metadata.notes
+      notes: metadata.notes,
+      pepper_type: metadata.pepperType
     });
 
     // Check for validation errors or other failures returned as objects
@@ -210,8 +222,9 @@ router.post('/predict', upload.single('image'), async (req, res) => {
 router.post('/predict-url', async (req, res) => {
   try {
     console.log('📥 Received predict-url request:', req.body);
-    const { imageUrl, image_url } = req.body;
+    const { imageUrl, image_url, pepper_type, pepperType } = req.body;
     const finalImageUrl = imageUrl || image_url;
+    const finalPepperType = pepper_type || pepperType || 'black_pepper';
 
     if (!finalImageUrl) {
       console.log('❌ No URL provided');
@@ -222,7 +235,8 @@ router.post('/predict-url', async (req, res) => {
     }
 
     console.log('🔗 Calling Flask with URL:', finalImageUrl);
-    const prediction = await diseaseDetectionService.predictFromUrl(finalImageUrl);
+    console.log('🌶️ Pepper type:', finalPepperType);
+    const prediction = await diseaseDetectionService.predictFromUrl(finalImageUrl, finalPepperType);
     console.log('✅ Got Flask response:', prediction);
 
     // Check for validation errors or other failures
@@ -521,6 +535,35 @@ router.delete('/:id', async (req, res) => {
       error: error.message
     });
   }
+});
+
+// ====== Multer Error Handling Middleware ======
+// This middleware catches multer errors (file validation, size limits, etc.)
+router.use((err, req, res, next) => {
+  // Check if it's a multer error
+  if (err instanceof multer.MulterError) {
+    // Multer-specific error
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        error: 'File Too Large',
+        message: 'Image file size exceeds 10MB limit'
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      error: 'Upload Error',
+      message: err.message
+    });
+  } else if (err) {
+    // Other errors (like file filter rejection)
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid File',
+      message: err.message
+    });
+  }
+  next();
 });
 
 export default router;

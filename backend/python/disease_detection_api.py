@@ -17,8 +17,8 @@ from werkzeug.utils import secure_filename
 import traceback
 
 print("Step 2/4: Importing disease detector...")
-# Import the disease detector
-from cnn_disease_detector_v3 import CNNDiseaseDetector as PlantDiseaseDetector
+# Import the dual model disease detector
+from dual_model_detector import DualModelDetector as PlantDiseaseDetector
 print("Step 3/4: Initializing Flask app...")
 
 # Initialize Flask app
@@ -37,8 +37,8 @@ app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 print("Step 4/4: Initializing disease detector (may take 30-60 seconds)...")
-print("Loading TensorFlow and CNN model...\n")
-# Initialize disease detector
+print("Loading TensorFlow and both CNN models...\n")
+# Initialize dual model detector (supports both bell and black pepper)
 detector = PlantDiseaseDetector()
 print("\nAll initialization complete!")
 
@@ -52,10 +52,15 @@ def allowed_file(filename):
 def get_disease_description(disease_name):
     """Get disease description"""
     descriptions = {
+        # Bell Pepper Diseases
         'Pepper__bell___Bacterial_spot': 'Bacterial leaf spot caused by Xanthomonas bacteria. Causes dark spots with yellow halos on leaves.',
         'Pepper__bell___healthy': 'The plant appears healthy with no visible signs of disease.',
         'Pepper__bell___Yellow_Leaf_Curl': 'Viral disease causing yellowing, curling, and stunted growth of leaves.',
-        'Pepper__bell___Nutrient_Deficiency': 'Yellowing or discoloration due to lack of essential nutrients like Nitrogen, Potassium or Magnesium.'
+        'Pepper__bell___Nutrient_Deficiency': 'Yellowing or discoloration due to lack of essential nutrients like Nitrogen, Potassium or Magnesium.',
+        # Black Pepper Diseases (formatted names)
+        'Black Pepper Healthy': 'The black pepper plant appears healthy with no visible signs of disease.',
+        'Black Pepper Leaf Blight': 'A fungal disease causing brown lesions on leaves, leading to defoliation and reduced yield.',
+        'Black Pepper Yellow Mottle Virus': 'A viral disease causing yellow mottling and mosaic patterns on leaves, transmitted by aphids.'
     }
     return descriptions.get(disease_name, 'No description available')
 
@@ -63,10 +68,15 @@ def get_disease_description(disease_name):
 def get_disease_severity(disease_name):
     """Get disease severity"""
     severity_map = {
+        # Bell Pepper
         'Pepper__bell___Bacterial_spot': 'Moderate',
         'Pepper__bell___healthy': 'None',
         'Pepper__bell___Yellow_Leaf_Curl': 'High',
-        'Pepper__bell___Nutrient_Deficiency': 'Low to Moderate'
+        'Pepper__bell___Nutrient_Deficiency': 'Low to Moderate',
+        # Black Pepper
+        'Black Pepper Healthy': 'None',
+        'Black Pepper Leaf Blight': 'High',
+        'Black Pepper Yellow Mottle Virus': 'High'
     }
     return severity_map.get(disease_name, 'Unknown')
 
@@ -74,6 +84,7 @@ def get_disease_severity(disease_name):
 def get_disease_treatment(disease_name):
     """Get treatment recommendations"""
     treatments = {
+        # Bell Pepper
         'Pepper__bell___Bacterial_spot': [
             'Remove and destroy infected leaves',
             'Apply copper-based bactericide',
@@ -97,6 +108,27 @@ def get_disease_treatment(disease_name):
             'For nitrogen deficiency: add blood meal or fish emulsion',
             'For magnesium deficiency: apply Epsom salt solution',
             'Test soil pH and adjust if needed (optimal: 6.0-6.8)'
+        ],
+        # Black Pepper
+        'Black Pepper Healthy': [
+            'Continue regular care practices',
+            'Monitor plants regularly',
+            'Maintain proper irrigation and drainage',
+            'Apply organic mulch around plants'
+        ],
+        'Black Pepper Leaf Blight': [
+            'Remove and destroy infected leaves immediately',
+            'Apply fungicide (Bordeaux mixture or copper oxychloride)',
+            'Improve air circulation by pruning dense growth',
+            'Avoid overhead irrigation',
+            'Apply fungicide spray every 10-15 days during rainy season'
+        ],
+        'Black Pepper Yellow Mottle Virus': [
+            'Remove and destroy infected plants to prevent spread',
+            'Control aphid populations using insecticides or neem oil',
+            'Use virus-free planting material',
+            'Maintain field hygiene and remove weed hosts',
+            'No chemical cure available - prevention is key'
         ]
     }
     return treatments.get(disease_name, [])
@@ -105,6 +137,7 @@ def get_disease_treatment(disease_name):
 def get_disease_prevention(disease_name):
     """Get prevention tips"""
     prevention = {
+        # Bell Pepper
         'Pepper__bell___Bacterial_spot': [
             'Use disease-free seeds',
             'Rotate crops annually',
@@ -128,6 +161,27 @@ def get_disease_prevention(disease_name):
             'Maintain proper fertilization schedule',
             'Use compost to improve soil quality',
             'Ensure proper drainage to prevent nutrient leaching'
+        ],
+        # Black Pepper
+        'Black Pepper Healthy': [
+            'Regular inspection for early disease detection',
+            'Maintain proper drainage and avoid waterlogging',
+            'Practice crop rotation if possible',
+            'Use disease-free planting material'
+        ],
+        'Black Pepper Leaf Blight': [
+            'Plant resistant varieties',
+            'Maintain proper spacing (2-3 meters between plants)',
+            'Prune regularly to ensure good air circulation',
+            'Apply preventive fungicide before monsoon season',
+            'Remove fallen infected leaves from ground'
+        ],
+        'Black Pepper Yellow Mottle Virus': [
+            'Use certified virus-free cuttings for planting',
+            'Control aphid vectors through regular monitoring',
+            'Remove infected plants immediately to prevent spread',
+            'Maintain weed-free field to reduce aphid habitats',
+            'Avoid planting near infected areas'
         ]
     }
     return prevention.get(disease_name, [])
@@ -136,10 +190,13 @@ def get_disease_prevention(disease_name):
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
+    available_models = detector.get_available_models()
     return jsonify({
         'status': 'healthy',
-        'service': 'Disease Detection API',
-        'model_trained': detector.model is not None,
+        'service': 'Disease Detection API (Dual Model)',
+        'models_loaded': len(available_models),
+        'available_models': [m['type'] for m in available_models],
+        'current_model': detector.current_model_type,
         'timestamp': datetime.now().isoformat()
     })
 
@@ -170,34 +227,34 @@ def predict_disease():
     """
     try:
         print("\n" + "="*50)
-        print("🔬 PREDICT ENDPOINT CALLED")
+        print("[PREDICT] PREDICT ENDPOINT CALLED")
         print("="*50)
         
         # Debug: Print all request info
-        print(f"📋 Request files: {list(request.files.keys())}")
-        print(f"📋 Request form: {list(request.form.keys())}")
-        print(f"📋 Content Type: {request.content_type}")
+        print(f"[INFO] Request files: {list(request.files.keys())}")
+        print(f"[INFO] Request form: {list(request.form.keys())}")
+        print(f"[INFO] Content Type: {request.content_type}")
         
         # Check if model is trained
         if detector.model is None:
-            print("❌ ERROR: Model is None!")
+            print("[X] ERROR: Model is None!")
             return jsonify({
                 'success': False,
                 'error': 'Model not trained. Please train the model first.',
                 'hint': 'Call POST /train to train the model'
             }), 400
         
-        print("✅ Model is loaded")
+        print("[OK] Model is loaded")
         
         # Check if image file is present (accept both 'image' and 'file' keys)
         if 'image' in request.files:
             file = request.files['image']
-            print(f"✅ Found 'image' key: {file.filename}")
+            print(f"[OK] Found 'image' key: {file.filename}")
         elif 'file' in request.files:
             file = request.files['file']
-            print(f"✅ Found 'file' key: {file.filename}")
+            print(f"[OK] Found 'file' key: {file.filename}")
         else:
-            print(f"❌ ERROR: No image/file found!")
+            print(f"[X] ERROR: No image/file found!")
             print(f"Available keys: {list(request.files.keys())}")
             return jsonify({
                 'success': False,
@@ -207,23 +264,23 @@ def predict_disease():
         
         # Check if file is selected
         if file.filename == '':
-            print("❌ ERROR: Empty filename")
+            print("[X] ERROR: Empty filename")
             return jsonify({
                 'success': False,
                 'error': 'No file selected'
             }), 400
         
-        print(f"📁 Processing file: {file.filename}")
+        print(f"[INFO] Processing file: {file.filename}")
         
         # Check file type
         if not allowed_file(file.filename):
-            print(f"❌ ERROR: Invalid file type")
+            print(f"[X] ERROR: Invalid file type")
             return jsonify({
                 'success': False,
                 'error': f'Invalid file type. Allowed types: {", ".join(ALLOWED_EXTENSIONS)}'
             }), 400
         
-        print(f"✅ File type valid")
+        print(f"[OK] File type valid")
         
         # Save file
         filename = secure_filename(file.filename)
@@ -231,31 +288,40 @@ def predict_disease():
         unique_filename = f"{timestamp}_{filename}"
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
         
-        print(f"💾 Saving to: {filepath}")
+        print(f"[SAVE] Saving to: {filepath}")
         file.save(filepath)
-        print(f"✅ File saved successfully")
+        print(f"[OK] File saved successfully")
         
-        # Get optional metadata
+        # Get optional metadata and model type
         metadata = {
             'user_id': request.form.get('user_id'),
             'location': request.form.get('location'),
             'notes': request.form.get('notes')
         }
         
-        # Predict disease
-        print(f"🔍 Running prediction...")
-        result = detector.predict(filepath)
-        print(f"✅ Prediction result: {result}")
+        # Get pepper type (defaults to black_pepper)
+        pepper_type = request.form.get('pepper_type', 'black_pepper')
+        if pepper_type not in ['bell_pepper', 'black_pepper']:
+            pepper_type = 'black_pepper'
+        print(f"[MODEL] Using model: {pepper_type}")
         
-        # Check for validation errors from detector (handles both validation and confidence checks)
-        if not result.get('success', True) and result.get('error') in ['Invalid Image', 'Not a Pepper Plant Leaf']:
-            print(f"❌ ERROR: Image validation/identification failed: {result.get('message')}")
+        # Predict disease
+        print(f"[PREDICT] Running prediction...")
+        result = detector.predict(filepath, model_type=pepper_type)
+        print(f"[OK] Prediction result: {result}")
+        
+        # Check for validation errors or model rejection (handles validation, confidence, and wrong pepper type)
+        if not result.get('success', True):
+            error_type = result.get('error', 'Prediction failed')
+            print(f"[X] ERROR: {error_type}: {result.get('message')}")
             return jsonify({
                 'success': False,
-                'error': result.get('error'),
-                'message': result.get('message'),
-                'suggestion': result.get('suggestion'),
-                'confidence': result.get('validation_confidence', result.get('model_confidence'))
+                'error': error_type,
+                'message': result.get('message', 'Prediction failed'),
+                'suggestion': result.get('suggestion', 'Please try uploading a different image'),
+                'confidence': result.get('validation_confidence', result.get('model_confidence', 0)),
+                'model_type': result.get('detected_type', pepper_type),
+                'detailed_error': result.get('detailed_error', False)
             }), 400
         
         # Transform result to match frontend expectations
@@ -292,6 +358,8 @@ def predict_disease():
                         'filename': unique_filename,
                         'upload_time': timestamp,
                         'file_size': os.path.getsize(filepath),
+                        'model_type': result.get('model_type', pepper_type),
+                        'model_name': result.get('model_name', ''),
                         **metadata
                     }
                 }
@@ -303,12 +371,12 @@ def predict_disease():
                 'details': result
             }
         
-        print(f"✅ Returning formatted response")
+        print(f"[OK] Returning formatted response")
         print("="*50 + "\n")
         return jsonify(response)
         
     except Exception as e:
-        print(f"\n❌ EXCEPTION CAUGHT:")
+        print(f"\n[X] EXCEPTION CAUGHT:")
         print(f"Error: {str(e)}")
         print(f"Traceback:")
         traceback.print_exc()
@@ -334,31 +402,37 @@ def predict_from_url():
     """
     try:
         print("\n" + "="*50)
-        print("🔬 PREDICT-URL ENDPOINT CALLED")
+        print("[PREDICT-URL] PREDICT-URL ENDPOINT CALLED")
         print("="*50)
         
         # Check if model is trained
         if detector.model is None:
-            print("❌ ERROR: Model is None!")
+            print("[X] ERROR: Model is None!")
             return jsonify({
                 'success': False,
                 'error': 'Model not trained. Please train the model first.',
                 'hint': 'Call POST /train to train the model'
             }), 400
         
-        print("✅ Model is loaded")
+        print("[OK] Model is loaded")
         
         data = request.get_json()
         
         if not data or 'image_url' not in data:
-            print("❌ ERROR: No image_url provided")
+            print("[X] ERROR: No image_url provided")
             return jsonify({
                 'success': False,
                 'error': 'No image_url provided in request body'
             }), 400
         
         image_url = data['image_url']
-        print(f"📥 Image URL: {image_url}")
+        print(f"[INFO] Image URL: {image_url}")
+        
+        # Get pepper type (defaults to black_pepper)
+        pepper_type = data.get('pepper_type', 'black_pepper')
+        if pepper_type not in ['bell_pepper', 'black_pepper']:
+            pepper_type = 'black_pepper'
+        print(f"[MODEL] Using model: {pepper_type}")
         
         # Download and save image with proper headers to avoid 403 errors
         import urllib.request
@@ -367,7 +441,7 @@ def predict_from_url():
         filename = f"{timestamp}_url_image.jpg"
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         
-        print(f"⬇️ Downloading image from URL...")
+        print(f"[DOWNLOAD] Downloading image from URL...")
         
         # Add comprehensive headers to mimic real browser request
         req = urllib.request.Request(
@@ -394,11 +468,11 @@ def predict_from_url():
                 with open(filepath, 'wb') as out_file:
                     out_file.write(response.read())
             
-            print(f"✅ Image downloaded successfully: {filepath}")
-            print(f"💾 File size: {os.path.getsize(filepath)} bytes")
+            print(f"[OK] Image downloaded successfully: {filepath}")
+            print(f"[SAVE] File size: {os.path.getsize(filepath)} bytes")
             
         except urllib.error.HTTPError as e:
-            print(f"❌ HTTP Error {e.code}: {e.reason}")
+            print(f"[X] HTTP Error {e.code}: {e.reason}")
             if e.code == 403:
                 return jsonify({
                     'success': False,
@@ -416,26 +490,29 @@ def predict_from_url():
                     'error': f'Failed to download image: HTTP {e.code} - {e.reason}'
                 }), 400
         except Exception as e:
-            print(f"❌ Download error: {str(e)}")
+            print(f"[X] Download error: {str(e)}")
             return jsonify({
                 'success': False,
                 'error': f'Failed to download image: {str(e)}'
             }), 400
         
         # Predict disease
-        print(f"🔍 Running prediction...")
-        result = detector.predict(filepath)
-        print(f"✅ Prediction result: {result}")
+        print(f"[PREDICT] Running prediction...")
+        result = detector.predict(filepath, model_type=pepper_type)
+        print(f"[OK] Prediction result: {result}")
         
-        # Check for validation errors from detector (handles both validation and confidence checks)
-        if not result.get('success', True) and result.get('error') in ['Invalid Image', 'Not a Pepper Plant Leaf']:
-            print(f"❌ ERROR: Image validation/identification failed: {result.get('message')}")
+        # Check for validation errors or model rejection (handles validation, confidence, and wrong pepper type)
+        if not result.get('success', True):
+            error_type = result.get('error', 'Prediction failed')
+            print(f"[X] ERROR: {error_type}: {result.get('message')}")
             return jsonify({
                 'success': False,
-                'error': result.get('error'),
-                'message': result.get('message'),
-                'suggestion': result.get('suggestion'),
-                'confidence': result.get('validation_confidence', result.get('model_confidence'))
+                'error': error_type,
+                'message': result.get('message', 'Prediction failed'),
+                'suggestion': result.get('suggestion', 'Please try uploading a different image'),
+                'confidence': result.get('validation_confidence', result.get('model_confidence', 0)),
+                'model_type': result.get('detected_type', pepper_type),
+                'detailed_error': result.get('detailed_error', False)
             }), 400
         
         # Transform result
@@ -468,7 +545,9 @@ def predict_from_url():
                     'metadata': {
                         'source': 'url',
                         'image_url': image_url,
-                        'timestamp': timestamp
+                        'timestamp': timestamp,
+                        'model_type': result.get('model_type', pepper_type),
+                        'model_name': result.get('model_name', '')
                     }
                 }
             }
@@ -479,12 +558,12 @@ def predict_from_url():
                 'details': result
             }
         
-        print(f"✅ Returning response")
+        print(f"[OK] Returning response")
         print("="*50 + "\n")
         return jsonify(response)
         
     except Exception as e:
-        print(f"\n❌ EXCEPTION in predict-url:")
+        print(f"\n[X] EXCEPTION in predict-url:")
         print(f"Error: {str(e)}")
         print(f"Traceback:")
         traceback.print_exc()
@@ -555,19 +634,40 @@ def get_diseases_info():
 def get_model_info():
     """Get information about the trained model"""
     try:
+        current_model_type = detector.current_model_type
         info = {
             'success': True,
-            'model_type': 'CNN - MobileNetV2',
-            'classes': detector.class_names,
-            'class_count': len(detector.class_names),
+            'model_type': 'CNN - MobileNetV2 (Dual Model)',
+            'current_model': current_model_type,
+            'current_model_name': detector.model_configs[current_model_type]['display_name'],
+            'classes': detector.class_names.get(current_model_type, {}),
+            'class_count': len(detector.class_names.get(current_model_type, {})),
             'supported_formats': list(ALLOWED_EXTENSIONS),
             'max_file_size': f"{MAX_FILE_SIZE / (1024*1024):.0f}MB",
             'input_shape': str(detector.model.input_shape) if detector.model else None,
-            'output_shape': str(detector.model.output_shape) if detector.model else None
+            'output_shape': str(detector.model.output_shape) if detector.model else None,
+            'available_models': detector.get_available_models()
         }
         
         return jsonify(info)
         
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/models', methods=['GET'])
+def get_available_models():
+    """Get list of available pepper models"""
+    try:
+        models = detector.get_available_models()
+        return jsonify({
+            'success': True,
+            'current_model': detector.current_model_type,
+            'models': models
+        })
     except Exception as e:
         return jsonify({
             'success': False,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -38,17 +38,7 @@ const Checkout = () => {
   const [findingHub, setFindingHub] = useState(false);
   const [assignedHub, setAssignedHub] = useState(hubCollectionData.collectionHub || null);
 
-  useEffect(() => {
-    if (user) {
-      fetchCart();
-      loadUserAddress();
-      loadAddressBook();
-    } else {
-      navigate('/login');
-    }
-  }, [user, navigate]);
-
-  const fetchCart = async () => {
+  const fetchCart = useCallback(async () => {
     try {
       const token = await user.getIdToken();
       const response = await fetch(`/api/cart/${user.uid}`, {
@@ -74,9 +64,9 @@ const Checkout = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const loadUserAddress = async () => {
+  const loadUserAddress = useCallback(async () => {
     try {
       const token = await user.getIdToken();
       const response = await fetch('/api/user/me', {
@@ -111,9 +101,9 @@ const Checkout = () => {
       const cached = localStorage.getItem('shippingAddress');
       if (cached) setShippingAddress(normalizeAddress(JSON.parse(cached)));
     }
-  };
+  }, [user]);
 
-  const loadAddressBook = async () => {
+  const loadAddressBook = useCallback(async () => {
     try {
       const token = await user.getIdToken();
       const res = await fetch('/api/user/addresses', {
@@ -125,7 +115,17 @@ const Checkout = () => {
     } catch (e) {
       // ignore non-blocking error
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchCart();
+      loadUserAddress();
+      loadAddressBook();
+    } else {
+      navigate('/login');
+    }
+  }, [user, navigate, fetchCart, loadUserAddress, loadAddressBook]);
 
   const saveAddress = async () => {
     try {
@@ -343,6 +343,7 @@ const Checkout = () => {
           throw new Error(err.message || 'Failed to place hub collection order');
         }
         
+        // eslint-disable-next-line no-unused-vars
         const orderData = await createRes.json();
         setSuccess('Hub collection order placed successfully! You will be notified when ready for collection.');
         

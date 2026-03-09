@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Truck, Power, Package, RefreshCw, ArrowLeft, User, Phone, Mail, MapPin } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Truck, Power, Package, RefreshCw, ArrowLeft, Phone, Mail, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import authService from "../services/authService";
 import { apiFetch } from "../services/api";
@@ -12,21 +12,7 @@ export default function AdminDeliveryStatus() {
   const [message, setMessage] = useState({ text: '', type: '' });
   const [filter, setFilter] = useState('ALL'); // ALL, ONLINE, OFFLINE
 
-  useEffect(() => {
-    const currentUser = authService.getCurrentUser();
-    if (!currentUser) {
-      window.location.href = '/login';
-      return;
-    }
-    if (currentUser.role !== 'admin') {
-      navigate('/dashboard');
-      return;
-    }
-    setUser(currentUser);
-    fetchDeliveryBoys();
-  }, [navigate]);
-
-  const fetchDeliveryBoys = async () => {
+  const fetchDeliveryBoys = useCallback(async () => {
     setLoading(true);
     try {
       const response = await apiFetch('/api/admin/delivery-boys/status', { method: 'GET' });
@@ -40,7 +26,21 @@ export default function AdminDeliveryStatus() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const currentUser = authService.getCurrentUser();
+    if (!currentUser) {
+      window.location.href = '/login';
+      return;
+    }
+    if (currentUser.role !== 'admin') {
+      navigate('/dashboard');
+      return;
+    }
+    setUser(currentUser);
+    fetchDeliveryBoys();
+  }, [navigate, fetchDeliveryBoys]);
 
   const showMessage = (text, type) => {
     setMessage({ text, type });

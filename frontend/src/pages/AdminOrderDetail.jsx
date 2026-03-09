@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Truck, Package, CheckCircle, Clock, AlertCircle, User, Phone, Mail, MapPin, DollarSign, RefreshCw, Building2, Key, Home } from 'lucide-react';
+import { ArrowLeft, Truck, Package, CheckCircle, Clock, AlertCircle, User, Phone, Mail, MapPin, RefreshCw, Building2, Home } from 'lucide-react';
 import authService from '../services/authService';
 import { apiFetch } from '../services/api';
 import './AdminOrderDetail.css';
@@ -13,6 +13,36 @@ export default function AdminOrderDetail() {
   const [routeData, setRouteData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const fetchOrderDetail = useCallback(async () => {
+    // ... existing fetchOrderDetail logic ...
+    try {
+      const response = await apiFetch(`/api/admin/orders/${id}`, { method: 'GET' });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.message || 'Failed to fetch order');
+        return;
+      }
+      setOrder(data);
+    } catch (err) {
+      console.error('Error fetching order:', err);
+      setError('Failed to load order details');
+    }
+  }, [id]);
+
+  const fetchRouteDetail = useCallback(async () => {
+    try {
+      const response = await apiFetch(`/api/admin/orders/${id}/route`, { method: 'GET' });
+      if (response.ok) {
+        const data = await response.json();
+        setRouteData(data);
+      }
+    } catch (err) {
+      console.error('Error fetching route:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
     const currentUser = authService.getCurrentUser();
@@ -27,37 +57,7 @@ export default function AdminOrderDetail() {
     setUser(currentUser);
     fetchOrderDetail();
     fetchRouteDetail();
-  }, [id, navigate]);
-
-  const fetchOrderDetail = async () => {
-    // ... existing fetchOrderDetail logic ...
-    try {
-      const response = await apiFetch(`/api/admin/orders/${id}`, { method: 'GET' });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.message || 'Failed to fetch order');
-        return;
-      }
-      setOrder(data);
-    } catch (err) {
-      console.error('Error fetching order:', err);
-      setError('Failed to load order details');
-    }
-  };
-
-  const fetchRouteDetail = async () => {
-    try {
-      const response = await apiFetch(`/api/admin/orders/${id}/route`, { method: 'GET' });
-      if (response.ok) {
-        const data = await response.json();
-        setRouteData(data);
-      }
-    } catch (err) {
-      console.error('Error fetching route:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [id, navigate, fetchOrderDetail, fetchRouteDetail]);
 
   if (!user) {
     return (
@@ -106,6 +106,7 @@ export default function AdminOrderDetail() {
     );
   }
 
+  // eslint-disable-next-line no-unused-vars
   const getStatusColor = (status) => {
     const colors = {
       'PENDING': '#f59e0b',
@@ -118,6 +119,7 @@ export default function AdminOrderDetail() {
     return colors[status] || '#6b7280';
   };
 
+  // eslint-disable-next-line no-unused-vars
   const getStatusIcon = (status) => {
     const icons = {
       'PENDING': Clock,
@@ -151,6 +153,7 @@ export default function AdminOrderDetail() {
   };
 
   const orderStatuses = ['PENDING', 'APPROVED', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+  // eslint-disable-next-line no-unused-vars
   const currentStatusIndex = orderStatuses.indexOf(order.status);
 
   const formatDate = (date) => {
@@ -415,6 +418,7 @@ export default function AdminOrderDetail() {
                   {routeData.route.map((hub, index) => {
                     const isCurrent = routeData.currentHub && routeData.currentHub._id === hub._id;
                     const isPassed = routeData.currentHubIndex > index;
+                    // eslint-disable-next-line no-unused-vars
                     const isUpcoming = routeData.currentHubIndex < index;
 
                     let statusColor = '#cbd5e1'; // gray (upcoming)

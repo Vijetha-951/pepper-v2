@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Search, Loader2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
-import authService from '../services/authService';
 import userService from '../services/userService';
 
 export default function AdminUserManagement() {
   // Helpers to pick correct identifiers from MongoDB/Firebase
   const getUserId = (u) => u?._id || u?.firebaseUid || u?.id || '';
   const getMongoId = (u) => u?._id || u?.id || '';
+  // eslint-disable-next-line no-unused-vars
   const getDeleteId = (u) => u?._id || u?.firebaseUid || u?.id || '';
 
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState(''); // '', 'user', 'deliveryboy', 'admin'
-  const [statusFilter, setStatusFilter] = useState(''); // '', 'pending', 'approved', 'rejected'
+  const statusFilter = ''; // '', 'pending', 'approved', 'rejected'
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
 
@@ -65,6 +65,7 @@ export default function AdminUserManagement() {
     fetchUsers();
   };
 
+  // eslint-disable-next-line no-unused-vars
   const doApprove = async (userId) => {
     setPendingAction({ type: 'approve', userId });
     setError('');
@@ -96,6 +97,7 @@ export default function AdminUserManagement() {
 
   const isActingOn = (type, userId) => pendingAction && pendingAction.type === type && pendingAction.userId === userId;
 
+  // eslint-disable-next-line no-unused-vars
   const doDelete = async (userId) => {
     if (!window.confirm('Delete this user from Firebase, Firestore, and MongoDB? This cannot be undone.')) return;
     setPendingAction({ type: 'delete', userId });

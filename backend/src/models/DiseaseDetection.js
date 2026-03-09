@@ -37,7 +37,17 @@ const diseaseDetectionSchema = new mongoose.Schema(
     prediction: {
       type: String,
       required: true,
-      enum: ['Healthy', 'Bacterial Spot', 'Yellow Leaf Curl', 'Nutrient Deficiency']
+      enum: [
+        // Bell Pepper (Capsicum) Diseases
+        'Healthy',
+        'Bacterial Spot',
+        'Yellow Leaf Curl',
+        'Nutrient Deficiency',
+        // Black Pepper (Piper nigrum) Diseases
+        'Black Pepper Healthy',
+        'Black Pepper Leaf Blight',
+        'Black Pepper Yellow Mottle Virus'
+      ]
     },
     confidence: {
       type: Number,

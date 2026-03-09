@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Package, DollarSign, Clock, ChevronLeft, ChevronRight, ArrowLeft, MapPin, Home, Building2, Key, Trash2, Download } from 'lucide-react';
+import { Eye, Package, DollarSign, Clock, ChevronLeft, ChevronRight, ArrowLeft, MapPin, Home, Building2, Download } from 'lucide-react';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import './AdminAllOrders.css';
@@ -20,25 +20,7 @@ const AdminAllOrders = () => {
   });
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
-        fetchOrders(firebaseUser);
-      } else {
-        setLoading(false);
-        setError('Please sign in to view orders');
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    calculateSummary();
-  }, [orders]);
-
-  const fetchOrders = async (firebaseUser = user) => {
+  const fetchOrders = useCallback(async (firebaseUser = user) => {
     try {
       setLoading(true);
       if (!firebaseUser) {
@@ -66,9 +48,9 @@ const AdminAllOrders = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const calculateSummary = () => {
+  const calculateSummary = useCallback(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -100,7 +82,25 @@ const AdminAllOrders = () => {
       pendingOrders,
       pendingAmount
     });
-  };
+  }, [orders]);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        fetchOrders(firebaseUser);
+      } else {
+        setLoading(false);
+        setError('Please sign in to view orders');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [fetchOrders]);
+
+  useEffect(() => {
+    calculateSummary();
+  }, [calculateSummary]);
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -144,68 +144,6 @@ const AdminAllOrders = () => {
 
   const handleViewDetails = (orderId) => {
     navigate(`/admin/orders/${orderId}`);
-  };
-
-  const handleDeleteOrder = async (orderId, orderNumber) => {
-    if (!window.confirm(`Are you sure you want to permanently delete order ${orderNumber}? This action cannot be undone and will remove all related data (notifications, restock requests, etc.)`)) {
-      return;
-    }
-
-    try {
-      if (!user) {
-        alert('Not authenticated');
-        return;
-      }
-      const token = await user.getIdToken();
-      const response = await fetch(`/api/hub-collection/orders/${orderId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        alert(`✅ ${data.message}\n\nDeleted:\n- Order\n- ${data.deleted.notifications} notification(s)\n- ${data.deleted.restockRequests} restock request(s)`);
-        // Refresh the orders list
-        fetchOrders(user);
-      } else {
-        const errorData = await response.json();
-        alert(`❌ Failed to delete order: ${errorData.message}`);
-      }
-    } catch (error) {
-      console.error('Error deleting order:', error);
-      alert('Failed to delete order');
-    }
-  };
-
-  const handleUpdateStatus = async (orderId, newStatus) => {
-    try {
-      if (!user) {
-        alert('Not authenticated');
-        return;
-      }
-      const token = await user.getIdToken();
-      const response = await fetch(`/api/admin/orders/${orderId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-
-      if (response.ok) {
-        fetchOrders(); // Refresh orders
-        alert(`Order status updated to ${newStatus}`);
-      } else {
-        alert('Failed to update order status');
-      }
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      alert('Failed to update order status');
-    }
   };
 
   const handleDownloadInvoice = async (orderId) => {

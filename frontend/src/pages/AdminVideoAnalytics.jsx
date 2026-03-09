@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import { 
   TrendingUp, Eye, Heart, Users, Video, ArrowLeft,
-  Calendar, Award, Activity
+  Award, Activity
 } from 'lucide-react';
 import { auth } from '../config/firebase';
 import './AdminVideoAnalytics.css';

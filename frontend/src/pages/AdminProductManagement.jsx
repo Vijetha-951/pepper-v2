@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search, CheckCircle2, XCircle, Edit, Package, Loader2, AlertTriangle, ChevronLeft, ChevronRight, Trash2, Plus } from 'lucide-react';
-import authService from '../services/authService';
+import { Search, Edit, Package, Loader2, AlertTriangle, ChevronLeft, ChevronRight, Trash2, Plus } from 'lucide-react';
 import productService from '../services/productService';
 
 // Add CSS for spinner animation
@@ -57,7 +56,7 @@ export default function AdminProductManagement() {
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState(''); // '', 'Bush', 'Climber'
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const limit = 10;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -119,6 +118,7 @@ export default function AdminProductManagement() {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const doSeedProducts = async () => {
     if (!window.confirm('This will add all missing pepper varieties to the database. Continue?')) return;
     setPendingAction({ type: 'seed' });

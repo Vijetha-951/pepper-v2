@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
@@ -12,13 +12,7 @@ const Cart = () => {
   const [updating, setUpdating] = useState({});
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (user) {
-      fetchCart();
-    }
-  }, [user]);
-
-  const fetchCart = async () => {
+  const fetchCart = useCallback(async () => {
     try {
       const token = await user.getIdToken();
       const response = await fetch(`/api/cart/${user.uid}`, {
@@ -41,7 +35,13 @@ const Cart = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchCart();
+    }
+  }, [user, fetchCart]);
 
   const updateQuantity = async (productId, newQuantity) => {
     setUpdating(prev => ({ ...prev, [productId]: true }));

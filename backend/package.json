@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "flask": "cd python && python disease_detection_api_fast.py",
+    "flask": "cd python && python disease_detection_api.py",
     "dev:all": "concurrently -n flask,node -c magenta,green \"npm run flask\" \"npm run dev\"",
     "test": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest",
     "test:watch": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest --watch",

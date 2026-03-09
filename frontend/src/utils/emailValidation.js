@@ -84,6 +84,7 @@ export function validateMeaningfulEmail(email) {
 
   const [localPart, domainPart] = trimmedEmail.split('@');
   const [domain, ...tldParts] = domainPart.split('.');
+  // eslint-disable-next-line no-unused-vars
   const tld = tldParts.join('.');
 
   // Check for meaningless local part patterns
@@ -136,6 +137,8 @@ export function validateMeaningfulEmail(email) {
   };
 }
 
-export default {
+const emailValidationUtils = {
   validateMeaningfulEmail
 };
+
+export default emailValidationUtils;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Search, Loader2, AlertTriangle, ChevronLeft, ChevronRight, TrendingUp, Users, Target, Zap } from 'lucide-react';
 import userService from '../services/userService';
 
@@ -24,7 +24,7 @@ export default function AdminCustomerSegmentation() {
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit]);
 
-  const fetchCustomerSegments = async () => {
+  const fetchCustomerSegments = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -36,9 +36,9 @@ export default function AdminCustomerSegmentation() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [query, page, limit]);
 
-  const fetchSegmentationStats = async () => {
+  const fetchSegmentationStats = useCallback(async () => {
     setStatsLoading(true);
     try {
       const res = await userService.getSegmentationStats();
@@ -48,15 +48,15 @@ export default function AdminCustomerSegmentation() {
     } finally {
       setStatsLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchSegmentationStats();
   }, []);
 
   useEffect(() => {
+    fetchSegmentationStats();
+  }, [fetchSegmentationStats]);
+
+  useEffect(() => {
     fetchCustomerSegments();
-  }, [page, limit]);
+  }, [fetchCustomerSegments]);
 
   const onSearch = (e) => {
     e.preventDefault();

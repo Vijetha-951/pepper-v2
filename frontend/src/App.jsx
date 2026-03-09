@@ -29,10 +29,7 @@ import ForgotPassword from "./pages/ForgotPassword.jsx";
 import DiseaseDetection from "./pages/DiseaseDetection.jsx";
 
 // Shopping flow pages
-import Cart from "./pages/Cart.jsx";
-import Wishlist from "./pages/Wishlist.jsx";
 import Checkout from "./pages/Checkout.jsx";
-import Orders from "./pages/Orders.jsx";
 import PaymentSuccess from "./pages/PaymentSuccess.jsx";
 import HubSelection from "./pages/HubSelection.jsx";
 import CollectionVerification from "./pages/CollectionVerification.jsx";
