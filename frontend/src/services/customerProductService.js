@@ -2,6 +2,7 @@
 // Uses regular fetch with Firebase auth token
 
 import { auth } from '../config/firebase';
+import { apiFetch } from './api';
 
 const BASE_URL = '/api/products';
 const CART_URL = '/api/cart';
@@ -227,7 +228,7 @@ class CustomerProductService {
         throw new Error('User not authenticated');
       }
 
-      const response = await fetch(`${ORDERS_URL}/stats`, {
+      const response = await apiFetch(`${ORDERS_URL}/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

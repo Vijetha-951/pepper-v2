@@ -135,7 +135,7 @@ class AuthService {
         const firebaseUser = this.firebaseAuth.getCurrentUser();
         const idToken = firebaseUser ? await firebaseUser.getIdToken(true) : null;
         if (idToken) {
-          await fetch('/api/auth/google-login', {
+          await apiFetch('/api/auth/google-login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken, role: result.user?.role })
