@@ -33,7 +33,7 @@ class CustomerProductService {
 
       const url = params.toString() ? `${BASE_URL}?${params}` : BASE_URL;
       
-      const response = await fetch(url);
+      const response = await apiFetch(url);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -58,7 +58,7 @@ class CustomerProductService {
   // Get single product by ID
   async getProduct(productId) {
     try {
-      const response = await fetch(`${BASE_URL}/${productId}`);
+      const response = await apiFetch(`${BASE_URL}/${productId}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch product: ${response.statusText}`);
@@ -79,7 +79,7 @@ class CustomerProductService {
         throw new Error('User not authenticated');
       }
 
-      const response = await fetch(CART_URL, {
+      const response = await apiFetch(CART_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -131,7 +131,7 @@ class CustomerProductService {
         throw new Error('User not authenticated');
       }
 
-      const response = await fetch(`${CART_URL}/${user.uid}`, {
+      const response = await apiFetch(`${CART_URL}/${user.uid}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -156,7 +156,7 @@ class CustomerProductService {
         throw new Error('User not authenticated');
       }
 
-      const response = await fetch(`${CART_URL}/item/${productId}`, {
+      const response = await apiFetch(`${CART_URL}/item/${productId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -193,7 +193,7 @@ class CustomerProductService {
         throw new Error('User not authenticated');
       }
 
-      const response = await fetch(`${CART_URL}/item/${productId}`, {
+      const response = await apiFetch(`${CART_URL}/item/${productId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -262,7 +262,7 @@ class CustomerProductService {
         throw new Error('User not authenticated');
       }
 
-      const response = await fetch(`${ADMIN_URL}/stats`, {
+      const response = await apiFetch(`${ADMIN_URL}/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -300,7 +300,7 @@ class CustomerProductService {
       params.append('k', k);
       params.append('limit', limit);
 
-      const response = await fetch(`${RECOMMENDATIONS_URL}/products?${params}`, {
+      const response = await apiFetch(`${RECOMMENDATIONS_URL}/products?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -335,7 +335,7 @@ class CustomerProductService {
         return null;
       }
 
-      const response = await fetch(`${RECOMMENDATIONS_URL}/track`, {
+      const response = await apiFetch(`${RECOMMENDATIONS_URL}/track`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -364,7 +364,7 @@ class CustomerProductService {
         throw new Error('User not authenticated');
       }
 
-      const response = await fetch(`${RECOMMENDATIONS_URL}/insights`, {
+      const response = await apiFetch(`${RECOMMENDATIONS_URL}/insights`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -393,7 +393,7 @@ class CustomerProductService {
       params.append('limit', limit);
       params.append('monthsBack', monthsBack);
 
-      const response = await fetch(`${ADMIN_URL}/demand-predictions?${params}`, {
+      const response = await apiFetch(`${ADMIN_URL}/demand-predictions?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
