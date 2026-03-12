@@ -4,7 +4,7 @@ Flask REST API for pepper plant disease detection from leaf images
 """
 
 print("\n" + "="*60)
-print("PEPPER DISEASE DETECTION API")
+print("BLACK PEPPER DISEASE DETECTION API")
 print("="*60)
 print("Step 1/4: Importing libraries...")
 
@@ -17,7 +17,7 @@ from werkzeug.utils import secure_filename
 import traceback
 
 print("Step 2/4: Importing disease detector...")
-# Import the dual model disease detector
+# Import the black pepper disease detector
 from dual_model_detector import DualModelDetector as PlantDiseaseDetector
 print("Step 3/4: Initializing Flask app...")
 
@@ -36,9 +36,9 @@ app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 # Ensure upload directory exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-print("Step 4/4: Initializing disease detector (may take 30-60 seconds)...")
-print("Loading TensorFlow and both CNN models...\n")
-# Initialize dual model detector (supports both bell and black pepper)
+print("Step 4/4: Initializing disease detector (may take 20-30 seconds)...")
+print("Loading TensorFlow and Black Pepper CNN model...\n")
+# Initialize black pepper disease detector
 detector = PlantDiseaseDetector()
 print("\nAll initialization complete!")
 
@@ -57,8 +57,18 @@ def get_disease_description(disease_name):
         'Pepper__bell___healthy': 'The plant appears healthy with no visible signs of disease.',
         'Pepper__bell___Yellow_Leaf_Curl': 'Viral disease causing yellowing, curling, and stunted growth of leaves.',
         'Pepper__bell___Nutrient_Deficiency': 'Yellowing or discoloration due to lack of essential nutrients like Nitrogen, Potassium or Magnesium.',
-        # Black Pepper Diseases (formatted names)
+        # Black Pepper Diseases - EXACT class names from PyTorch model
+        'Footrot': 'Phytophthora capsici fungal disease affecting roots and stem base, causing wilting, yellowing, and eventual plant death. Major disease in high rainfall areas.',
+        'Healthy': 'The black pepper plant appears healthy with no visible signs of disease.',
+        'Not_Pepper_Leaf': 'The uploaded image does not appear to be a pepper leaf. Please upload a clear image of a black pepper plant leaf.',
+        'Pollu_Disease': 'Pollu beetle (Longitarsus nigripennis) infestation causing leaf damage, shot holes, and defoliation. Beetles feed on tender leaves and shoots.',
+        'Slow-Decline': 'Slow wilt syndrome caused by various pathogens including nematodes and fungi, leading to gradual yellowing, wilting, and progressive plant decline over months.',
+        # Legacy black pepper diseases (formatted names for backward compatibility)
+        'Black Pepper Footrot': 'Phytophthora capsici fungal disease affecting roots and stem base, causing wilting, yellowing, and eventual plant death. Major disease in high rainfall areas.',
         'Black Pepper Healthy': 'The black pepper plant appears healthy with no visible signs of disease.',
+        'Black Pepper Not Pepper Leaf': 'The uploaded image does not appear to be a pepper leaf. Please upload a clear image of a black pepper plant leaf.',
+        'Black Pepper Pollu Disease': 'Pollu beetle (Longitarsus nigripennis) infestation causing leaf damage, shot holes, and defoliation. Beetles feed on tender leaves and shoots.',
+        'Black Pepper Slow Decline': 'Slow wilt syndrome caused by various pathogens including nematodes and fungi, leading to gradual yellowing, wilting, and progressive plant decline over months.',
         'Black Pepper Leaf Blight': 'A fungal disease causing brown lesions on leaves, leading to defoliation and reduced yield.',
         'Black Pepper Yellow Mottle Virus': 'A viral disease causing yellow mottling and mosaic patterns on leaves, transmitted by aphids.'
     }
@@ -73,8 +83,18 @@ def get_disease_severity(disease_name):
         'Pepper__bell___healthy': 'None',
         'Pepper__bell___Yellow_Leaf_Curl': 'High',
         'Pepper__bell___Nutrient_Deficiency': 'Low to Moderate',
-        # Black Pepper
+        # Black Pepper - EXACT class names from PyTorch model
+        'Footrot': 'Critical',
+        'Healthy': 'None',
+        'Not_Pepper_Leaf': 'N/A',
+        'Pollu_Disease': 'High',
+        'Slow-Decline': 'High to Critical',
+        # Legacy formatted names
+        'Black Pepper Footrot': 'Critical',
         'Black Pepper Healthy': 'None',
+        'Black Pepper Not Pepper Leaf': 'N/A',
+        'Black Pepper Pollu Disease': 'High',
+        'Black Pepper Slow Decline': 'High to Critical',
         'Black Pepper Leaf Blight': 'High',
         'Black Pepper Yellow Mottle Virus': 'High'
     }
@@ -109,13 +129,87 @@ def get_disease_treatment(disease_name):
             'For magnesium deficiency: apply Epsom salt solution',
             'Test soil pH and adjust if needed (optimal: 6.0-6.8)'
         ],
-        # Black Pepper
+        # Black Pepper - EXACT class names from PyTorch model
+        'Footrot': [
+            'Improve drainage immediately - avoid waterlogging',
+            'Apply Bordeaux mixture (1%) or metalaxyl-based fungicide to stem base',
+            'Remove soil around root collar for better aeration',
+            'Apply Trichoderma viride as biocontrol agent',
+            'Drench soil with copper oxychloride (0.25%)',
+            'Remove and burn severely infected plants to prevent spread',
+            'Apply neem cake around plant base (500g per plant)'
+        ],
+        'Healthy': [
+            'Continue regular care practices',
+            'Monitor plants regularly',
+            'Maintain proper irrigation and drainage',
+            'Apply organic mulch around plants'
+        ],
+        'Not_Pepper_Leaf': [
+            'Please upload a clear image of a black pepper plant leaf',
+            'Ensure the image shows the leaf clearly with good lighting',
+            'Avoid uploading images of other plants, objects, or people'
+        ],
+        'Pollu_Disease': [
+            'Spray quinalphos (0.05%) or chlorpyriphos (0.04%)',
+            'Apply neem-based insecticide (1500 ppm azadirachtin)',
+            'Remove and destroy affected leaves',
+            'Practice field sanitation - remove fallen leaves',
+            'Apply soil drenching with phorate granules',
+            'Spray early morning when beetles are active',
+            'Repeat treatment every 15 days during infestation period'
+        ],
+        'Slow-Decline': [
+            'Apply nematicide if root-knot nematodes detected',
+            'Improve soil drainage and aeration',
+            'Apply Trichoderma harzianum to soil',
+            'Foliar spray with micronutrients (zinc, boron, magnesium)',
+            'Apply organic matter and compost to improve soil health',
+            'Drench with copper-based fungicide around root zone',
+            'Consider replanting with disease-free, resistant varieties if condition worsens',
+            'Test soil for nematode presence and nutrient deficiencies'
+        ],
+        # Legacy formatted names
+        'Black Pepper Footrot': [
+            'Improve drainage immediately - avoid waterlogging',
+            'Apply Bordeaux mixture (1%) or metalaxyl-based fungicide to stem base',
+            'Remove soil around root collar for better aeration',
+            'Apply Trichoderma viride as biocontrol agent',
+            'Drench soil with copper oxychloride (0.25%)',
+            'Remove and burn severely infected plants to prevent spread',
+            'Apply neem cake around plant base (500g per plant)'
+        ],
         'Black Pepper Healthy': [
             'Continue regular care practices',
             'Monitor plants regularly',
             'Maintain proper irrigation and drainage',
             'Apply organic mulch around plants'
         ],
+        'Black Pepper Not Pepper Leaf': [
+            'Please upload a clear image of a black pepper plant leaf',
+            'Ensure the image shows the leaf clearly with good lighting',
+            'Avoid uploading images of other plants, objects, or people'
+        ],
+        'Black Pepper Pollu Disease': [
+            'Spray quinalphos (0.05%) or chlorpyriphos (0.04%)',
+            'Apply neem-based insecticide (1500 ppm azadirachtin)',
+            'Remove and destroy affected leaves',
+            'Practice field sanitation - remove fallen leaves',
+            'Apply soil drenching with phorate granules',
+            'Spray early morning when beetles are active',
+            'Repeat treatment every 15 days during infestation period'
+        ],
+        'Black Pepper Slow Decline': [
+            'Apply nematicide if root-knot nematodes detected',
+            'Improve soil drainage and aeration',
+            'Apply Trichoderma harzianum to soil',
+            'Foliar spray with micronutrients (zinc, boron, magnesium)',
+            'Apply organic matter and compost to improve soil health',
+            'Drench with copper-based fungicide around root zone',
+            'Consider replanting with disease-free, resistant varieties if condition worsens',
+            'Test soil for nematode presence and nutrient deficiencies'
+        ],
+        # Legacy
         'Black Pepper Leaf Blight': [
             'Remove and destroy infected leaves immediately',
             'Apply fungicide (Bordeaux mixture or copper oxychloride)',
@@ -163,12 +257,47 @@ def get_disease_prevention(disease_name):
             'Ensure proper drainage to prevent nutrient leaching'
         ],
         # Black Pepper
+        'Black Pepper Footrot': [
+            'Ensure excellent drainage - avoid low-lying waterlogged areas',
+            'Plant on raised beds or mounds (30-45 cm height)',
+            'Use disease-free cuttings from certified sources',
+            'Apply Trichoderma viride to soil before planting',
+            'Avoid over-irrigation, especially during monsoon',
+            'Maintain proper spacing (2-3 meters) for air circulation',
+            'Apply organic mulch but avoid stem contact',
+            'Monitor regularly during rainy season'
+        ],
         'Black Pepper Healthy': [
             'Regular inspection for early disease detection',
             'Maintain proper drainage and avoid waterlogging',
             'Practice crop rotation if possible',
             'Use disease-free planting material'
         ],
+        'Black Pepper Not Pepper Leaf': [
+            'Take clear, well-lit photos of pepper leaves',
+            'Ensure the leaf fills most of the frame',
+            'Upload actual pepper plant leaves only'
+        ],
+        'Black Pepper Pollu Disease': [
+            'Monitor plants regularly for beetle presence',
+            'Remove weeds and alternate hosts from field',
+            'Use light traps to monitor beetle populations',
+            'Apply neem cake to soil (200g per plant) as repellent',
+            'Maintain field sanitation - remove fallen leaves',
+            'Avoid planting near heavily infested areas',
+            'Practice crop rotation with non-host crops'
+        ],
+        'Black Pepper Slow Decline': [
+            'Use certified disease-free, nematode-free planting material',
+            'Test soil for nematodes before planting',
+            'Apply organic matter (5-10 kg per plant annually)',
+            'Ensure good drainage - avoid waterlogging',
+            'Practice crop rotation with non-host plants',
+            'Use resistant or tolerant varieties (e.g., Panniyur-1)',
+            'Maintain proper nutrition with balanced fertilization',
+            'Avoid root damage during cultivation'
+        ],
+        # Legacy
         'Black Pepper Leaf Blight': [
             'Plant resistant varieties',
             'Maintain proper spacing (2-3 meters between plants)',
@@ -193,7 +322,7 @@ def health_check():
     available_models = detector.get_available_models()
     return jsonify({
         'status': 'healthy',
-        'service': 'Disease Detection API (Dual Model)',
+        'service': 'Black Pepper Disease Detection API',
         'models_loaded': len(available_models),
         'available_models': [m['type'] for m in available_models],
         'current_model': detector.current_model_type,
@@ -341,7 +470,16 @@ def predict_disease():
             
             # Create all_predictions array from probabilities
             all_predictions = []
-            if 'probabilities' in result:
+            # PyTorch returns 'all_predictions' as dict, Keras returns 'probabilities'
+            if 'all_predictions' in result and isinstance(result['all_predictions'], dict):
+                # PyTorch format: dict of {class_name: probability}
+                for disease, prob in result['all_predictions'].items():
+                    all_predictions.append({
+                        'disease': disease.replace('Pepper__bell___', '').replace('_', ' ').title(),
+                        'probability': prob
+                    })
+            elif 'probabilities' in result:
+                # Keras format
                 for disease, prob in result['probabilities'].items():
                     all_predictions.append({
                         'disease': disease.replace('Pepper__bell___', '').replace('_', ' ').title(),
@@ -529,7 +667,16 @@ def predict_from_url():
             }
             
             all_predictions = []
-            if 'probabilities' in result:
+            # PyTorch returns 'all_predictions' as dict, Keras returns 'probabilities'
+            if 'all_predictions' in result and isinstance(result['all_predictions'], dict):
+                # PyTorch format: dict of {class_name: probability}
+                for disease, prob in result['all_predictions'].items():
+                    all_predictions.append({
+                        'disease': disease.replace('Pepper__bell___', '').replace('_', ' ').title(),
+                        'probability': prob
+                    })
+            elif 'probabilities' in result:
+                # Keras format
                 for disease, prob in result['probabilities'].items():
                     all_predictions.append({
                         'disease': disease.replace('Pepper__bell___', '').replace('_', ' ').title(),
@@ -637,7 +784,7 @@ def get_model_info():
         current_model_type = detector.current_model_type
         info = {
             'success': True,
-            'model_type': 'CNN - MobileNetV2 (Dual Model)',
+            'model_type': 'CNN - EfficientNetB0 (Black Pepper)',
             'current_model': current_model_type,
             'current_model_name': detector.model_configs[current_model_type]['display_name'],
             'classes': detector.class_names.get(current_model_type, {}),
@@ -835,7 +982,7 @@ if __name__ == '__main__':
         print("[*] Model already trained and loaded.")
     
     # Start Flask server
-    print("\nDisease Detection API Starting...")
+    print("\nBlack Pepper Disease Detection API Starting...")
     print("=" * 50)
     print(f"URL: http://localhost:5001")
     print(f"Health Check: http://localhost:5001/health")

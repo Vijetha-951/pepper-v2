@@ -1,5 +1,9 @@
 {
-  "black_pepper_healthy": 0,
-  "black_pepper_leaf_blight": 1,
-  "black_pepper_yellow_mottle_virus": 2
+  "Footrot": 0,
+  "Healthy": 1,
+  "Not_Pepper_Leaf": 2,
+  "Pollu_Disease": 3,
+  "Slow-Decline": 4
+}
+  "black_pepper_slow_decline": 4
 }

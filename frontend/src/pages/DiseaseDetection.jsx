@@ -207,31 +207,6 @@ const DiseaseDetection = () => {
             </button>
           </div>
 
-          {/* Pepper Type Selector */}
-          <div className="pepper-type-selector">
-            <label htmlFor="pepperType" style={{ fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>
-              🌶️ Select Pepper Type:
-            </label>
-            <select 
-              id="pepperType"
-              value={pepperType} 
-              onChange={(e) => setPepperType(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                fontSize: '16px',
-                borderRadius: '8px',
-                border: '2px solid #4CAF50',
-                backgroundColor: 'white',
-                cursor: 'pointer',
-                marginBottom: '20px'
-              }}
-            >
-              <option value="black_pepper">🫚 Black Pepper (Piper nigrum) - For peppercorn plants</option>
-              <option value="bell_pepper">🫑 Bell Pepper (Capsicum) - For bell pepper/chili plants</option>
-            </select>
-          </div>
-
           {/* Upload Area - File Mode */}
           {uploadMode === 'file' && (
             <div 

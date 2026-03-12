@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Search, Package2, TrendingUp, AlertTriangle, Plus, Filter, RefreshCw, Loader2, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
 import productService from '../services/productService';
 
@@ -93,6 +93,12 @@ export default function AdminStockManagement() {
       console.warn('Failed to fetch low stock alerts:', err);
     }
   }, []);
+
+  // Fetch data on component mount and when filters change
+  useEffect(() => {
+    fetchStockData();
+    fetchLowStockAlerts();
+  }, [fetchStockData, fetchLowStockAlerts]);
 
   const handleRestock = async (productId, quantity, reason) => {
     setPendingActions(prev => ({ ...prev, [productId]: 'restock' }));

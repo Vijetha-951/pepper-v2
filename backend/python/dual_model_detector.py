@@ -17,10 +17,12 @@ class DualModelDetector:
     
     def __init__(self):
         """Initialize the dual-model detector"""
-        print("[*] Initializing Dual Model Disease Detector...")
+        print("[*] Initializing Black Pepper Disease Detector...")
         self.models = {}
         self.class_names = {}
         self.current_model_type = 'black_pepper'  # Default
+        self.using_pytorch = False  # Flag for PyTorch model
+        self.pytorch_detector = None  # PyTorch detector instance
         
         # Model configurations
         self.model_configs = {
@@ -36,25 +38,46 @@ class DualModelDetector:
             }
         }
         
-        # Load both models
-        print("[*] Loading models (this may take 30-60 seconds)...")
-        for model_type, config in self.model_configs.items():
-            try:
-                print(f"\n[*] Loading {config['display_name']} model...")
-                self._load_model(model_type)
-                print(f"[OK] {config['display_name']} model loaded successfully!")
-            except Exception as e:
-                print(f"[!] Warning: Failed to load {config['display_name']} model: {str(e)}")
-                self.models[model_type] = None
+        # Load only black pepper model
+        print("[*] Loading Black Pepper model...")
+        model_type = 'black_pepper'
+        config = self.model_configs[model_type]
+        try:
+            print(f"[*] Loading {config['display_name']} model...")
+            self._load_model(model_type)
+            print(f"[OK] {config['display_name']} model loaded successfully!")
+        except Exception as e:
+            print(f"[!] Error: Failed to load {config['display_name']} model: {str(e)}")
+            raise e
         
-        print("\n[*] Dual Model Detector initialization complete!")
+        print("[*] Black Pepper Detector initialization complete!")
         self._print_status()
     
     def _load_model(self, model_type):
-        """Load a specific model"""
+        """Load a specific model (PyTorch if available, otherwise Keras)"""
         config = self.model_configs[model_type]
         
-        # Load model
+        # Check for PyTorch model first (for black pepper only)
+        if model_type == 'black_pepper':
+            pytorch_path = os.path.join(os.path.dirname(__file__), 'best_black_pepper_model.pth')
+            if os.path.exists(pytorch_path):
+                print(f"[*] Found PyTorch model: {pytorch_path}")
+                print(f"[*] Loading trained PyTorch EfficientNet model...")
+                try:
+                    from pytorch_black_pepper_detector import get_detector
+                    self.pytorch_detector = get_detector()
+                    self.models[model_type] = 'pytorch'  # Mark as PyTorch
+                    self.using_pytorch = True
+                    
+                    # Load class names from PyTorch detector
+                    self.class_names[model_type] = self.pytorch_detector.class_names
+                    print(f"[OK] PyTorch model loaded with trained weights!")
+                    return
+                except Exception as e:
+                    print(f"[!] Warning: Could not load PyTorch model: {e}")
+                    print(f"[*] Falling back to Keras model...")
+        
+        # Load Keras model (default)
         if not os.path.exists(config['model_path']):
             raise FileNotFoundError(f"Model file not found: {config['model_path']}")
         
@@ -74,14 +97,27 @@ class DualModelDetector:
     def _print_status(self):
         """Print the status of loaded models"""
         print("\n" + "="*60)
-        print("MODEL STATUS")
+        print("BLACK PEPPER MODEL STATUS")
         print("="*60)
-        for model_type, config in self.model_configs.items():
-            status = "[OK] Loaded" if self.models.get(model_type) is not None else "[X] Not Available"
-            print(f"{config['display_name']:30} {status}")
-            if self.models.get(model_type) is not None:
+        model_type = 'black_pepper'
+        config = self.model_configs[model_type]
+        status = "[OK] Loaded" if self.models.get(model_type) is not None else "[X] Not Available"
+        
+        if self.using_pytorch:
+            framework = "PyTorch (Trained EfficientNet-B0)"
+        else:
+            framework = "TensorFlow/Keras"
+        
+        print(f"{config['display_name']:30} {status}")
+        print(f"  Framework: {framework}")
+        
+        if self.models.get(model_type) is not None:
+            if self.using_pytorch and self.pytorch_detector:
+                # Show exact class names from PyTorch detector
+                classes = self.pytorch_detector.class_names
+            else:
                 classes = list(self.class_names[model_type].values())
-                print(f"  Classes: {', '.join(classes)}")
+            print(f"  Classes ({len(classes)}): {', '.join(classes)}")
         print("="*60 + "\n")
     
     def _format_class_name(self, raw_class_name):
@@ -179,8 +215,12 @@ class DualModelDetector:
             if img is None:
                 return False, "Could not read image file", 0
             
-            # Get original dimensions
+            # Get original image dimensions
             height, width = img.shape[:2]
+            
+            # Check 1: Image too small
+            if height < 50 or width < 50:
+                return False, "Image resolution too low. Please upload a higher quality image.", 0
             
             # Resize for consistent analysis
             img_resized = cv2.resize(img, (256, 256))
@@ -188,10 +228,6 @@ class DualModelDetector:
             hsv = cv2.cvtColor(img_resized, cv2.COLOR_BGR2HSV)
             
             total_pixels = 256 * 256
-            
-            # Check 1: Image too small
-            if height < 50 or width < 50:
-                return False, "Image resolution too low. Please upload a higher quality image.", 0
             
             # ============= STRICT REJECTION CHECKS =============
             
@@ -203,47 +239,34 @@ class DualModelDetector:
             green_pct = (np.sum(green_mask > 0) / total_pixels) * 100
             self._last_green_pct = green_pct
             
-            # Yellow/Light Brown (diseased/stressed leaves/necrotic tissue)
+            # Yellow/Light Brown (diseased/stressed leaves)
             yellow_lower = np.array([10, 20, 20])
             yellow_upper = np.array([35, 255, 255])
             yellow_mask = cv2.inRange(hsv, yellow_lower, yellow_upper)
             yellow_pct = (np.sum(yellow_mask > 0) / total_pixels) * 100
             self._last_yellow_pct = yellow_pct
             
-            # Brown/Dark Gray (necrotic/dead tissue in disease spots)
-            brown_lower = np.array([0, 0, 20])
-            brown_upper = np.array([30, 255, 100])
-            brown_mask = cv2.inRange(hsv, brown_lower, brown_upper)
-            brown_pct = (np.sum(brown_mask > 0) / total_pixels) * 100
-            self._last_brown_pct = brown_pct
+            plant_pct = green_pct + yellow_pct
+            self._last_plant_pct = plant_pct
+            
+            # Minimum plant content threshold - much more lenient to allow diseased leaves
+            if plant_pct < 5:
+                return False, "WARNING: Not a pepper plant leaf! Please upload a clear photo showing the actual pepper plant leaf. Avoid screenshots, documents, or non-plant images.", 0
             
             # Check 3: Detect human skin (reject photos of people)
-            # Tightened ranges to avoid brown/yellow leaf spots
-            skin_lower1 = np.array([0, 30, 80])
-            skin_upper1 = np.array([20, 130, 255])
-            skin_lower2 = np.array([0, 20, 70])
-            skin_upper2 = np.array([25, 140, 255])
+            skin_lower1 = np.array([0, 20, 70])
+            skin_upper1 = np.array([20, 150, 255])
+            skin_lower2 = np.array([0, 10, 60])
+            skin_upper2 = np.array([25, 160, 255])
             
             skin_mask1 = cv2.inRange(hsv, skin_lower1, skin_upper1)
             skin_mask2 = cv2.inRange(hsv, skin_lower2, skin_upper2)
             skin_mask = cv2.bitwise_or(skin_mask1, skin_mask2)
             skin_pct = (np.sum(skin_mask > 0) / total_pixels) * 100
             
-            # Plant content should not include skin tones
-            # This prevents photos of people from passing the plant_pct threshold
-            plant_pct = green_pct + max(0, yellow_pct - skin_pct/2) + max(0, brown_pct - skin_pct)
-            self._last_plant_pct = plant_pct
-            
-            # Minimum plant content threshold
-            if plant_pct < 2:
-                return False, "WARNING: Not enough pepper leaf content detected! Please upload a clear photo showing the actual pepper plant leaf.", 0
-            
-            # Reject if it's likely a person
-            # RESTORED green_pct check: If there's enough green, it's likely a leaf with some skin-like spots
-            if skin_pct > 20 and green_pct < 15:
-                return False, f"WARNING: This appears to be a photo of a person or hand (skin: {skin_pct:.1f}%). Please upload a clear photo of ONLY the pepper plant leaf.", 0
-            elif skin_pct > 40: # Definite person regardless of green
-                 return False, f"WARNING: Too much skin detected ({skin_pct:.1f}%). Please upload a photo of the actual pepper plant leaf.", 0
+            # Reject if it's clearly a person photo
+            if skin_pct > 45 and green_pct < 25:
+                return False, "WARNING: This appears to be a photo of a person, not a pepper plant. Please upload a photo of the actual pepper plant leaf.", 0
             
             # Check 4: Detect artificial blue (sky, screens, clothing, logos)
             blue_lower = np.array([90, 50, 50])
@@ -278,31 +301,8 @@ class DualModelDetector:
             
             # Check 8: Color variety check (natural leaves have varied hues)
             hsv_std = np.std(hsv[:, :, 0])  # Hue standard deviation
-            if hsv_std < 1.5 and plant_pct < 10:  # Much more lenient
+            if hsv_std < 2 and plant_pct < 15:  # Much more lenient
                 return False, "WARNING: This doesn't look like a natural pepper plant image. Please upload a clear photo of an actual pepper plant leaf.", 0
-            
-            # Check 9: Aspect Ratio Check (New) - Reject broad non-pepper leaves
-            # Pepper leaves are typically elongated (0.35 - 0.85)
-            leaf_mask = cv2.bitwise_or(green_mask, yellow_mask)
-            leaf_mask = cv2.bitwise_or(leaf_mask, brown_mask)
-            contours, _ = cv2.findContours(leaf_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            if contours:
-                largest_contour = max(contours, key=cv2.contourArea)
-                if cv2.contourArea(largest_contour) > 1000:
-                    x, y, w, h = cv2.boundingRect(largest_contour)
-                    # Orientation-independent aspect ratio
-                    long_side = max(w, h)
-                    short_side = min(w, h)
-                    ratio = float(long_side) / short_side if short_side > 0 else 0
-                    self._leaf_ratio = ratio
-                    print(f"[DEBUG] Leaf ratio: {ratio:.2f} (w:{w}, h:{h})")
-                    
-                    # Pepper leaves are elongated but not too thin
-                    # Loosened: allow rounder shapes (ratio >= 1.0) to prevent false rejections
-                    if ratio < 1.0: # Basically always passes if it's a blob
-                        return False, f"WARNING: Leaf shape not valid (ratio: {ratio:.2f}). Please upload a pepper plant leaf.", 0
-                    if ratio > 8.0: # Slightly increased from 6.0
-                        return False, f"WARNING: Leaf shape too thin for a pepper plant (ratio: {ratio:.2f}). Please upload a pepper plant leaf.", 0
             
             # Check 9: Red/orange dominant (reject peppers/fruits instead of leaves)
             red_lower1 = np.array([0, 50, 50])
@@ -321,8 +321,8 @@ class DualModelDetector:
             
             # ============= FINAL VALIDATION =============
             
-            # Must have reasonable plant content (lowered from 8)
-            if plant_pct < 4:
+            # Must have reasonable plant content
+            if plant_pct < 8:
                 return False, "WARNING: Not enough pepper leaf content detected in the photo. Please upload a clearer photo of the actual plant leaf.", 0
             
             # Calculate confidence score based on plant content and image quality
@@ -353,6 +353,25 @@ class DualModelDetector:
             if model_type is not None:
                 self.set_model_type(model_type)
             
+            # Use PyTorch detector if available (black pepper only)
+            if self.current_model_type == 'black_pepper' and self.using_pytorch:
+                print("[*] Using trained PyTorch model for prediction...")
+                
+                # Validate image first
+                is_valid, reason, validation_confidence = self.is_valid_plant_image(image_path)
+                if not is_valid:
+                    return {
+                        'success': False,
+                        'error': 'Invalid Image',
+                        'message': reason,
+                        'validation_confidence': validation_confidence
+                    }
+                
+                # Use PyTorch detector
+                result = self.pytorch_detector.predict(image_path)
+                return result
+            
+            # Otherwise use Keras model (default)
             # Validate image
             is_valid, reason, validation_confidence = self.is_valid_plant_image(image_path)
             if not is_valid:
@@ -399,10 +418,10 @@ class DualModelDetector:
                 max_disease_name, max_disease_prob = max(disease_probs, key=lambda x: x[1]) if disease_probs else (None, 0)
                 healthy_prob = probabilities[healthy_key]
                 
-                # Rule 1: If probabilities are close (difference < 25%), default to healthy to avoid false positives
-                if abs(healthy_prob - max_disease_prob) < 25:
+                # Rule 1: If probabilities are close (difference < 15%), default to healthy to avoid false positives
+                if abs(healthy_prob - max_disease_prob) < 15:
                     predicted_class = healthy_key
-                    confidence = max(healthy_prob, max_disease_prob)
+                    confidence = healthy_prob
                     print(f"[*] Probabilities too close ({healthy_prob:.1f}% vs {max_disease_prob:.1f}%) - Defaulting to HEALTHY")
                 
                 # Rule 2: If a disease is predicted but leaf looks very green/healthy
@@ -422,20 +441,18 @@ class DualModelDetector:
                         confidence = max(healthy_prob, 85.0)
                         print(f"[*] Extremely green image ({green_val:.1f}%) - Overriding high-confidence disease prediction to HEALTHY")
             
-            # Check confidence threshold
-            # High threshold for species identification (at least 75%)
-            # If it's below 75%, it's likely a different plant that just looks "similar" (like coffee)
-            if confidence < 75:
+            # Check confidence threshold (lowered to 20% to allow predictions for valid leaves)
+            if confidence < 20:
                 return {
                     'success': False,
-                    'error': f'Low Confidence / Unknown Species',
-                    'message': f'I am only {confidence:.1f}% confident this is a {self.model_configs[self.current_model_type]["display_name"]} leaf. It might be a different or unknown plant species.',
-                    'suggestion': f'Please ensure you are uploading a clear, close-up photo of an actual {self.model_configs[self.current_model_type]["display_name"]} leaf.',
+                    'error': f'Not a {self.model_configs[self.current_model_type]["display_name"]} Leaf',
+                    'message': f'This model is trained for {self.model_configs[self.current_model_type]["display_name"]} leaves. Your image may be a different type of plant.',
+                    'suggestion': f'Please upload a clear photo of a {self.model_configs[self.current_model_type]["display_name"]} leaf.',
                     'model_confidence': round(confidence, 2),
                     'detected_type': self.current_model_type
                 }
             
-            # Show result
+            # Show result with low confidence warning if confidence is between 20-50%
             result = {
                 'success': True,
                 'disease': predicted_class,
@@ -443,14 +460,7 @@ class DualModelDetector:
                 'probabilities': probabilities,
                 'model_type': self.current_model_type,
                 'model_name': self.model_configs[self.current_model_type]['display_name'],
-                'is_valid': True,
-                'debug_info': {
-                    'plant_pct': round(getattr(self, '_last_plant_pct', 0), 2),
-                    'green_pct': round(getattr(self, '_last_green_pct', 0), 2),
-                    'yellow_pct': round(getattr(self, '_last_yellow_pct', 0), 2),
-                    'brown_pct': round(getattr(self, '_last_brown_pct', 0), 2),
-                    'leaf_ratio': round(getattr(self, '_leaf_ratio', 0), 2)
-                }
+                'is_valid': True
             }
             
             # Add warning for low confidence predictions
